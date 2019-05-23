@@ -1,0 +1,21 @@
+{
+  "exp_name": ["DQN_for_CartPole"],
+  "env": ["CartPole-v0"],
+  "agent": ["DQN"],
+  "input_type": ["feature"],
+  "device": ["cpu"],
+  "memory_size": [40000],
+  "batch_size": [128],
+  "exploration_steps": [1000],
+  "max_steps": [1e7],
+  "max_episodes": [500],
+  "discount": [0.99],
+  "seed": [1],
+  "runs": [3],
+  "hidden_layers": [[30, 15]],
+  "gradient_clip": [5],
+  "exploration": [{"start":1.0,"end":0.001,"steps":1e4,"epsilon":0.01}],
+  "lr": [0.01],
+  "target_network_update_freq": [3],
+  "generate_random_seed": [false]
+}

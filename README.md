@@ -1,0 +1,1 @@
+Explorer is a reinforcement learning frame based on Pytorch for **exploring** new ideas.

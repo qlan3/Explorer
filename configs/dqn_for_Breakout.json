@@ -1,0 +1,23 @@
+{
+  "exp_name": ["DQN_for_Breakout"],
+  "env": ["Breakout-v0", "BreakoutNoFrameskip-v4"],
+  "agent": ["DQN"],
+  "input_type": ["pixel"],
+  "device": ["cpu"],
+  "memory_size": [1e6],
+  "batch_size": [32],
+  "exploration_steps": [50000],
+  "max_steps": [2e7],
+  "max_episodes": [2e6],
+  "discount": [0.99],
+  "seed": [719],
+  "runs": [100],
+  "history_length": [4],
+  "hidden_layers": [[]],
+  "feature_dim": [512],
+  "gradient_clip": [5],
+  "exploration": [{"start":1.0,"end":0.01,"steps":1e6,"epsilon":0.01}],
+  "lr": [0.00025],
+  "target_network_update_freq": [10000],
+  "generate_random_seed": [true]
+}
