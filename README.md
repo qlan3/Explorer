@@ -10,3 +10,4 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 # References
 - [DeepRL](https://github.com/ShangtongZhang/DeepRL)
 - [Deep Reinforcement Learning Algorithms with PyTorch](https://github.com/p-christ/Deep-Reinforcement-Learning-Algorithms-with-PyTorch)
+- [Classic Control](https://github.com/muhammadzaheer/classic-control)
