@@ -15,7 +15,7 @@
   "hidden_layers": [[30, 15]],
   "gradient_clip": [5],
   "exploration": [{"start":1.0,"end":0.001,"steps":1e4,"epsilon":0.01}],
-  "lr": [0.01],
+  "lr": [0.01, 0.1],
   "target_network_update_freq": [3],
   "generate_random_seed": [true]
 }
