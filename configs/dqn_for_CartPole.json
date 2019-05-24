@@ -1,5 +1,5 @@
 {
-  "exp_name": ["DQN_for_CartPole"],
+  "exp_name": ["CartPole"],
   "env": ["CartPole-v0"],
   "agent": ["DQN"],
   "input_type": ["feature"],
@@ -17,5 +17,5 @@
   "exploration": [{"start":1.0,"end":0.001,"steps":1e4,"epsilon":0.01}],
   "lr": [0.01],
   "target_network_update_freq": [3],
-  "generate_random_seed": [false]
+  "generate_random_seed": [true]
 }

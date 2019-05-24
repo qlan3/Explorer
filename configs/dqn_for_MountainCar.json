@@ -1,5 +1,5 @@
 {
-  "exp_name": ["DQN_for_MountainCar"],
+  "exp_name": ["MountainCar"],
   "env": ["MountainCar-v0"],
   "agent": ["DQN"],
   "input_type": ["feature"],

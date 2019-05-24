@@ -28,17 +28,14 @@ class Sweeper(object):
     Index is from 1 to # of total conbinations.
     '''
     cfg = Config()
-    cfg_dict = {}
     # Set config index
     setattr(cfg, 'config_idx', idx)
-    cfg_dict['config_idx'] = idx
     idx = (idx-1) % self.total_combinations
     
     for key, values in self.config_dicts.items():
       value_len = len(values)
       value = values[idx % value_len]
       setattr(cfg, key, value)
-      cfg_dict[key] = value
       idx = idx // value_len
     
-    return cfg, cfg_dict
+    return cfg

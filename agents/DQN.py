@@ -41,14 +41,14 @@ class DQN(BaseAgent):
       # Create Q value network
       feature_net = Conv2d_NN(in_channels=cfg.history_length, feature_dim=cfg.feature_dim)
       value_net = MLP(layer_dims=layer_dims)
-      self.Q_net = NetworkGlue(feature_net, value_net)
+      self.Q_net = NetworkGlue(feature_net, value_net).to(self.device)
       # Create target Q value network
       feature_net_target = Conv2d_NN(in_channels=cfg.history_length, feature_dim=cfg.feature_dim)
       value_net_target = MLP(layer_dims=layer_dims)
-      self.Q_net_target = NetworkGlue(feature_net_target, value_net_target)
+      self.Q_net_target = NetworkGlue(feature_net_target, value_net_target).to(self.device)
     elif self.input_type == 'feature':
-      self.Q_net = MLP(layer_dims=layer_dims,hidden_activation=nn.Sigmoid())
-      self.Q_net_target = MLP(layer_dims=layer_dims,hidden_activation=nn.Sigmoid())
+      self.Q_net = MLP(layer_dims=layer_dims,hidden_activation=nn.ReLU()).to(self.device)
+      self.Q_net_target = MLP(layer_dims=layer_dims,hidden_activation=nn.ReLU()).to(self.device)
     else:
       raise ValueError(f'{self.input_type} is not supported.')
     

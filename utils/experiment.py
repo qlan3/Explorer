@@ -1,9 +1,9 @@
 import sys
 import time
+import json
+import torch
 import random
 import logging
-
-import torch
 import numpy as np
 from tqdm import tqdm
 
@@ -22,10 +22,13 @@ class Experiment(object):
     self.runs = cfg.runs
     self.config_idx = cfg.config_idx
     self.exp_name = cfg.exp_name
-    self.log_name = f'./logs/{self.exp_name}-{self.config_idx}.csv'
-    self.image_name = f'./images/{self.exp_name}-{self.config_idx}.png'
     self.results = None
+    self.log_path = f'{cfg.log_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.csv'
+    self.image_path = f'{cfg.image_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.png'
+    self.model_path = f'{cfg.model_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.pt'
+    self.cfg_path = f'{cfg.log_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.json'
     self.set_random_seed(cfg)
+    self.save_config(cfg)
 
   def set_random_seed(self, cfg):
     # Set all random seeds
@@ -52,9 +55,23 @@ class Experiment(object):
       else:
         self.results = self.results.append(result, ignore_index=True)
       self.save_results()
+      self.save_model()
     self.end_time = time.time()
     print(f'Memory usage: {rss_memory_usage():.2f} MB')
     print(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')
 
   def save_results(self):
-    self.results.to_csv(self.log_name, index=False)
+    self.results.to_csv(self.log_path, index=False)
+  
+  def save_model(self):
+    torch.save(self.agent.Q_net.state_dict(), self.model_path)
+  
+  def load_model(self):
+    self.agent.Q_net.load_state_dict(torch.load(self.model_path))
+
+  def save_config(self, cfg):
+    cfg_json = json.dumps(cfg.__dict__, indent=2)
+    print(cfg_json, end='\n')
+    f = open(self.cfg_path, 'w')
+    f.write(cfg_json)
+    f.close()
