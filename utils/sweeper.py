@@ -29,6 +29,9 @@ class Sweeper(object):
     '''
     cfg = Config()
     cfg_dict = {}
+    # Set config index
+    setattr(cfg, 'config_idx', idx)
+    cfg_dict['config_idx'] = idx
     idx = (idx-1) % self.total_combinations
     
     for key, values in self.config_dicts.items():

@@ -9,6 +9,7 @@ import numpy
 
 from utils.sweeper import Sweeper
 from utils.experiment import Experiment
+from utils.plot import *
 
 def main(argv):
   # python main.py --config_idx 1 --config_file ./configs/dqn_for_MountainCar.json
@@ -19,11 +20,14 @@ def main(argv):
   
   sweeper = Sweeper(args.config_file)
   cfg, cfg_dict = sweeper.generate_config_from_idx(args.config_idx)
-
-  print(json.dumps(cfg_dict, indent=2), end='\n')
-
   exp = Experiment(cfg)
+  # Update seed in config dict
+  cfg_dict['seed'] = cfg.seed
+  print(json.dumps(cfg_dict, indent=2), end='\n')
+  # Run
   exp.run()
+  # Plot results for one agent
+  plot_agent_results(exp.log_name, exp.image_name, exp.exp_name)
 
 if __name__=='__main__':
   main(sys.argv)

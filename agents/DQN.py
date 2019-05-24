@@ -1,5 +1,6 @@
 import gym
 import torch
+import pandas as pd
 from torch import nn
 import torch.optim as optim
 from gym.spaces.box import Box
@@ -16,6 +17,7 @@ from agents.BaseAgent import BaseAgent
 class DQN(BaseAgent):
   def __init__(self, cfg):
     super().__init__(cfg)
+    self.agent_name = cfg.agent
     self.env = make_env(cfg.env)
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
@@ -34,11 +36,6 @@ class DQN(BaseAgent):
     else:
       self.input_type = 'feature'
       layer_dims = [self.state_size] + cfg.hidden_layers + [self.action_size]
-      # print(layer_dims)
-    # Reset counter
-    self.step_count = 0
-    self.episode_count = 0
-    self.total_episode_reward_list = []
     
     if self.input_type == 'pixel':
       # Create Q value network
@@ -78,6 +75,12 @@ class DQN(BaseAgent):
     self.episode_step_count = 0
   
   def run_episodes(self):
+    # Reset counter
+    self.step_count = 0
+    self.episode_count = 0
+    self.total_episode_reward_list = []
+    result = []
+    
     self.reset_game()
     while (self.step_count < self.max_steps) and (self.episode_count < self.max_episodes):
       # Take a step
@@ -94,11 +97,17 @@ class DQN(BaseAgent):
       self.total_episode_reward += self.reward
       # If done, reset the game
       if self.done or self.episode_step_count >= self.time_out_step:
-        self.total_episode_reward_list.append(self.total_episode_reward)
         self.episode_count += 1
         self.step_count += self.episode_step_count
+        self.total_episode_reward_list.append(self.total_episode_reward)
+        result_dict = {'Agent': self.agent_name, 
+                       'Episode': self.episode_count, 
+                       'Step': self.step_count, 
+                       'Return': self.total_episode_reward}
+        result.append(result_dict)
         print(f'Episode {self.episode_count}, Step {self.step_count}: return={self.total_episode_reward}')
         self.reset_game()
+    return pd.DataFrame(result)
 
   def get_action(self):
     # Uses the local Q network and an epsilon greedy policy to pick an action
