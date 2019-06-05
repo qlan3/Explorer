@@ -28,7 +28,9 @@ class NetworkGlue(nn.Module):
 
 
 class MLP(nn.Module):
-  # Multilayer Perceptron
+  '''
+  Multilayer Perceptron
+  '''
   def __init__(self, layer_dims, hidden_activation=nn.ReLU(), output_activation=None):
     super().__init__()
     # Create layers
@@ -48,7 +50,9 @@ class MLP(nn.Module):
 
 
 class Conv2d_NN(nn.Module):
-  # 2D convolution neural network
+  '''
+  2D convolution neural network
+  '''
   def __init__(self, in_channels=4, h=84, w=84, feature_dim=512):
     super().__init__()
     self.conv1 = layer_init(nn.Conv2d(in_channels, 32, kernel_size=8, stride=4))

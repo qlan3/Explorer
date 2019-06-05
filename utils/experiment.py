@@ -1,9 +1,10 @@
+import os
 import sys
+import copy
 import time
 import json
 import torch
 import random
-import logging
 import numpy as np
 from tqdm import tqdm
 
@@ -11,43 +12,61 @@ from agents import *
 from utils.helper import *
 
 AGENTS = {
-    'DQN': DQN
+    'NaiveDQN': NaiveDQN,
+    'DQN': DQN,
+    'DDQN': DDQN,
+    'MaxminDQN': MaxminDQN
   }
 
-  
+
 class Experiment(object):
-  # Train the agent to play the game.
+  '''
+  Train the agent to play the game.
+  '''
   def __init__(self, cfg):
-    self.agent = AGENTS[cfg.agent](cfg)
+    self.results = None
+    self.cfg = copy.deepcopy(cfg)
     self.runs = cfg.runs
     self.config_idx = cfg.config_idx
     self.exp_name = cfg.exp_name
-    self.results = None
-    self.log_path = f'{cfg.log_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.csv'
-    self.image_path = f'{cfg.image_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.png'
-    self.model_path = f'{cfg.model_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.pt'
-    self.cfg_path = f'{cfg.log_dir}{self.exp_name}-{cfg.agent}-index={self.config_idx}.json'
-    self.set_random_seed(cfg)
-    self.save_config(cfg)
+    if self.cfg.generate_random_seed:
+      self.cfg.seed = random.randint(0, 2**32 - 2)
+    
+    self.time_str = get_time_str()
+    self.cfg.tag = f'{self.exp_name}-{cfg.agent}-{self.config_idx}-{self.time_str}'
+    self.cfg.log_dir = f'{cfg.log_dir}{self.cfg.tag}/'
+    if not os.path.exists(self.cfg.log_dir): os.makedirs(self.cfg.log_dir)
 
-  def set_random_seed(self, cfg):
-    # Set all random seeds
-    if cfg.generate_random_seed:
-      cfg.seed = random.randint(0, 2**32 - 2)
-    self.seed = cfg.seed
-    random.seed(self.seed)
-    np.random.seed(self.seed)
-    torch.manual_seed(self.seed)
+    self.log_path = f'{self.cfg.log_dir}results.csv'
+    self.model_path = f'{self.cfg.log_dir}model.pt'
+    self.cfg_path = f'{self.cfg.log_dir}config.json'
+    
+    self.image_path = f'{cfg.image_dir}{self.cfg.tag}.png'
+    
+    self.save_config()
+
+  def set_random_seed(self, seed):
+    '''
+    Set all random seeds
+    '''
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    self.agent.env.seed(seed)
     torch.backends.cudnn.deterministic = True
     if torch.cuda.is_available(): 
-      torch.cuda.manual_seed_all(self.seed)
-    # self.agent.set_random_seed(self.seed)
-    # self.agent.env.set_random_seed(self.seed)
+      torch.cuda.manual_seed_all(seed)
+    # self.agent.set_random_seed(seed)
 
   def run(self):
-    # Run the game for multiple times
+    '''
+    Run the game for multiple times
+    '''
+    set_one_thread()
     self.start_time = time.time()
     for r in tqdm(range(self.runs)):
+      self.agent = AGENTS[self.cfg.agent](self.cfg, r+1)
+      self.set_random_seed(self.cfg.seed + r)
       print(f'Run: {r+1}/{self.runs}')
       result = self.agent.run_episodes()
       if r == 0:
@@ -69,8 +88,8 @@ class Experiment(object):
   def load_model(self):
     self.agent.Q_net.load_state_dict(torch.load(self.model_path))
 
-  def save_config(self, cfg):
-    cfg_json = json.dumps(cfg.__dict__, indent=2)
+  def save_config(self):
+    cfg_json = json.dumps(self.cfg.__dict__, indent=2)
     print(cfg_json, end='\n')
     f = open(self.cfg_path, 'w')
     f.write(cfg_json)

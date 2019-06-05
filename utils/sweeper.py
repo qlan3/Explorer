@@ -13,6 +13,7 @@ class Sweeper(object):
       self.config_dicts = json.load(f)
     self.total_combinations = 1
     self.set_total_combinations()
+    print('Total combinations:', self.total_combinations)
 
   def set_total_combinations(self):
     '''
@@ -20,7 +21,7 @@ class Sweeper(object):
     '''
     self.total_combinations = 1
     for key, values in self.config_dicts.items():
-        self.total_combinations *= len(values)
+      self.total_combinations *= len(values)
 
   def generate_config_from_idx(self, idx):
     '''

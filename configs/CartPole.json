@@ -1,0 +1,23 @@
+{
+  "exp_name": ["CartPole"],
+  "env": ["CartPole-v0"],
+  "agent": ["NaiveDQN", "DQN", "DDQN", "MaxminDQN"],
+  "input_type": ["feature"],
+  "device": ["cpu"],
+  "memory_size": [1e4],
+  "batch_size": [32],
+  "time_out_step": [200],
+  "max_episodes": [3000],
+  "display_interval": [50],
+  "rolling_score_window": [100],
+  "discount": [0.99],
+  "seed": [1],
+  "runs": [1],
+  "hidden_layers": [[64,64]],
+  "gradient_clip": [5],
+  "exploration": [{"exploration_steps":1e3,"start":1.0,"end":0.01,"decay":0.999,"epsilon":0.01}],
+  "lr": [0.001],
+  "sgd_update_frequency": [4],
+  "target_network_update_freq": [200],
+  "generate_random_seed": [false]
+}

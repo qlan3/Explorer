@@ -4,7 +4,9 @@ from collections import namedtuple, deque
 from utils.helper import to_tensor
 
 class Replay(object):
-  # Replay buffer to store experiences
+  '''
+  Replay buffer to store experiences
+  '''
   def __init__(self, memory_size, batch_size, device):
     self.memory_size = memory_size
     self.batch_size = batch_size
@@ -13,7 +15,9 @@ class Replay(object):
     self.clear()
 
   def add(self, experience):
-    # Add experience(s) into memory
+    '''
+    Add experience(s) into memory
+    '''
     for exp in experience:
       self.memory[self.pos] = self.experience(*exp)
       self.pos = (self.pos + 1) % self.memory_size
@@ -34,7 +38,7 @@ class Replay(object):
 
   def __len__(self):
     if self.memory[-1] == None:
-      return self.pos + 1
+      return self.pos
     else:
       return self.memory_size
 
