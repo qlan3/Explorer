@@ -6,4 +6,4 @@ class BaseAgent(object):
     tb_log_dir = cfg.log_dir
     self.logger = Logger(tb_log_dir)
     self.logger.debug(f'The tensorboard dir is: {tb_log_dir}')
-    #self.logger.init_writer()
+    # self.logger.init_writer()
