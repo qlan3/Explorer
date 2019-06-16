@@ -5,7 +5,7 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 
 # Implemented algorithms
 
-- Naive Deep Q-learning (NaiveDQN): No target network.
+- Naive Deep Q-learning (VanillaDQN): No target network.
 - Deep Q-Learning (DQN)
 - Double Deep Q-learning (DDQN)
 - Maxmin Deep Q-learning (MaxminDQN)

@@ -26,7 +26,7 @@ class DDQN(DQN):
       best_actions = self.Q_net(next_states).detach().argmax(1).unsqueeze(1)
       self.logger.debug('best actions:', best_actions.size())
       
-      q_target = self.Q_net_target(next_states).gather(1, best_actions).squeeze()
+      q_target = self.Q_net_target(next_states).detach().gather(1, best_actions).squeeze()
       self.logger.debug('double q target size 0:', q_target.size())
       
       q_target = rewards + self.discount * q_target * (1 - dones)

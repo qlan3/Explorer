@@ -14,9 +14,9 @@ from components.exploration import *
 from agents.BaseAgent import BaseAgent
 
 
-class NaiveDQN(BaseAgent):
+class VanillaDQN(BaseAgent):
   '''
-  Implementation of Naive DQN with only replay buffer (no target network)
+  Implementation of Vanilla DQN with only replay buffer (no target network)
   '''
   def __init__(self, cfg, run):
     super().__init__(cfg, run)
@@ -27,7 +27,8 @@ class NaiveDQN(BaseAgent):
     self.discount = cfg.discount
     self.exploration_steps = int(cfg.exploration['exploration_steps'])
     self.time_out_step = int(cfg.time_out_step)
-    self.max_episodes = int(cfg.max_episodes)
+    self.train_max_episodes = int(cfg.train_max_episodes)
+    self.test_max_episodes = int(cfg.test_max_episodes)
     self.display_interval = cfg.display_interval
     self.gradient_clip = cfg.gradient_clip
     self.sgd_update_frequency = int(cfg.sgd_update_frequency)
@@ -69,16 +70,21 @@ class NaiveDQN(BaseAgent):
     self.done = False
     self.total_episode_reward = 0
     self.episode_step_count = 0
-  
-  def run_episodes(self):
-    # Run multiple episodes
+
+  def run_episodes(self, mode='Train', render=False):
+    # Run for multiple episodes
     self.step_count = 0
     self.episode_count = 0
     result = []
     total_episode_reward_list = []
-    while self.episode_count < self.max_episodes:
-      # Run one episode
-      self.run_episode()
+
+    if mode=='Train':
+      max_episodes = self.train_max_episodes
+    elif mode=='Test':
+      max_episodes = self.test_max_episodes
+    while self.episode_count < max_episodes:
+      # Run for one episode
+      self.run_episode(mode, render)
       # Save result
       total_episode_reward_list.append(self.total_episode_reward)
       rolling_score = np.mean(total_episode_reward_list[-1 * self.rolling_score_window:])
@@ -86,30 +92,32 @@ class NaiveDQN(BaseAgent):
                      'Episode': self.episode_count, 
                      'Step': self.step_count, 
                      'Return': self.total_episode_reward,
-                     'Average Return': rolling_score}
+                     'Rolling Return': rolling_score}
       result.append(result_dict)
-      # self.logger.add_scalars('Return',{f'run{self.run}': self.total_episode_reward}, self.episode_count)
+      # self.logger.add_scalars(f'[{mode}] Return',{f'run{self.run}': self.total_episode_reward}, self.episode_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
+        self.logger.info(f'[{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
     return pd.DataFrame(result)
   
-  def run_episode(self):
-    # Run one episode
+  def run_episode(self, mode, render):
+    # Run for one episode
     self.reset_game()
     while not (self.done or self.episode_step_count >= self.time_out_step):
-      self.action = self.get_action() # Take a step
-      # self.env.render()
+      self.action = self.get_action(mode) # Take a step
+      if render:
+        self.env.render()
       self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-      self.save_experience()
-      if self.time_to_learn(): self.learn() # Update policy
+      if mode=='Train':
+        self.save_experience()
+        if self.time_to_learn(): self.learn() # Update policy
       self.state = self.next_state
       self.episode_step_count += 1
       self.step_count += 1
       self.total_episode_reward += self.reward
     self.episode_count += 1
 
-  def get_action(self):
+  def get_action(self, mode='Train'):
     '''
     Uses the local Q network and an epsilon greedy policy to pick an action
     PyTorch only accepts mini-batches and not single observations so we have to use unsqueeze to add
@@ -121,8 +129,11 @@ class NaiveDQN(BaseAgent):
     self.Q_net.eval() # Set network in evaluation mode
     with torch.no_grad():
       q_values = self.Q_net(state)
-    self.Q_net.train() # Set network back in training mode
-    action = self.exploration.select_action(q_values, self.step_count)
+    if mode=='Train':
+      self.Q_net.train() # Set network back in training mode
+      action = self.exploration.select_action(q_values, self.step_count)
+    elif mode=='Test':
+      action = torch.argmax(q_values).item() # During test, select action greedily
     return action
 
   def time_to_learn(self):

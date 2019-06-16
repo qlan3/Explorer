@@ -11,10 +11,10 @@ from utils.helper import *
 from components.replay import *
 from components.network import *
 from components.exploration import *
-from agents.NaiveDQN import NaiveDQN
+from agents.VanillaDQN import VanillaDQN
 
 
-class DQN(NaiveDQN):
+class DQN(VanillaDQN):
   '''
   Implementation of DQN with target network and replay buffer
   '''

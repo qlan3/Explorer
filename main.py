@@ -28,9 +28,11 @@ def main(argv):
   exp.run()
 
   # Plot results for one agent
-  y_label = 'Average Return'
-  # y_label = 'Return'
-  # plot_agent_results(exp.log_path, exp.image_path, exp.exp_name, y_label)
+  # y_label = 'Rolling Return'
+  y_label = 'Return'
+  plot_agent_results(exp.train_log_path, exp.image_path, exp.exp_name, y_label, show=False)
+  # Show test results for one agent
+  show_test_result(exp.test_log_path, y_label)
 
 if __name__=='__main__':
   main(sys.argv)
