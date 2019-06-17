@@ -20,23 +20,16 @@ class DQN(VanillaDQN):
   '''
   def __init__(self, cfg, run):
     super().__init__(cfg, run)
-    self.target_network_update_freq = cfg.target_network_update_freq
+    self.target_network_update_freqency = cfg.target_network_update_freqency
     # Create target Q value network
-    if self.input_type == 'pixel':
-      feature_net_target = Conv2d_NN(in_channels=cfg.history_length, feature_dim=cfg.feature_dim)
-      value_net_target = MLP(layer_dims=self.layer_dims)
-      self.Q_net_target = NetworkGlue(feature_net_target, value_net_target).to(self.device)
-    elif self.input_type == 'feature':
-      self.Q_net_target = MLP(layer_dims=self.layer_dims,hidden_activation=nn.ReLU()).to(self.device)
-    else:
-      raise ValueError(f'{self.input_type} is not supported.')
+    self.Q_net_target = self.creatNN(cfg.input_type).to(self.device)
     # Load target Q value network
     self.Q_net_target.load_state_dict(self.Q_net.state_dict())
 
   def learn(self):
     super().learn()
     # Update target network
-    if self.step_count % self.target_network_update_freq == 0:
+    if self.step_count % self.target_network_update_freqency == 0:
       self.Q_net_target.load_state_dict(self.Q_net.state_dict())
 
   def compute_q_target(self, next_states, rewards, dones):

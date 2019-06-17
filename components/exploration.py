@@ -5,8 +5,8 @@ import random
 
 class BaseExploration(object):
   # Base class for agent exploration strategies. 
-  def __init__(self, exploration):
-    self.exploration_steps = exploration['exploration_steps']
+  def __init__(self, exploration_steps, epsilon):
+    self.exploration_steps = exploration_steps
 
   def select_action(self, q_values):
     raise NotImplementedError("To be implemented")
@@ -16,9 +16,9 @@ class EpsilonGreedy(BaseExploration):
   '''
   Implementation of epsilon greedy exploration strategy
   '''
-  def __init__(self, exploration):
-    super().__init__(exploration)
-    self.epsilon = exploration['epsilon']
+  def __init__(self, exploration_steps, epsilon):
+    super().__init__(exploration_steps, epsilon)
+    self.epsilon = epsilon['end']
 
   def select_action(self, q_values, step_count):
     if random.random() < self.epsilon or step_count <= self.exploration_steps:
@@ -32,12 +32,12 @@ class LinearEpsilonGreedy(BaseExploration):
   '''
   Implementation of linear decay epsilon greedy exploration strategy
   '''
-  def __init__(self, exploration):
-    super().__init__(exploration)
-    self.inc = (exploration['end'] - exploration['start']) / float(exploration['steps'])
-    self.start = exploration['start']
-    self.end = exploration['end']
-    if exploration['end'] > exploration['start']:
+  def __init__(self, exploration_steps, epsilon):
+    super().__init__(exploration_steps, epsilon)
+    self.inc = (epsilon['end'] - epsilon['start']) / epsilon['steps']
+    self.start = epsilon['start']
+    self.end = epsilon['end']
+    if epsilon['end'] > epsilon['start']:
       self.bound = min
     else:
       self.bound = max
@@ -56,12 +56,12 @@ class ExponentialEpsilonGreedy(BaseExploration):
   Implementation of exponential decay epsilon greedy exploration strategy:
     epsilon = bound(epsilon_end, epsilon_start * exp(- decay * step))
   '''
-  def __init__(self, exploration):
-    super().__init__(exploration)
-    self.decay = exploration['decay']
-    self.start = exploration['start']
-    self.end = exploration['end']
-    if exploration['end'] > exploration['start']:
+  def __init__(self, exploration_steps, epsilon):
+    super().__init__(exploration_steps, epsilon)
+    self.decay = epsilon['decay']
+    self.start = epsilon['start']
+    self.end = epsilon['end']
+    if epsilon['end'] > epsilon['start']:
       self.bound = min
     else:
       self.bound = max
@@ -73,3 +73,11 @@ class ExponentialEpsilonGreedy(BaseExploration):
     else:
       action = torch.argmax(q_values).item()
     return action
+
+
+EXPLORATIONS = {
+    'BaseExploration': BaseExploration,
+    'EpsilonGreedy': EpsilonGreedy,
+    'LinearEpsilonGreedy': LinearEpsilonGreedy,
+    'ExponentialEpsilonGreedy': ExponentialEpsilonGreedy
+  }

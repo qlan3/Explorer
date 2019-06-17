@@ -19,6 +19,6 @@
   "exploration": [{"exploration_steps":1e3,"start":1.0,"end":0.01,"decay":0.999,"epsilon":0.01}],
   "lr": [0.001],
   "sgd_update_frequency": [4],
-  "target_network_update_freq": [200],
+  "target_network_update_freqency": [200],
   "generate_random_seed": [false]
 }

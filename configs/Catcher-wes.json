@@ -7,7 +7,7 @@
   "memory_size": [5e4],
   "batch_size": [32],
   "time_out_step": [1e9],
-  "train_max_episodes": [800],
+  "train_max_episodes": [1000],
   "test_max_episodes": [500],
   "display_interval": [50],
   "rolling_score_window": [100],
@@ -16,9 +16,9 @@
   "runs": [1],
   "hidden_layers": [[128,128,128]],
   "gradient_clip": [5],
-  "exploration": [{"exploration_steps":1e3,"start":1.0,"end":0.01,"steps":1e-6,"epsilon":0.01}],
+  "exploration": [{"exploration_steps":1e3,"start":1.0,"end":0.01,"steps":1e6,"epsilon":0.01}],
   "lr": [1e-3, 1e-4],
   "sgd_update_frequency": [4],
-  "target_network_update_freq": [1e4],
+  "target_network_update_freqency": [1e4],
   "generate_random_seed": [false]
 }

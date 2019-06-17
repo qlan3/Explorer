@@ -8,7 +8,7 @@ class Replay(object):
   Replay buffer to store experiences
   '''
   def __init__(self, memory_size, batch_size, device):
-    self.memory_size = memory_size
+    self.memory_size = int(memory_size)
     self.batch_size = batch_size
     self.device = device
     self.experience = namedtuple("Experience", field_names=["state", "action", "next_state", "reward", "done"])
@@ -54,3 +54,7 @@ class Replay(object):
   def clear(self):
     self.memory = [None] * self.memory_size
     self.pos = 0
+
+REPLAYS = {
+  'Replay': Replay
+}

@@ -9,15 +9,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from agents import *
+# from agents import *
+import agents
 from utils.helper import *
-
-AGENTS = {
-    'VanillaDQN': VanillaDQN,
-    'DQN': DQN,
-    'DDQN': DDQN,
-    'MaxminDQN': MaxminDQN
-  }
 
 
 class Experiment(object):
@@ -34,8 +28,8 @@ class Experiment(object):
     if self.cfg.generate_random_seed:
       self.cfg.seed = random.randint(0, 2**32 - 2)
     
-    self.time_str = get_time_str()
-    self.cfg.tag = f'{self.exp_name}-{cfg.agent}-{self.config_idx}-{self.time_str}'
+    self.cfg.time_str = get_time_str()
+    self.cfg.tag = f'{self.exp_name}-{cfg.agent}-{self.config_idx}-{self.cfg.time_str}'
     self.cfg.log_dir = f'{cfg.log_dir}{self.cfg.tag}/'
     if not os.path.exists(self.cfg.log_dir): os.makedirs(self.cfg.log_dir)
 
@@ -68,7 +62,8 @@ class Experiment(object):
     set_one_thread()
     self.start_time = time.time()
     for r in tqdm(range(self.runs)):
-      self.agent = AGENTS[self.cfg.agent](self.cfg, r+1)
+      # self.agent = AGENTS[self.cfg.agent](self.cfg, r+1)
+      self.agent = getattr(agents, self.cfg.agent)(self.cfg, r+1)
       self.set_random_seed(self.cfg.seed + r)
       print(f'Run: {r+1}/{self.runs}')
       # Train

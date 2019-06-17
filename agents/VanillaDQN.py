@@ -25,7 +25,6 @@ class VanillaDQN(BaseAgent):
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
     self.discount = cfg.discount
-    self.exploration_steps = int(cfg.exploration['exploration_steps'])
     self.time_out_step = int(cfg.time_out_step)
     self.train_max_episodes = int(cfg.train_max_episodes)
     self.test_max_episodes = int(cfg.test_max_episodes)
@@ -35,31 +34,56 @@ class VanillaDQN(BaseAgent):
     self.action_size = self.get_action_size()
     self.state_size = self.get_state_size()
     self.rolling_score_window = cfg.rolling_score_window
-    self.input_type = cfg.input_type
+    self.history_length = cfg.history_length
 
-    if self.input_type == 'pixel':
+    # Create Q value network
+    if cfg.input_type == 'pixel':
       self.layer_dims = [cfg.feature_dim] + cfg.hidden_layers + [self.action_size]
-      # Create Q value network
-      feature_net = Conv2d_NN(in_channels=cfg.history_length, feature_dim=cfg.feature_dim)
-      value_net = MLP(layer_dims=self.layer_dims)
-      self.Q_net = NetworkGlue(feature_net, value_net).to(self.device)
-    elif self.input_type == 'feature':
+    elif cfg.input_type == 'feature':
       self.layer_dims = [self.state_size] + cfg.hidden_layers + [self.action_size]
-      self.Q_net = MLP(layer_dims=self.layer_dims,hidden_activation=nn.ReLU()).to(self.device)
     else:
-      raise ValueError(f'{self.input_type} is not supported.')
+      raise ValueError(f'{cfg.input_type} is not supported.')
+    self.Q_net = self.creatNN(cfg.input_type).to(self.device)
+    # Set replay buffer
+    self.replay_buffer = REPLAYS[cfg.memory_type](cfg.memory_size, self.batch_size, self.device)
+    # Set exploration strategy
+    epsilon = {
+      'steps': float(cfg.epsilon_steps),
+      'start': cfg.epsilon_start,
+      'end': cfg.epsilon_end,
+      'decay': cfg.epsilon_decay
+      }
+    self.exploration_steps = cfg.exploration_steps
+    self.exploration = EXPLORATIONS[cfg.exploration_type](cfg.exploration_steps, epsilon)
+    # Set loss function
+    self.loss = self.set_loss(cfg.loss)
+    # Set optimizer
+    self.optimizer = self.set_optimizer(cfg.optimizer, self.Q_net.parameters(), cfg.lr)
     
-    # Replay buffer
-    self.replay_buffer = Replay(int(cfg.memory_size), cfg.batch_size, cfg.device)
-    # Exploration strategy
-    # self.exploration = LinearEpsilonGreedy(cfg.exploration)
-    # self.exploration = EpsilonGreedy(cfg.exploration)
-    self.exploration = ExponentialEpsilonGreedy(cfg.exploration)
-    # Loss function
-    self.loss = nn.MSELoss(reduction='mean')
-    # Optimizer
-    self.optimizer = optim.RMSprop(self.Q_net.parameters(), lr=cfg.lr)
-    # self.optimizer = optim.Adam(self.Q_net.parameters(), lr=cfg.lr)
+  def creatNN(self, input_type):
+    if input_type == 'pixel':
+      feature_net = Conv2d_NN(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+      value_net = MLP(layer_dims=self.layer_dims)
+      NN = NetworkGlue(feature_net, value_net)
+    elif input_type == 'feature':
+      NN = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
+    else:
+      raise ValueError(f'{input_type} is not supported.')
+    return NN
+
+  def set_loss(self, loss_type):
+    if loss_type == 'MSELoss':
+      return nn.MSELoss(reduction='mean')
+    else:
+      raise ValueError(f'{loss_type} is not supported.')
+  
+  def set_optimizer(self, optimizer_type, params, lr):
+    if optimizer_type == 'RMSprop':
+      return optim.RMSprop(params, lr=lr)
+    elif optimizer_type == 'Adam':
+      return optim.Adam(params, lr=lr)
+    else:
+      raise ValueError(f'{optimizer_type} is not supported.')
 
   def reset_game(self):
     # Reset the game before a new episode
@@ -88,7 +112,7 @@ class VanillaDQN(BaseAgent):
       # Save result
       total_episode_reward_list.append(self.total_episode_reward)
       rolling_score = np.mean(total_episode_reward_list[-1 * self.rolling_score_window:])
-      result_dict = {'Agent': self.agent_name, 
+      result_dict = {'Agent': self.agent_name,
                      'Episode': self.episode_count, 
                      'Step': self.step_count, 
                      'Return': self.total_episode_reward,
