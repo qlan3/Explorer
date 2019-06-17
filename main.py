@@ -16,8 +16,8 @@ def main(argv):
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')
   args = parser.parse_args()
   
-  if not os.path.exists(args.log_dir): os.makedirs(args.log_dir)
-  if not os.path.exists(args.image_dir): os.makedirs(args.image_dir)
+  # if not os.path.exists(args.log_dir): os.makedirs(args.log_dir, exist_ok=True)
+  # if not os.path.exists(args.image_dir): os.makedirs(args.image_dir, exist_ok=True)
 
   sweeper = Sweeper(args.config_file)
   cfg = sweeper.generate_config_from_idx(args.config_idx)

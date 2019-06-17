@@ -22,6 +22,7 @@ class VanillaDQN(BaseAgent):
     super().__init__(cfg, run)
     self.agent_name = cfg.agent
     self.env = make_env(cfg.env)
+    self.run = run
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
     self.discount = cfg.discount
@@ -120,7 +121,7 @@ class VanillaDQN(BaseAgent):
       result.append(result_dict)
       # self.logger.add_scalars(f'[{mode}] Return',{f'run{self.run}': self.total_episode_reward}, self.episode_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'[{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
+        self.logger.info(f'[{mode}] Run {self.run}, Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
     return pd.DataFrame(result)
   
