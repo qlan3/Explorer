@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Get node
-salloc --time=12:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem=4000M
+salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem=1000M
 
 # Load singularity
 module load singularity/2.6
