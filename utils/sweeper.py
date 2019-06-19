@@ -36,6 +36,8 @@ class Sweeper(object):
     for key, values in self.config_dicts.items():
       value_len = len(values)
       value = values[idx % value_len]
+      if key in ['lr'] and type(value) == str:
+        value = eval(value)
       setattr(cfg, key, value)
       idx = idx // value_len
     

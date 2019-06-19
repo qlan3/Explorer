@@ -8,9 +8,9 @@ from gym.spaces.discrete import Discrete
 
 from envs.env import *
 from utils.helper import *
-from components.replay import *
 from components.network import *
-from components.exploration import *
+import components.replay
+import components.exploration
 from agents.BaseAgent import BaseAgent
 
 
@@ -22,6 +22,7 @@ class VanillaDQN(BaseAgent):
     super().__init__(cfg, run)
     self.agent_name = cfg.agent
     self.env = make_env(cfg.env)
+    self.config_idx = cfg.config_idx
     self.run = run
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
@@ -46,7 +47,8 @@ class VanillaDQN(BaseAgent):
       raise ValueError(f'{cfg.input_type} is not supported.')
     self.Q_net = self.creatNN(cfg.input_type).to(self.device)
     # Set replay buffer
-    self.replay_buffer = REPLAYS[cfg.memory_type](cfg.memory_size, self.batch_size, self.device)
+    # self.replay_buffer = REPLAYS[cfg.memory_type](cfg.memory_size, self.batch_size, self.device)
+    self.replay_buffer = getattr(components.replay, cfg.memory_type)(cfg.memory_size, self.batch_size, self.device)
     # Set exploration strategy
     epsilon = {
       'steps': float(cfg.epsilon_steps),
@@ -55,11 +57,12 @@ class VanillaDQN(BaseAgent):
       'decay': cfg.epsilon_decay
       }
     self.exploration_steps = cfg.exploration_steps
-    self.exploration = EXPLORATIONS[cfg.exploration_type](cfg.exploration_steps, epsilon)
+    # Set exploration strategy
+    self.exploration = getattr(components.exploration, cfg.exploration_type)(cfg.exploration_steps, epsilon)
     # Set loss function
-    self.loss = self.set_loss(cfg.loss)
+    self.loss = getattr(torch.nn, cfg.loss)(reduction='mean')
     # Set optimizer
-    self.optimizer = self.set_optimizer(cfg.optimizer, self.Q_net.parameters(), cfg.lr)
+    self.optimizer = getattr(torch.optim, cfg.optimizer)(self.Q_net.parameters(), cfg.lr)
     
   def creatNN(self, input_type):
     if input_type == 'pixel':
@@ -77,14 +80,6 @@ class VanillaDQN(BaseAgent):
       return nn.MSELoss(reduction='mean')
     else:
       raise ValueError(f'{loss_type} is not supported.')
-  
-  def set_optimizer(self, optimizer_type, params, lr):
-    if optimizer_type == 'RMSprop':
-      return optim.RMSprop(params, lr=lr)
-    elif optimizer_type == 'Adam':
-      return optim.Adam(params, lr=lr)
-    else:
-      raise ValueError(f'{optimizer_type} is not supported.')
 
   def reset_game(self):
     # Reset the game before a new episode
@@ -103,9 +98,9 @@ class VanillaDQN(BaseAgent):
     result = []
     total_episode_reward_list = []
 
-    if mode=='Train':
+    if mode == 'Train':
       max_episodes = self.train_max_episodes
-    elif mode=='Test':
+    elif mode == 'Test':
       max_episodes = self.test_max_episodes
     while self.episode_count < max_episodes:
       # Run for one episode
@@ -121,8 +116,7 @@ class VanillaDQN(BaseAgent):
       result.append(result_dict)
       # self.logger.add_scalars(f'[{mode}] Return',{f'run{self.run}': self.total_episode_reward}, self.episode_count)
       if self.episode_count % self.display_interval == 0:
-        # self.logger.info(f'[{mode}] Run {self.run}, Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
-        print(f'[{mode}] Run {self.run}, Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
+        self.logger.info(f'<{self.config_idx}> [{mode}] Run {self.run}, Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
     return pd.DataFrame(result)
   

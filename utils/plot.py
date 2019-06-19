@@ -7,7 +7,7 @@ def show_test_result(log_name, y_label):
   df = pd.read_csv(log_name)
   y_mean = df[y_label].mean()
   y_std = df[y_label].std(ddof=0)
-  print(f'{y_label}: mean={y_mean}, std={y_std}')
+  print(f'{y_label}: {y_mean:.2f}+/-{y_std:.2f}')
   return y_mean, y_std
 
 def plot_results(log_name, image_name, title, y_label, show=True):

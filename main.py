@@ -7,8 +7,8 @@ from utils.experiment import Experiment
 from utils.plot import *
 
 def main(argv):
+  # python main.py --config_file ./configs/Catcher-DQN.json --config_idx 1
   # python main.py --config_file ./configs/LunarLander.json --config_idx 1
-  # python main.py --config_file ./configs/Catcher.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--log_dir', type=str, default='./logs/', help='log directory')
   parser.add_argument('--image_dir', type=str, default='./images/', help='image directory')
@@ -28,8 +28,8 @@ def main(argv):
   exp.run()
 
   # Plot results for one agent
-  # y_label = 'Rolling Return'
-  y_label = 'Return'
+  y_label = 'Rolling Return'
+  # y_label = 'Return'
   plot_results(exp.train_log_path, exp.image_path, exp.exp_name, y_label, show=False)
   # Show test results for one agent
   show_test_result(exp.test_log_path, y_label)

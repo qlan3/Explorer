@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-# from agents import *
 import agents
 from utils.helper import *
 
@@ -62,7 +61,6 @@ class Experiment(object):
     set_one_thread()
     self.start_time = time.time()
     for r in tqdm(range(self.runs)):
-      # self.agent = AGENTS[self.cfg.agent](self.cfg, r+1)
       self.agent = getattr(agents, self.cfg.agent)(self.cfg, r+1)
       self.set_random_seed(self.cfg.seed + r)
       print(f'Run: {r+1}/{self.runs}')
@@ -92,9 +90,9 @@ class Experiment(object):
     print(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')
 
   def save_results(self, mode):
-    if mode=='Train':
+    if mode == 'Train':
       self.train_results.to_csv(self.train_log_path, index=False)
-    elif mode=='Test':
+    elif mode == 'Test':
       self.test_results.to_csv(self.test_log_path, index=False)
   
   def save_model(self, model_path):

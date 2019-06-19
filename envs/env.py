@@ -44,6 +44,3 @@ def get_env_group_title(env):
     group_title = None
   
   return group_title
-
-
-  

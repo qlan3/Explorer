@@ -73,11 +73,3 @@ class ExponentialEpsilonGreedy(BaseExploration):
     else:
       action = torch.argmax(q_values).item()
     return action
-
-
-EXPLORATIONS = {
-    'BaseExploration': BaseExploration,
-    'EpsilonGreedy': EpsilonGreedy,
-    'LinearEpsilonGreedy': LinearEpsilonGreedy,
-    'ExponentialEpsilonGreedy': ExponentialEpsilonGreedy
-  }
