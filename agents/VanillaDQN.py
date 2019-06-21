@@ -32,7 +32,6 @@ class VanillaDQN(BaseAgent):
     self.test_max_episodes = int(cfg.test_max_episodes)
     self.display_interval = cfg.display_interval
     self.gradient_clip = cfg.gradient_clip
-    self.sgd_update_frequency = int(cfg.sgd_update_frequency)
     self.action_size = self.get_action_size()
     self.state_size = self.get_state_size()
     self.rolling_score_window = cfg.rolling_score_window
@@ -163,8 +162,7 @@ class VanillaDQN(BaseAgent):
     - There are enough experiences in replay buffer
     """
     if len(self.replay_buffer) > self.batch_size and \
-      self.step_count > self.exploration_steps and \
-      self.step_count % self.sgd_update_frequency == 0:
+      self.step_count > self.exploration_steps:
       return True
     else:
       return False

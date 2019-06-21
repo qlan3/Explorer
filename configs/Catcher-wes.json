@@ -18,7 +18,6 @@
   "gradient_clip": [5],
   "exploration": [{"exploration_steps":1e3,"start":1.0,"end":0.01,"steps":1e6,"epsilon":0.01}],
   "lr": [1e-3, 1e-4],
-  "sgd_update_frequency": [4],
   "target_network_update_freqency": [1e4],
   "generate_random_seed": [false]
 }

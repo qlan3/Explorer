@@ -54,7 +54,7 @@ class LinearEpsilonGreedy(BaseExploration):
 class ExponentialEpsilonGreedy(BaseExploration):
   '''
   Implementation of exponential decay epsilon greedy exploration strategy:
-    epsilon = bound(epsilon_end, epsilon_start * exp(- decay * step))
+    epsilon = bound(epsilon_end, epsilon_start * (decay ** step))
   '''
   def __init__(self, exploration_steps, epsilon):
     super().__init__(exploration_steps, epsilon)
@@ -67,7 +67,7 @@ class ExponentialEpsilonGreedy(BaseExploration):
       self.bound = max
 
   def select_action(self, q_values, step_count):
-    self.epsilon = self.bound(self.start * math.exp(-self.decay * step_count), self.end)
+    self.epsilon = self.bound(self.start * math.pow(self.decay, step_count), self.end)
     if random.random() < self.epsilon or step_count <= self.exploration_steps:
       action = random.randint(0, q_values.shape[1] - 1)
     else:
