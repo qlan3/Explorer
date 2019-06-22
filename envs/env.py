@@ -1,10 +1,12 @@
 import gym
 import gym_pygame
+from gym.wrappers.time_limit import TimeLimit
+
 from envs.wrapper import *
 
 
-def make_env(env_name, episode_life=True):
-  env = gym.make(env_name).unwrapped
+def make_env(env_name, max_episide_steps=200, episode_life=True):
+  env = gym.make(env_name)
   env_group_title = get_env_group_title(env)
   # print('env_group_title:', env_group_title)
   if env_group_title == 'atari':
@@ -18,7 +20,7 @@ def make_env(env_name, episode_life=True):
       env = TransposeImage(env)
     env = FrameStack(env, 4)
   elif env_group_title == 'classic_control':
-    pass
+    env = TimeLimit(env.unwrapped, max_episide_steps=max_episide_steps)
   elif env_group_title == 'gym_pygame':
     pass
   return env

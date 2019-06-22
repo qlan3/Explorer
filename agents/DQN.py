@@ -18,8 +18,8 @@ class DQN(VanillaDQN):
   '''
   Implementation of DQN with target network and replay buffer
   '''
-  def __init__(self, cfg, run):
-    super().__init__(cfg, run)
+  def __init__(self, cfg):
+    super().__init__(cfg)
     self.target_network_update_freqency = cfg.target_network_update_freqency
     # Create target Q value network
     self.Q_net_target = self.creatNN(cfg.input_type).to(self.device)

@@ -7,7 +7,6 @@ import torch
 import random
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 import agents
 from utils.helper import *
@@ -18,27 +17,19 @@ class Experiment(object):
   Train the agent to play the game.
   '''
   def __init__(self, cfg):
-    self.train_results = None
-    self.test_results = None
+    self.train_result = None
+    self.test_result = None
     self.cfg = copy.deepcopy(cfg)
-    self.runs = cfg.runs
     self.config_idx = cfg.config_idx
     self.exp_name = cfg.exp_name
     if self.cfg.generate_random_seed:
       self.cfg.seed = random.randint(0, 2**32 - 2)
-    
-    self.cfg.time_str = get_time_str()
-    self.cfg.tag = f'{self.exp_name}-{cfg.agent}-{self.config_idx}-{self.cfg.time_str}'
-    self.cfg.log_dir = f'{cfg.log_dir}{self.cfg.tag}/'
-    if not os.path.exists(self.cfg.log_dir): os.makedirs(self.cfg.log_dir)
-
-    self.train_log_path = f'{self.cfg.log_dir}results-Train.csv'
-    self.test_log_path = f'{self.cfg.log_dir}results-Test.csv'
-    self.model_path = lambda r: f'{self.cfg.log_dir}model{r}.pt'
-    self.cfg_path = f'{self.cfg.log_dir}config.json'
-    
-    self.image_path = f'{cfg.image_dir}{self.cfg.tag}.png'
-    
+    self.cfg.logs_dir = f'{cfg.logs_dir}{self.config_idx}/'
+    if not os.path.exists(self.cfg.logs_dir): os.makedirs(self.cfg.logs_dir)
+    self.train_log_path = self.cfg.logs_dir + 'result-Train.csv'
+    self.test_log_path = self.cfg.logs_dir + 'result-Test.csv'
+    self.model_path = self.cfg.logs_dir + 'model.pt'
+    self.cfg_path = self.cfg.logs_dir + 'config.json'
     self.save_config()
 
   def set_random_seed(self, seed):
@@ -60,43 +51,32 @@ class Experiment(object):
     '''
     set_one_thread()
     self.start_time = time.time()
-    for r in tqdm(range(self.runs)):
-      self.agent = getattr(agents, self.cfg.agent)(self.cfg, r+1)
-      self.set_random_seed(self.cfg.seed + r)
-      print(f'Run: {r+1}/{self.runs}')
-      # Train
-      train_result = self.agent.run_episodes(mode='Train')
-      if r == 0:
-        self.train_results = train_result
-      else:
-        self.train_results = self.train_results.append(train_result, ignore_index=True)
-      self.save_results(mode='Train')
-      # Test
-      test_result = self.agent.run_episodes(mode='Test')
-      test_result = {'Agent': self.agent.agent_name, 
-                     'Run': r,
-                     'Average Return': test_result['Return'].mean(),
-                     'Average Rolling Return': test_result['Rolling Return'].mean()}
-      test_result = pd.DataFrame([test_result])
-      if r == 0:
-        self.test_results = test_result
-      else:
-        self.test_results = self.test_results.append(test_result, ignore_index=True)
-      self.save_results(mode='Test')
-      # Save model
-      self.save_model(self.model_path(r))
+    self.agent = getattr(agents, self.cfg.agent)(self.cfg)
+    self.set_random_seed(self.cfg.seed)
+    # Train
+    self.train_result = self.agent.run_episodes(mode='Train', render=False)
+    self.save_results(mode='Train')
+    # Test
+    test_result = self.agent.run_episodes(mode='Test')
+    test_result = {'Agent': self.agent.agent_name,
+                   'Average Return': test_result['Return'].mean(),
+                   'Average Rolling Return': test_result['Rolling Return'].mean()}
+    self.test_result = pd.DataFrame([test_result])
+    self.save_results(mode='Test')
+    # Save model
+    self.save_model()
     self.end_time = time.time()
     print(f'Memory usage: {rss_memory_usage():.2f} MB')
     print(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')
 
   def save_results(self, mode):
     if mode == 'Train':
-      self.train_results.to_csv(self.train_log_path, index=False)
+      self.train_result.to_csv(self.train_log_path, index=False)
     elif mode == 'Test':
-      self.test_results.to_csv(self.test_log_path, index=False)
+      self.test_result.to_csv(self.test_log_path, index=False)
   
-  def save_model(self, model_path):
-    torch.save(self.agent.Q_net.state_dict(), model_path)
+  def save_model(self):
+    torch.save(self.agent.Q_net.state_dict(), self.model_path)
   
   def load_model(self):
     self.agent.Q_net.load_state_dict(torch.load(self.model_path))

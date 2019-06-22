@@ -18,8 +18,8 @@ class MaxminDQN(VanillaDQN):
   '''
   Implementation of Maxmin DQN with target network and replay buffer
   '''
-  def __init__(self, cfg, run):
-    super().__init__(cfg, run)
+  def __init__(self, cfg):
+    super().__init__(cfg)
     self.target_network_update_freqency = cfg.target_network_update_freqency
     self.k = cfg.target_networks_num # number of target networks
     # Create target Q value network

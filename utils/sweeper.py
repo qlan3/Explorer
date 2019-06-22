@@ -20,7 +20,7 @@ class Sweeper(object):
     Calculate total combinations of configurations
     '''
     self.total_combinations = 1
-    for key, values in self.config_dicts.items():
+    for _, values in self.config_dicts.items():
       self.total_combinations *= len(values)
 
   def generate_config_from_idx(self, idx):
@@ -29,8 +29,9 @@ class Sweeper(object):
     Index is from 1 to # of total conbinations.
     '''
     cfg = Config()
-    # Set config index
+    # Set config index and total combinations
     setattr(cfg, 'config_idx', idx)
+    setattr(cfg, 'total_combinations', self.total_combinations)
     idx = (idx-1) % self.total_combinations
     
     for key, values in self.config_dicts.items():

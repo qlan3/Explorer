@@ -18,16 +18,15 @@ class VanillaDQN(BaseAgent):
   '''
   Implementation of Vanilla DQN with only replay buffer (no target network)
   '''
-  def __init__(self, cfg, run):
-    super().__init__(cfg, run)
+  def __init__(self, cfg):
+    super().__init__(cfg)
     self.agent_name = cfg.agent
-    self.env = make_env(cfg.env)
+    self.max_episide_steps = int(cfg.max_episide_steps)
+    self.env = make_env(cfg.env, max_episide_steps=self.max_episide_steps)
     self.config_idx = cfg.config_idx
-    self.run = run
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
     self.discount = cfg.discount
-    self.time_out_step = int(cfg.time_out_step)
     self.train_max_episodes = int(cfg.train_max_episodes)
     self.test_max_episodes = int(cfg.test_max_episodes)
     self.display_interval = cfg.display_interval
@@ -46,7 +45,6 @@ class VanillaDQN(BaseAgent):
       raise ValueError(f'{cfg.input_type} is not supported.')
     self.Q_net = self.creatNN(cfg.input_type).to(self.device)
     # Set replay buffer
-    # self.replay_buffer = REPLAYS[cfg.memory_type](cfg.memory_size, self.batch_size, self.device)
     self.replay_buffer = getattr(components.replay, cfg.memory_type)(cfg.memory_size, self.batch_size, self.device)
     # Set exploration strategy
     epsilon = {
@@ -113,16 +111,16 @@ class VanillaDQN(BaseAgent):
                      'Return': self.total_episode_reward,
                      'Rolling Return': rolling_score}
       result.append(result_dict)
-      # self.logger.add_scalars(f'[{mode}] Return',{f'run{self.run}': self.total_episode_reward}, self.episode_count)
+      # self.logger.add_scalar(f'[{mode}] Return', self.total_episode_reward, self.episode_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'<{self.config_idx}> [{mode}] Run {self.run}, Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
+        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
     return pd.DataFrame(result)
   
   def run_episode(self, mode, render):
     # Run for one episode
     self.reset_game()
-    while not (self.done or self.episode_step_count >= self.time_out_step):
+    while not self.done:
       self.action = self.get_action(mode) # Take a step
       if render:
         self.env.render()

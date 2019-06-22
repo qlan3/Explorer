@@ -18,8 +18,8 @@ class DDQN(DQN):
   '''
   Implementation of Double DQN with target network and replay buffer
   '''
-  def __init__(self, cfg, run):
-    super().__init__(cfg, run)
+  def __init__(self, cfg):
+    super().__init__(cfg)
 
   def compute_q_target(self, next_states, rewards, dones):
     with torch.no_grad():

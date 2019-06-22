@@ -5,7 +5,7 @@ from tensorboardX import SummaryWriter
 logging.basicConfig(format='%(levelname)s: %(message)s')
 
 class Logger(object):
-  def __init__(self, tb_log_dir):
+  def __init__(self, tb_logs_dir):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     # logger.setLevel(logging.DEBUG)
@@ -15,11 +15,11 @@ class Logger(object):
     self.error = logger.error
     self.critical = logger.critical
     
-    self.tb_log_dir = tb_log_dir
+    self.tb_logs_dir = tb_logs_dir
     self.writer = None
 
   def init_writer(self):
-    self.writer = SummaryWriter(self.tb_log_dir)
+    self.writer = SummaryWriter(self.tb_logs_dir)
 
   def add_scalar(self, tag, scalar_value, global_step=None):
     self.writer.add_scalar(tag, scalar_value, global_step)

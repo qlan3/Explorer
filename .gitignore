@@ -3,13 +3,13 @@
 # Edit at https://www.gitignore.io/?templates=python,windows,visualstudiocode
 
 # Logs
-logs/
+*logs/
 
 # Images
-images/
+*images/
 
 # Analysis
-analysis/
+*analysis/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
