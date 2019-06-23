@@ -91,7 +91,7 @@ def show_train_results(env, agent, result_label='Rolling Return', mode='Train', 
     plot_results(train_results, image_path, env, result_label, show)
     train_results = None
 
-def show_test_result(env, agent, result_label='Average Return', mode='Test'):
+def show_test_results(env, agent, result_label='Average Return', mode='Test'):
   '''
   1. Merge test results
   2. Get mean and std of test results
@@ -134,9 +134,9 @@ def show_test_result(env, agent, result_label='Average Return', mode='Test'):
   sorted_results_path = test_results_path + f'TestResults-{env}-{agent}-{mode}.csv'
   sorted_results.to_csv(sorted_results_path, index=False)
 
+def show_results(env, agent, show=False):
+  show_train_results(env, agent, result_label='Rolling Return', mode='Train', show=show)
+  show_test_results(env, agent, result_label='Average Return', mode='Test')
 
 if __name__ == "__main__":
-  for env in ['Pixelcopter']:
-    for agent in ['DQN']:
-      show_train_results(env, agent, result_label='Rolling Return', mode='Train', show=False)
-      show_test_result(env, agent, result_label='Average Return', mode='Test')
+  show_results('Pixelcopter', 'DQN')

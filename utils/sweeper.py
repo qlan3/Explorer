@@ -2,7 +2,10 @@ import os
 import sys
 import json
 import argparse
-from config import Config
+
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.sys.path.insert(0, parentdir)
+from utils.config import Config
 
 class Sweeper(object):
   '''
