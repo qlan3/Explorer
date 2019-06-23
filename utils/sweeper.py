@@ -1,7 +1,8 @@
+import os
 import sys
 import json
 import argparse
-from utils.config import Config
+from config import Config
 
 class Sweeper(object):
   '''
@@ -13,7 +14,7 @@ class Sweeper(object):
       self.config_dicts = json.load(f)
     self.total_combinations = 1
     self.set_total_combinations()
-    print('Total combinations:', self.total_combinations)
+    # print('Total combinations:', self.total_combinations)
 
   def set_total_combinations(self):
     '''
@@ -43,3 +44,9 @@ class Sweeper(object):
       idx = idx // value_len
     
     return cfg
+
+if __name__ == "__main__":
+  config_list = os.listdir('./configs/')
+  for config_file in config_list:
+    sweeper = Sweeper('./configs/'+config_file)
+    print(f'Total Combinations for {config_file}: {sweeper.total_combinations}')

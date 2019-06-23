@@ -10,9 +10,9 @@ def main(argv):
   # python main.py --config_file ./configs/LunarLander-DQN.json --config_idx 1
   # python main.py --config_file ./configs/Pixelcopter-DQN.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
-  parser.add_argument('--logs_dir', type=str, default='./logs/', help='log directory')
-  parser.add_argument('--images_dir', type=str, default='./images/', help='image directory')
-  parser.add_argument('--config_file', type=str, default='./configs/dqn_for_CartPole.json', help='Configuration file for the chosen model')
+  parser.add_argument('--logs_dir', type=str, default='./Catcher-logs/', help='log directory')
+  parser.add_argument('--images_dir', type=str, default='./Catcher-images/', help='image directory')
+  parser.add_argument('--config_file', type=str, default='./configs/Catcher-DQN.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')
   args = parser.parse_args()
   

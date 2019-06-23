@@ -21,6 +21,7 @@ def make_env(env_name, max_episide_steps=200, episode_life=True):
     env = FrameStack(env, 4)
   elif env_group_title == 'classic_control':
     env = TimeLimit(env.unwrapped, max_episide_steps=max_episide_steps)
+    # pass
   elif env_group_title == 'gym_pygame':
     pass
   return env
