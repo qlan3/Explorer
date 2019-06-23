@@ -20,7 +20,7 @@
   "optimizer": ["RMSprop"],
   "lr": [1e-3, 1e-4, 1e-5],
   "batch_size": [32],
-  "max_episide_steps": [2000],
+  "max_episode_steps": [2000],
   "train_max_episodes": [2000],
   "test_max_episodes": [100],
   "display_interval": [100],

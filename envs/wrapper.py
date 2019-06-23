@@ -7,8 +7,7 @@ from gym.spaces.discrete import Discrete
 cv2.ocl.setUseOpenCL(False)
 
 
-def make_atari(env_id):
-  env = gym.make(env_id).unwrapped
+def make_atari(env, max_episode_steps):
   # assert 'NoFrameskip' in env.spec.id
   env = NoopResetEnv(env, noop_max=30)
   env = MaxAndSkipEnv(env, skip=4)

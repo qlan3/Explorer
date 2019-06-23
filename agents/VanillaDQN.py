@@ -21,8 +21,8 @@ class VanillaDQN(BaseAgent):
   def __init__(self, cfg):
     super().__init__(cfg)
     self.agent_name = cfg.agent
-    self.max_episide_steps = int(cfg.max_episide_steps)
-    self.env = make_env(cfg.env, max_episide_steps=self.max_episide_steps)
+    self.max_episode_steps = int(cfg.max_episode_steps)
+    self.env = make_env(cfg.env, max_episode_steps=self.max_episode_steps)
     self.config_idx = cfg.config_idx
     self.device = torch.device(cfg.device)
     self.batch_size = cfg.batch_size
