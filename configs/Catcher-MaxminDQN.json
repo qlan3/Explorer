@@ -1,5 +1,5 @@
 {
-  "exp_name": ["Catcher"],
+  "game": ["Catcher"],
   "env": ["Catcher-v0"],
   "agent": ["MaxminDQN"],
   "target_networks_num": [1,3,5,7],

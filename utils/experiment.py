@@ -21,7 +21,7 @@ class Experiment(object):
     self.test_result = None
     self.cfg = copy.deepcopy(cfg)
     self.config_idx = cfg.config_idx
-    self.exp_name = cfg.exp_name
+    self.game = cfg.game
     if self.cfg.generate_random_seed:
       self.cfg.seed = random.randint(0, 2**32 - 2)
     self.cfg.logs_dir = f'{cfg.logs_dir}{self.config_idx}/'
@@ -83,7 +83,7 @@ class Experiment(object):
 
   def save_config(self):
     cfg_json = json.dumps(self.cfg.__dict__, indent=2)
-    print(cfg_json, end='\n')
+    # print(cfg_json, end='\n')
     f = open(self.cfg_path, 'w')
     f.write(cfg_json)
     f.close()

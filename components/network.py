@@ -5,7 +5,8 @@ import torch.nn.functional as F
 
 def layer_init(layer, w_scale=1.0):
   # Initialize all weights and biases in layer and return it
-  nn.init.xavier_normal_(layer.weight.data, gain=1)
+  nn.init.orthogonal_(layer.weight.data)
+  # nn.init.xavier_normal_(layer.weight.data, gain=1)
   layer.weight.data.mul_(w_scale)
   nn.init.constant_(layer.bias.data, 0) # layer.bias.data.zero_()
   return layer

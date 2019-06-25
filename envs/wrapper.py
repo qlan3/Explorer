@@ -4,13 +4,17 @@ import numpy as np
 from collections import deque
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
+from gym.wrappers.time_limit import TimeLimit
 cv2.ocl.setUseOpenCL(False)
 
 
 def make_atari(env, max_episode_steps):
   # assert 'NoFrameskip' in env.spec.id
+  print('set time limit:', max_episode_steps)
   env = NoopResetEnv(env, noop_max=30)
   env = MaxAndSkipEnv(env, skip=4)
+  if max_episode_steps != 0:
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
   return env
 
 def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, scale=False):

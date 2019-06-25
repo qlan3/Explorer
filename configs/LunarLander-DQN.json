@@ -1,5 +1,5 @@
 {
-  "exp_name": ["LunarLander"],
+  "game": ["LunarLander"],
   "env": ["LunarLander-v2"],
   "agent": ["DQN"],
   "input_type": ["feature"],

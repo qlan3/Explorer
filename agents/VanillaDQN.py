@@ -9,6 +9,7 @@ from gym.spaces.discrete import Discrete
 from envs.env import *
 from utils.helper import *
 from components.network import *
+from components.normalizer import *
 import components.replay
 import components.exploration
 from agents.BaseAgent import BaseAgent
@@ -35,14 +36,20 @@ class VanillaDQN(BaseAgent):
     self.state_size = self.get_state_size()
     self.rolling_score_window = cfg.rolling_score_window
     self.history_length = cfg.history_length
-
-    # Create Q value network
+    self.sgd_update_frequency = cfg.sgd_update_frequency
+    self.show_tb = cfg.show_tb
+    
     if cfg.input_type == 'pixel':
       self.layer_dims = [cfg.feature_dim] + cfg.hidden_layers + [self.action_size]
+      self.state_normalizer = ImageNormalizer()
+      self.reward_normalizer = SignNormalizer()
     elif cfg.input_type == 'feature':
       self.layer_dims = [self.state_size] + cfg.hidden_layers + [self.action_size]
+      self.state_normalizer = RescaleNormalizer()
+      self.reward_normalizer = RescaleNormalizer()
     else:
       raise ValueError(f'{cfg.input_type} is not supported.')
+    # Create Q value network
     self.Q_net = self.creatNN(cfg.input_type).to(self.device)
     # Set replay buffer
     self.replay_buffer = getattr(components.replay, cfg.memory_type)(cfg.memory_size, self.batch_size, self.device)
@@ -60,6 +67,8 @@ class VanillaDQN(BaseAgent):
     self.loss = getattr(torch.nn, cfg.loss)(reduction='mean')
     # Set optimizer
     self.optimizer = getattr(torch.optim, cfg.optimizer)(self.Q_net.parameters(), cfg.lr)
+    # Set tensorboard
+    if self.show_tb: self.logger.init_writer()
     
   def creatNN(self, input_type):
     if input_type == 'pixel':
@@ -80,7 +89,7 @@ class VanillaDQN(BaseAgent):
 
   def reset_game(self):
     # Reset the game before a new episode
-    self.state = self.env.reset()
+    self.state = self.state_normalizer(self.env.reset())
     self.next_state = None
     self.action = None
     self.reward = None
@@ -111,7 +120,9 @@ class VanillaDQN(BaseAgent):
                      'Return': self.total_episode_reward,
                      'Rolling Return': rolling_score}
       result.append(result_dict)
-      # self.logger.add_scalar(f'[{mode}] Return', self.total_episode_reward, self.episode_count)
+      if self.show_tb:
+        self.logger.add_scalar(f'{mode}_Return', self.total_episode_reward, self.step_count)
+        self.logger.add_scalar(f'{mode}_Rolling_Return', rolling_score, self.step_count)
       if self.episode_count % self.display_interval == 0:
         self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
@@ -121,17 +132,23 @@ class VanillaDQN(BaseAgent):
     # Run for one episode
     self.reset_game()
     while not self.done:
-      self.action = self.get_action(mode) # Take a step
-      if render:
-        self.env.render()
-      self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-      if mode=='Train':
-        self.save_experience()
-        if self.time_to_learn(): self.learn() # Update policy
-      self.state = self.next_state
-      self.episode_step_count += 1
-      self.step_count += 1
-      self.total_episode_reward += self.reward
+      experiences = []
+      for _ in range(self.sgd_update_frequency):
+        self.action = self.get_action(mode) # Take a step
+        if render: self.env.render()
+        self.next_state, self.reward, self.done, _ = self.env.step(self.action)
+        self.next_state = self.state_normalizer(self.next_state)
+        self.reward = self.reward_normalizer(self.reward)
+        self.state = self.next_state
+        self.episode_step_count += 1
+        self.step_count += 1
+        self.total_episode_reward += self.reward
+        experiences.append([self.state, self.action, self.next_state, self.reward, self.done])
+        if self.done:
+          break
+      if mode == 'Train':
+          self.save_experience(experiences)
+          if self.time_to_learn(): self.learn() # Update policy
     self.episode_count += 1
 
   def get_action(self, mode='Train'):
@@ -146,41 +163,40 @@ class VanillaDQN(BaseAgent):
     self.Q_net.eval() # Set network in evaluation mode
     with torch.no_grad():
       q_values = self.Q_net(state)
-    if mode=='Train':
+    if mode == 'Train':
       self.Q_net.train() # Set network back in training mode
       action = self.exploration.select_action(q_values, self.step_count)
-    elif mode=='Test':
+    elif mode == 'Test':
       action = torch.argmax(q_values).item() # During test, select action greedily
     return action
 
   def time_to_learn(self):
     """
     Return boolean to indicate whether it is time to learn:
-    - The agent is not in exploration stage
+    - The agent is not on exploration stage
     - There are enough experiences in replay buffer
     """
-    if len(self.replay_buffer) > self.batch_size and \
-      self.step_count > self.exploration_steps:
+    if self.step_count > self.exploration_steps:
       return True
     else:
       return False
 
   def learn(self):
     states, actions, next_states, rewards, dones = self.replay_buffer.sample()
-    
+    '''
     self.logger.debug(f'states: {states.size()}')
     self.logger.debug(f'actions: {actions.size()}')
     self.logger.debug(f'next_states: {next_states.size()}')
     self.logger.debug(f'rewards: {rewards.size()}')
     self.logger.debug(f'dones: {dones.size()}')
-
+    '''
     # Compute q target
     q_target = self.compute_q_target(next_states, rewards, dones)
     # Compute q
     q = self.comput_q(states, actions)
     
-    self.logger.debug(f'q size: {q.size()}')
-    self.logger.debug(f'q target size: {q_target.size()}')
+    # self.logger.debug(f'q size: {q.size()}')
+    # self.logger.debug(f'q target size: {q_target.size()}')
     
     # Take an optimization step
     loss = self.loss(q, q_target)
@@ -205,10 +221,9 @@ class VanillaDQN(BaseAgent):
     q = q.gather(1, actions).squeeze()
     return q
 
-  def save_experience(self):
-    # Saves recent experience to replay buffer 
-    experience = [self.state, self.action, self.next_state, self.reward, self.done]
-    self.replay_buffer.add([experience])
+  def save_experience(self, experiences):
+    # Saves recent experience to replay buffer
+    self.replay_buffer.add(experiences)
 
   def get_action_size(self):
     if isinstance(self.env.action_space, Discrete):

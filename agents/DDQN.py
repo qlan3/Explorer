@@ -24,12 +24,12 @@ class DDQN(DQN):
   def compute_q_target(self, next_states, rewards, dones):
     with torch.no_grad():
       best_actions = self.Q_net(next_states).detach().argmax(1).unsqueeze(1)
-      self.logger.debug('best actions:', best_actions.size())
+      # self.logger.debug('best actions:', best_actions.size())
       
       q_target = self.Q_net_target(next_states).detach().gather(1, best_actions).squeeze()
-      self.logger.debug('double q target size 0:', q_target.size())
+      # self.logger.debug('double q target size 0:', q_target.size())
       
       q_target = rewards + self.discount * q_target * (1 - dones)
-      self.logger.debug('double q target size 1:', q_target.size())
+      # self.logger.debug('double q target size 1:', q_target.size())
     
     return q_target

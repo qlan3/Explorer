@@ -29,7 +29,7 @@ class DQN(VanillaDQN):
   def learn(self):
     super().learn()
     # Update target network
-    if self.step_count % self.target_network_update_freqency == 0:
+    if (self.step_count / self.sgd_update_frequency) % self.target_network_update_freqency == 0:
       self.Q_net_target.load_state_dict(self.Q_net.state_dict())
 
   def compute_q_target(self, next_states, rewards, dones):

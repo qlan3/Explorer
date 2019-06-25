@@ -1,5 +1,5 @@
 {
-  "exp_name": ["Catcher"],
+  "game": ["Catcher"],
   "env": ["Catcher-v0"],
   "agent": ["DQN"],
   "input_type": ["feature"],
