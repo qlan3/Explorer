@@ -12,20 +12,23 @@ class Replay(object):
     self.batch_size = batch_size
     self.device = device
     self.experience = namedtuple("Experience", field_names=["state", "action", "next_state", "reward", "done"])
-    self.clear()
+    self.memory = []
+    self.pos = 0
 
   def add(self, experience):
     '''
     Add experience(s) into memory
     '''
     for exp in experience:
+      if len(self.memory) < self.memory_size:
+        self.memory.append(None)
       self.memory[self.pos] = self.experience(*exp)
       self.pos = (self.pos + 1) % self.memory_size
     
   def sample(self):
     if self.empty():
       return None
-    sampled_indices = [np.random.randint(0, len(self)) for _ in range(self.batch_size)]
+    sampled_indices = [np.random.randint(0, len(self.memory)) for _ in range(self.batch_size)]
     sampled_data = [self.memory[idx] for idx in sampled_indices]
     # Stack sampled data and convert them to tensors
     states = to_tensor([np.asarray(e.state) for e in sampled_data if e is not None], self.device)
@@ -37,24 +40,13 @@ class Replay(object):
     return sampled_data
 
   def __len__(self):
-    if self.memory[-1] == None:
-      return self.pos
-    else:
-      return self.memory_size
+    return len(self.memory)
 
   def size(self):
     return self.memory_size
 
   def empty(self):
-    return self.memory[0] == None
+    return len(self.memory) == 0
 
   def shuffle(self):
     np.random.shuffle(self.memory)
-
-  def clear(self):
-    self.memory = [None] * self.memory_size
-    self.pos = 0
-
-REPLAYS = {
-  'Replay': Replay
-}

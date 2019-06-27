@@ -4,6 +4,7 @@ import argparse
 
 from utils.sweeper import Sweeper
 from utils.experiment import Experiment
+from utils.helper import make_dir
 
 def main(argv):
   # python main.py --config_file ./configs/Catcher-DQN.json --config_idx 1
@@ -11,19 +12,25 @@ def main(argv):
   # python main.py --config_file ./configs/Pixelcopter-DQN.json --config_idx 1
   # python main.py --config_file ./configs/Breakout-DQN.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
-  parser.add_argument('--logs_dir', type=str, default='./logs/', help='log directory')
-  parser.add_argument('--images_dir', type=str, default='./images/', help='image directory')
-  parser.add_argument('--config_file', type=str, default='./configs/Catcher-DQN.json', help='Configuration file for the chosen model')
+  parser.add_argument('--config_file', type=str, default='./configs/Catcher/DQN.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')
   args = parser.parse_args()
   
-  if not os.path.exists(args.logs_dir): os.makedirs(args.logs_dir, exist_ok=True)
-  if not os.path.exists(args.images_dir): os.makedirs(args.images_dir, exist_ok=True)
-
   sweeper = Sweeper(args.config_file)
   cfg = sweeper.generate_config_from_idx(args.config_idx)
-  setattr(cfg, 'logs_dir', args.logs_dir)
-  setattr(cfg, 'images_dir', args.images_dir)
+  
+  logs_dir = f'./logs/{cfg.game}/{cfg.agent}/{cfg.config_idx}/'
+  train_log_path = logs_dir + 'result_Train.csv'
+  test_log_path = logs_dir + 'result_Test.csv'
+  model_path = logs_dir + 'model.pt'
+  cfg_path = logs_dir + 'config.json'
+
+  setattr(cfg, 'logs_dir', logs_dir)
+  setattr(cfg, 'train_log_path', train_log_path)
+  setattr(cfg, 'test_log_path', test_log_path)
+  setattr(cfg, 'model_path', model_path)
+  setattr(cfg, 'cfg_path', cfg_path)
+  make_dir(cfg.logs_dir)
 
   exp = Experiment(cfg)
   exp.run()

@@ -4,7 +4,6 @@ import copy
 import time
 import json
 import torch
-import random
 import numpy as np
 import pandas as pd
 
@@ -23,27 +22,12 @@ class Experiment(object):
     self.config_idx = cfg.config_idx
     self.game = cfg.game
     if self.cfg.generate_random_seed:
-      self.cfg.seed = random.randint(0, 2**32 - 2)
-    self.cfg.logs_dir = f'{cfg.logs_dir}{self.config_idx}/'
-    if not os.path.exists(self.cfg.logs_dir): os.makedirs(self.cfg.logs_dir)
-    self.train_log_path = self.cfg.logs_dir + 'result-Train.csv'
-    self.test_log_path = self.cfg.logs_dir + 'result-Test.csv'
-    self.model_path = self.cfg.logs_dir + 'model.pt'
-    self.cfg_path = self.cfg.logs_dir + 'config.json'
+      self.cfg.seed = np.random.randint(int(1e6))
+    self.train_log_path = self.cfg.train_log_path
+    self.test_log_path = self.cfg.test_log_path
+    self.model_path = self.cfg.model_path
+    self.cfg_path = self.cfg.cfg_path
     self.save_config()
-
-  def set_random_seed(self, seed):
-    '''
-    Set all random seeds
-    '''
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    self.agent.env.seed(seed)
-    torch.backends.cudnn.deterministic = True
-    if torch.cuda.is_available(): 
-      torch.cuda.manual_seed_all(seed)
-    # self.agent.set_random_seed(seed)
 
   def run(self):
     '''
@@ -51,17 +35,14 @@ class Experiment(object):
     '''
     set_one_thread()
     self.start_time = time.time()
+    set_random_seed(self.cfg.seed)
     self.agent = getattr(agents, self.cfg.agent)(self.cfg)
-    self.set_random_seed(self.cfg.seed)
+    self.agent.env.seed(self.cfg.seed)
     # Train
     self.train_result = self.agent.run_episodes(mode='Train', render=False)
     self.save_results(mode='Train')
     # Test
-    test_result = self.agent.run_episodes(mode='Test')
-    test_result = {'Agent': self.agent.agent_name,
-                   'Average Return': test_result['Return'].mean(),
-                   'Average Rolling Return': test_result['Rolling Return'].mean()}
-    self.test_result = pd.DataFrame([test_result])
+    self.test_result = self.agent.run_episodes(mode='Test', render=False)
     self.save_results(mode='Test')
     # Save model
     self.save_model()

@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -27,7 +26,6 @@ class NetworkGlue(nn.Module):
     v = self.value_net(f)
     return v
 
-
 class MLP(nn.Module):
   '''
   Multilayer Perceptron
@@ -39,9 +37,9 @@ class MLP(nn.Module):
     for i in range(len(layer_dims[:-1])):
       dim_in, dim_out = layer_dims[i], layer_dims[i+1]
       self.mlp.append(layer_init(nn.Linear(dim_in, dim_out, bias=True)))
-      if i+2 != len(layer_dims) or output_activation == None:
+      if i+2 != len(layer_dims):
         self.mlp.append(hidden_activation)
-      else:
+      elif output_activation != None:
         self.mlp.append(output_activation)  
   
   def forward(self, x):

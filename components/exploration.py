@@ -1,6 +1,4 @@
-import math
-import torch
-import random
+import numpy as np
 
 
 class BaseExploration(object):
@@ -21,10 +19,10 @@ class EpsilonGreedy(BaseExploration):
     self.epsilon = epsilon['end']
 
   def select_action(self, q_values, step_count):
-    if random.random() < self.epsilon or step_count <= self.exploration_steps:
-      action = random.randint(0, q_values.shape[1] - 1)
+    if np.random.rand() < self.epsilon or step_count <= self.exploration_steps:
+      action = np.random.randint(0, len(q_values))
     else:
-      action = torch.argmax(q_values).item()
+      action = np.argmax(q_values)
     return action
 
 
@@ -44,10 +42,10 @@ class LinearEpsilonGreedy(BaseExploration):
 
   def select_action(self, q_values, step_count):
     self.epsilon = self.bound(self.start + step_count * self.inc, self.end)
-    if random.random() < self.epsilon or step_count <= self.exploration_steps:
-      action = random.randint(0, q_values.shape[1] - 1)
+    if np.random.rand() < self.epsilon or step_count <= self.exploration_steps:
+      action = np.random.randint(0, len(q_values))
     else:
-      action = torch.argmax(q_values).item()
+      action = np.argmax(q_values)
     return action
 
 
@@ -68,8 +66,8 @@ class ExponentialEpsilonGreedy(BaseExploration):
 
   def select_action(self, q_values, step_count):
     self.epsilon = self.bound(self.start * math.pow(self.decay, step_count), self.end)
-    if random.random() < self.epsilon or step_count <= self.exploration_steps:
-      action = random.randint(0, q_values.shape[1] - 1)
+    if np.random.rand() < self.epsilon or step_count <= self.exploration_steps:
+      action = np.random.randint(0, len(q_values))
     else:
-      action = torch.argmax(q_values).item()
+      action = np.argmax(q_values)
     return action

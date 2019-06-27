@@ -4,16 +4,15 @@ import pandas as pd
 import seaborn as sns; sns.set(style='darkgrid')
 import matplotlib.pyplot as plt
 
+from utils.helper import make_dir
 
 def get_total_combination(game, agent, config_idx=1):
   '''
-  Get total combination of configs in ./config/
+  Get total combination of configs
   '''
-  logs_path = f'./{game}-{agent}-logs/'
-  log_dir = f'{config_idx}'
-  assert os.path.isdir(os.path.join(logs_path, log_dir)), f'No log dir <{log_dir}>!'
-  config_path = os.path.join(logs_path, log_dir, 'config.json')
-  with open(config_path, 'r') as f:
+  config_file = f'./logs/{game}/{agent}/{config_idx}/config.json'
+  assert os.path.isfile(config_file), f'No config file <{config_file}>!'
+  with open(config_file, 'r') as f:
     config_dict = json.load(f)
   return config_dict['total_combinations']
 
@@ -21,63 +20,116 @@ def get_sweep_keys(game, agent):
   '''
   Open sweep config file and return sweep keys as a list
   '''
-  sweep_config_file = f'./configs/{game}-{agent}.json'
+  sweep_config_file = f'./configs/{game}/{agent}.json'
+  assert os.path.isfile(sweep_config_file), f'No sweep config file <{sweep_config_file}>!'
   sweep_keys = []
   with open(sweep_config_file, 'r') as f:
     config_dicts = json.load(f)
     for key, values in config_dicts.items():
       if len(values) > 1:
         sweep_keys.append(key)
-  
   return sweep_keys
 
-def merge_runs_results(game, agent, config_idx, total_combination, mode):
+def merge_game_agent_index(game, agent, config_idx, total_combination, mode):
   '''
-  Given game, agent and index, merge the results for multiple runs
+  Given game, agent and index, merge the results of multiple runs
   '''
-  logs_path = f'./{game}-{agent}-logs/'
   results = None
   while True:
-    log_dir = f'{config_idx}'
-    result_path = os.path.join(logs_path, log_dir, f'result-{mode}.csv')
+    result_file = f'./logs/{game}/{agent}/{config_idx}/result_{mode}.csv'
     # If result file doesn't exist, break
-    if not os.path.isfile(result_path): break
-    result = pd.read_csv(result_path)
+    if not os.path.isfile(result_file):
+      break
+    # Read result file
+    result = pd.read_csv(result_file)
     # Add config index as a column
     result['Config Index'] = config_idx
-    if results is None:
-      results = result
-    else:
-      results = results.append(result, ignore_index=True)
+    results = result if results is None else results.append(result, ignore_index=True)
     config_idx += total_combination
-  
   return results
 
-def merge_results(game, agent, result_label, mode):
+def merge_game_agent_allIndex(game, agent, mode):
   '''
-  Show test and train results
+  Given game, agent, merge and save the results of multiple runs for all config indexes
   - Merge results
   - Sort results by result label in Test mode
   - Save results into a .csv file
   '''
   total_combination = get_total_combination(game, agent)
   for config_idx in range(1, total_combination+1):
-    print(f'Merge {game}-{agent}-{mode} Results: {config_idx}')
+    print(f'Merge {game}_{agent}_{mode} results: {config_idx}/{total_combination}')
     # Merge results
-    results = merge_runs_results(game, agent, config_idx, total_combination, mode)
+    results = merge_game_agent_index(game, agent, config_idx, total_combination, mode)
     if results is None:
-      print(f'No {game}-{agent}-{mode} Results for {config_idx}')
+      print(f'No {game}_{agent}_{mode} results for {config_idx}')
       continue
-    if mode == 'Test':
-      # Sort test results by test result label
-      results = results.sort_values(by=[result_label], ascending=[False])
     # Save results
-    results_path = f'./{game}-{agent}-logs/{config_idx}/MergedResult-{mode}.csv'
-    results.to_csv(results_path)
+    results_file = f'./logs/{game}/{agent}/{config_idx}/result_{mode}_merged.csv'
+    results.to_csv(results_file, index=False)
 
-def plot_results(data, image_path, title, y_label, show=False):
+def sort_merged_test_result(game, agent):
   '''
-  Plot results
+  Sort merged test result by 'Average Return' and 'Return std'
+  '''
+  total_combination = get_total_combination(game, agent)
+  for config_idx_ in range(1, total_combination+1):
+    print(f'Sort {game}_{agent} merged test results: {config_idx_}/{total_combination}')
+    new_results = None
+    config_idx = config_idx_
+    while True:
+      # result = results.loc[results['Config Index']==config_idx]
+      result_file = f'./logs/{game}/{agent}/{config_idx}/result_Test.csv'
+      if not os.path.isfile(result_file): break
+      result = pd.read_csv(result_file)
+      new_result = pd.DataFrame([{'Game': game,
+                                  'Agent': agent,
+                                  'Config Index': config_idx,
+                                  'Average Return': result['Return'].mean(),
+                                  'Return std': result['Return'].std(ddof=0)}])
+      new_results = new_result if new_results is None else new_results.append(new_result, ignore_index=True)
+      config_idx += total_combination
+    sorted_results = new_results.sort_values(by=['Average Return', 'Return std'], ascending=[False, True])
+    # Save sorted results
+    sorted_results_file = f'./logs/{game}/{agent}/{config_idx_}/result_Test_merged_sorted.csv'
+    sorted_results.to_csv(sorted_results_file, index=False)    
+
+def get_result(game, agent, config_idx, mode, merged, topKRun=0):
+  '''
+  Return: (merged) result 
+  - merged == True: Return merged result for top k runs.
+                    If topKRun == 0, return all merged result of all runs.
+  - merged == False: Return unmerged result of one single run.
+  '''
+  if merged == False:
+    result_file = f'./logs/{game}/{agent}/{config_idx}/result_{mode}.csv'
+    assert os.path.isfile(result_file), f'No result file for <{result_file}>!'
+    result = pd.read_csv(result_file)
+  elif merged == True:
+    if mode == 'Test': 
+      result_file = f'./logs/{game}/{agent}/{config_idx}/result_{mode}_merged_sorted.csv'
+      assert os.path.isfile(result_file), f'No result file for <{result_file}>!'
+      result = pd.read_csv(result_file)
+      if topKRun > 0:
+        result = result[:topKRun]
+    elif mode == 'Train':
+      result_file = f'./logs/{game}/{agent}/{config_idx}/result_{mode}_merged.csv'
+      assert os.path.isfile(result_file), f'No result file for <{result_file}>!'
+      result = pd.read_csv(result_file)
+      if topKRun > 0:
+        # Read merged test results
+        sorted_merged_test_result_file = f'./logs/{game}/{agent}/{config_idx}/result_Test_merged_sorted.csv'
+        assert os.path.isfile(sorted_merged_test_result_file), f'No result file for <{sorted_merged_test_result_file}>!'
+        sorted_merged_test_result = pd.read_csv(sorted_merged_test_result_file)
+        # Get top k test results and config indexes
+        sorted_merged_test_result = sorted_merged_test_result[:topKRun]
+        config_idx_list = list(sorted_merged_test_result['Config Index'])
+        # Get train results with config indexes in the config_idx_list only
+        result = result.loc[result['Config Index'].isin(config_idx_list)]
+  return result
+
+def plot_vanilla(data, image_path, title, y_label, show=False):
+  '''
+  Plot results for any data (vanilla)
   '''
   ax = sns.lineplot(x='Episode', y=y_label, hue='Agent', data=data)
   ax.set_title(title)
@@ -88,129 +140,137 @@ def plot_results(data, image_path, title, y_label, show=False):
   plt.cla() # clear axis
   plt.close() # close window
 
-def plot_results_agent_index_list(game, agent_index_list, image_path, title, y_label, topk, show=False):
+def plot_game_agent_index(game, agent, config_idx, title, y_label, show, merged, topKRun=0):
   '''
-  Given game and agent-index pairs, plot the results
-  '''
-  mode = 'Train'
-  results = None
-  for agent_index in agent_index_list:
-    agent, config_idx = agent_index.split('-')
-    # Read test results
-    test_results_path = f'./{game}-{agent}-logs/{config_idx}/MergedResult-Test.csv'
-    if not os.path.isfile(test_results_path):
-      print(f'No MergedResult-Test file for {game}-{agent}-{config_idx}!')
-      continue
-    test_results = pd.read_csv(test_results_path)
-    # Get top k test results and config indexes
-    test_results = test_results[:topk]
-    # Get top k test results and config indexes
-    config_idx_list = list(test_results['Config Index'])
-    # Read train results
-    train_results_path = f'./{game}-{agent}-logs/{config_idx}/MergedResult-{mode}.csv'
-    if not os.path.isfile(train_results_path):
-      print(f'No MergedResult-{mode} file for {game}-{agent}-{config_idx}!')
-      continue
-    # Get train results with config indexes in the config_idx_list only
-    train_results = pd.read_csv(train_results_path)
-    train_results = train_results.loc[train_results['Config Index'].isin(config_idx_list)]
-    if results is None:
-      results = train_results
-    else:
-      results = results.append(train_results, ignore_index=True)
+  Mode: Train
+  Func: Given game, agent and config index, plot (merged) train result
+  - merged == True: Plot merged train result for top k runs.
+                    If topKRun == 0, plot all merged train result of all runs.
+  - merged == False: Plot unmerged train result of one single run. 
+                     Note that topKRun==0 in this case.
+  '''  
+  # Get result
+  result = get_result(game, agent, config_idx, 'Train', merged, topKRun)
+  # Plot
+  if merged:
+    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}_merged_topKRun{topKRun}.png'
+  else:
+    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}.png'
+  assert result is not None, 'No result!'
+  plot_vanilla(result, image_path, title, y_label, show)
 
-  if results is not None:
-    plot_results(results, image_path, title, y_label, show)
+def plot_game_agent_indexList(game, agent, indexList, title, y_label, show, merged, topKRun=0):
+  '''
+  Mode: Train
+  Func: Given game, agent and config index list, plot (merged) train result
+  - merged == True: Plot merged train result for top k runs.
+                    If topKRun == 0, plot all merged train result of all runs.
+  - merged == False: Plot unmerged train result of one single run. 
+                     Note that topKRun==0 in this case.
+  '''
+  results = None
+  for config_idx in indexList:
+    result = get_result(game, agent, config_idx, 'Train', merged, topKRun)
+    # Modify "Agent" value in result for better visualization: add config index
+    result['Agent'] = result['Agent'].map(lambda x: f'{x} {config_idx}')
+    results = result if results is None else results.append(result, ignore_index=True)
+  # Plot
+  if merged:
+    image_path = f'./logs/{game}/{agent}/0/indexList_merged_topKRun{topKRun}.png'
+  else:
+    image_path = f'./logs/{game}/{agent}/0/indexList.png'
+  assert results is not None, 'No results!'
+  plot_vanilla(results, image_path, title, y_label, show)
+
+def plot_game_agentIndexList(game, agentIndexList, title, y_label, show, merged, topKRun=0):
+  '''
+  Mode: Train
+  Func: Given game, agent-index list, plot (merged) train result
+  - merged == True: Plot merged train result for top k runs.
+                    If topKRun == 0, plot all merged train result of all runs.
+  - merged == False: Plot unmerged train result of one single run. 
+                     Note that topKRun==0 in this case.
+  '''
+  results = None
+  for agent_index in agentIndexList:
+    agent, config_idx = agent_index
+    result = get_result(game, agent, config_idx, 'Train', merged, topKRun)
+    # Modify "Agent" value in result for better visualization: add config index
+    result['Agent'] = result['Agent'].map(lambda x: f'{x} {config_idx}')
+    results = result if results is None else results.append(result, ignore_index=True)
+  # Plot
+  if merged:
+    image_path = f'./logs/{game}/{agent}/0/agentIndexList_merged_topKRun{topKRun}.png'
+  else:
+    image_path = f'./logs/{game}/{agent}/0/agentIndexList.png'
+  assert results is not None, 'No results!'
+  plot_vanilla(results, image_path, title, y_label, show)
     
-def show_results(game, agent, topk, result_label, mode):
+def show_results(game, agent, mode, result_label, show, topKRun=0):
   '''
-  Show results based on mode
+  Merge: True
+  Show results based on mode:
+  - Train: Plot merged train result for all config indexes
+  - Test: Generate a .csv file that store all merged test results
   '''
-  results_list = [] 
-  logs_path = f'./{game}-{agent}-logs/'
-  images_path = f'./{game}-{agent}-images/'
-  sweep_keys = get_sweep_keys(game, agent)
+
   total_combination = get_total_combination(game, agent)
+  if mode == 'Test':
+    results_list = []
+    sweep_keys = get_sweep_keys(game, agent)
   for config_idx in range(1, total_combination+1):
-    print(f'Show {game}-{agent}-{mode} Results: {config_idx}')
-    # Read test results
-    test_results_path = f'./{game}-{agent}-logs/{config_idx}/MergedResult-Test.csv'
-    if not os.path.isfile(test_results_path):
-      print(f'No MergedResult-Test file for {game}-{agent}-{config_idx}!')
-      continue
-    test_results = pd.read_csv(test_results_path)
-    # Get top k test results and config indexes
-    test_results = test_results[:topk]
-    if mode == 'Test':
+    print(f'Show {game}_{agent}_{mode} results: {config_idx}/{total_combination}')
+    result = get_result(game, agent, config_idx, mode, True, topKRun)
+    if mode == 'Train':
+      # Plot train results
+      plot_game_agent_index(game, agent, config_idx, game, result_label, show, True, topKRun)
+    elif mode == 'Test':
       # Get mean and std of test results
-      result_mean = test_results[result_label].mean()
-      result_std = test_results[result_label].std(ddof=0)
       result_dict = {'Agent': agent,
                      'Game': game, 
                      'Config Index': config_idx, 
-                     f'{result_label} (mean)': result_mean,
-                     f'{result_label} (std)': result_std}
+                     f'{result_label} (mean)': result[result_label].mean(),
+                     f'{result_label} (std)': result[result_label].std(ddof=0)}
       # Expand test result dict from config dict
-      log_dir = f'{config_idx}'
-      config_file = os.path.join(logs_path, log_dir, 'config.json')
+      config_file = f'./logs/{game}/{agent}/{config_idx}/config.json'
       with open(config_file, 'r') as f:
         config_dict = json.load(f)
         for key in sweep_keys:
           result_dict[key] = config_dict[key]
       results_list.append(result_dict)
-    elif mode == 'Train':
-      # Get top k test results and config indexes
-      config_idx_list = list(test_results['Config Index'])
-      # Read train results
-      train_results_path = f'./{game}-{agent}-logs/{config_idx}/MergedResult-{mode}.csv'
-      if not os.path.isfile(train_results_path):
-        print(f'No MergedResult-{mode} file for {game}-{agent}-{config_idx}!')
-        continue
-      train_results = pd.read_csv(train_results_path)
-      # Get train results with config indexes in the config_idx_list only
-      train_results = train_results.loc[train_results['Config Index'].isin(config_idx_list)]
-      if train_results is not None:
-        # Plot train results
-        image_path = images_path + f'{config_idx}.png'
-        plot_results(train_results, image_path, game, train_result_label, show=False)
-      else:
-        print(f'No {game}-{agent}-{mode} Results for {config_idx}')
-
   if mode == 'Test':
-    # Sort by mean and std of test result label value
+    make_dir(f'./logs/{game}/{agent}/0/')
     results = pd.DataFrame(results_list)
-    sorted_results = results.sort_values(by=[f'{result_label} (mean)', f'{result_label} (std)'], ascending=[False, False])
+    # Sort by mean and std of test result label value
+    sorted_results = results.sort_values(by=[f'{result_label} (mean)', f'{result_label} (std)'], ascending=[False, True])
     # Save sorted test results into a .csv file
-    sorted_results_path = f'./analysis/TestResults-{game}-{agent}-{mode}.csv'
-    sorted_results.to_csv(sorted_results_path, index=False)
+    sorted_results_file = f'./logs/{game}/{agent}/0/TestResults_topKRun{topKRun}.csv'
+    sorted_results.to_csv(sorted_results_file, index=False)
 
-def unfinished_index(game, agent):
+def unfinished_index(game, agent, runs):
   '''
-  Find unfinished config indexes based the existence of result-mode.csv file
+  Find unfinished config indexes based on the existence of result_Test.csv file
   '''
-  mode = 'Test'
-  logs_path = f'./{game}-{agent}-logs/'
-  print(f'{game}-{agent}:', end=' ')
-  for log_dir in os.listdir(logs_path):
-    if not os.path.isdir(os.path.join(logs_path, log_dir)):
-      continue
-    if not os.path.isfile(os.path.join(logs_path, log_dir, f'result-{mode}.csv')):
-      print(log_dir, end=' ')
+  largest_config_idx = runs * get_total_combination(game, agent)
+  print(f'{game}_{agent}:', end=' ')
+  for config_idx in range(1, largest_config_idx + 1):
+    result_file = f'./logs/{game}/{agent}/{config_idx}/result_Test.csv'
+    if not os.path.isfile(result_file):
+      print(config_idx, end=' ')
   print()
 
 if __name__ == "__main__":
   game = 'Pixelcopter'
-  agent = 'DDQN'
-  topk = 2
+  title = game
+  agent = 'DQN'
+  show = True
+  topKRun = 0
   test_result_label = 'Average Return'
   train_result_label = 'Rolling Return'
-  '''
-  merge_results(game, agent, test_result_label, mode='Test')
-  merge_results(game, agent, train_result_label, mode='Train')  
-  show_results(game, agent, topk, test_result_label, mode='Test')
-  show_results(game, agent, topk, train_result_label, mode='Train')
-  '''
-  image_path = './analysis/copter.png'
-  agent_index_list = ['DQN-1', 'DDQN-2']
-  plot_results_agent_index_list(game, agent_index_list, image_path, game, 'Rolling Return', topk, show=True)
+  
+  merge_game_agent_allIndex(game, agent, mode='Test')
+  merge_game_agent_allIndex(game, agent, mode='Train')
+  sort_merged_test_result(game, agent)
+  show_results(game, agent, 'Test', test_result_label, show, topKRun)
+  show_results(game, agent, 'Train', train_result_label, show, topKRun)
   

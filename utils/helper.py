@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 import torch
 import psutil
 import numpy as np
@@ -44,7 +45,20 @@ def to_numpy(t):
   '''
   Convert a tensor to numpy
   '''
-  if isinstance(t, torch.Tensor):
-    return t.cpu().detach().numpy()
-  else:
-    return t
+  return t.cpu().detach().numpy()
+
+def set_random_seed(seed):
+  '''
+  Set all random seeds
+  '''
+  random.seed(seed)
+  np.random.seed(seed)
+  torch.manual_seed(seed)
+  if torch.cuda.is_available(): 
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+def make_dir(dir):
+  if not os.path.exists(dir): 
+    os.makedirs(dir, exist_ok=True)

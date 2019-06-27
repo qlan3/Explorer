@@ -2,8 +2,7 @@ import logging
 from utils.helper import *
 from tensorboardX import SummaryWriter
 
-logging.basicConfig(format='%(levelname)s: %(message)s')
-
+logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s')
 class Logger(object):
   def __init__(self, tb_logs_dir):
     logger = logging.getLogger()

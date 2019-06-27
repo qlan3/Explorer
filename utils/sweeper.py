@@ -49,7 +49,9 @@ class Sweeper(object):
     return cfg
 
 if __name__ == "__main__":
-  config_list = os.listdir('./configs/')
-  for config_file in config_list:
-    sweeper = Sweeper('./configs/'+config_file)
-    print(f'Total Combinations for {config_file}: {sweeper.total_combinations}')
+  for game in os.listdir('./configs/'):
+    game_dir = os.path.join('./configs/', game)
+    for agent_config in os.listdir(game_dir):
+      config_file = os.path.join(game_dir, agent_config)
+      sweeper = Sweeper(config_file)
+      print(f'Total Combinations for {config_file}: {sweeper.total_combinations}')

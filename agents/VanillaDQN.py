@@ -1,5 +1,6 @@
 import gym
 import torch
+import numpy as np
 import pandas as pd
 from torch import nn
 import torch.optim as optim
@@ -21,6 +22,7 @@ class VanillaDQN(BaseAgent):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
+    self.game_name = cfg.game
     self.agent_name = cfg.agent
     self.max_episode_steps = int(cfg.max_episode_steps)
     self.env = make_env(cfg.env, max_episode_steps=self.max_episode_steps)
@@ -81,12 +83,6 @@ class VanillaDQN(BaseAgent):
       raise ValueError(f'{input_type} is not supported.')
     return NN
 
-  def set_loss(self, loss_type):
-    if loss_type == 'MSELoss':
-      return nn.MSELoss(reduction='mean')
-    else:
-      raise ValueError(f'{loss_type} is not supported.')
-
   def reset_game(self):
     # Reset the game before a new episode
     self.state = self.state_normalizer(self.env.reset())
@@ -108,13 +104,16 @@ class VanillaDQN(BaseAgent):
       max_episodes = self.train_max_episodes
     elif mode == 'Test':
       max_episodes = self.test_max_episodes
+      # self.Q_net.eval() # Set network in evaluation mode
+    
     while self.episode_count < max_episodes:
       # Run for one episode
       self.run_episode(mode, render)
       # Save result
       total_episode_reward_list.append(self.total_episode_reward)
       rolling_score = np.mean(total_episode_reward_list[-1 * self.rolling_score_window:])
-      result_dict = {'Agent': self.agent_name,
+      result_dict = {'Game': self.game_name,
+                     'Agent': self.agent_name,
                      'Episode': self.episode_count, 
                      'Step': self.step_count, 
                      'Return': self.total_episode_reward,
@@ -127,28 +126,24 @@ class VanillaDQN(BaseAgent):
         self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
     
     return pd.DataFrame(result)
-  
+
   def run_episode(self, mode, render):
     # Run for one episode
     self.reset_game()
     while not self.done:
-      experiences = []
-      for _ in range(self.sgd_update_frequency):
-        self.action = self.get_action(mode) # Take a step
-        if render: self.env.render()
-        self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-        self.next_state = self.state_normalizer(self.next_state)
-        self.reward = self.reward_normalizer(self.reward)
-        self.state = self.next_state
-        self.episode_step_count += 1
-        self.step_count += 1
-        self.total_episode_reward += self.reward
-        experiences.append([self.state, self.action, self.next_state, self.reward, self.done])
-        if self.done:
-          break
+      self.action = self.get_action(mode) # Take a step
+      if render:
+        self.env.render()
+      self.next_state, self.reward, self.done, _ = self.env.step(self.action)
+      self.next_state = self.state_normalizer(self.next_state)
+      self.reward = self.reward_normalizer(self.reward)
       if mode == 'Train':
-          self.save_experience(experiences)
-          if self.time_to_learn(): self.learn() # Update policy
+        if self.time_to_learn(): self.learn() # Update policy
+        self.save_experience()
+      self.state = self.next_state
+      self.episode_step_count += 1
+      self.step_count += 1
+      self.total_episode_reward += self.reward
     self.episode_count += 1
 
   def get_action(self, mode='Train'):
@@ -158,16 +153,13 @@ class VanillaDQN(BaseAgent):
     a "fake" dimension to make it a mini-batch rather than a single observation
     '''
     state = to_tensor(self.state, device=self.device)
-    # Add a batch dimension (Batch, Channel, Height, Width)
-    state = state.unsqueeze(0)
-    self.Q_net.eval() # Set network in evaluation mode
-    with torch.no_grad():
-      q_values = self.Q_net(state)
+    state = state.unsqueeze(0) # Add a batch dimension (Batch, Channel, Height, Width)
+    q_values = self.Q_net(state)
+    q_values = to_numpy(q_values).flatten()
     if mode == 'Train':
-      self.Q_net.train() # Set network back in training mode
       action = self.exploration.select_action(q_values, self.step_count)
     elif mode == 'Test':
-      action = torch.argmax(q_values).item() # During test, select action greedily
+      action = np.argmax(q_values) # During test, select best action
     return action
 
   def time_to_learn(self):
@@ -176,54 +168,42 @@ class VanillaDQN(BaseAgent):
     - The agent is not on exploration stage
     - There are enough experiences in replay buffer
     """
-    if self.step_count > self.exploration_steps:
+    if self.step_count > self.exploration_steps and self.step_count % self.sgd_update_frequency == 0:
       return True
     else:
       return False
 
   def learn(self):
     states, actions, next_states, rewards, dones = self.replay_buffer.sample()
-    '''
-    self.logger.debug(f'states: {states.size()}')
-    self.logger.debug(f'actions: {actions.size()}')
-    self.logger.debug(f'next_states: {next_states.size()}')
-    self.logger.debug(f'rewards: {rewards.size()}')
-    self.logger.debug(f'dones: {dones.size()}')
-    '''
     # Compute q target
     q_target = self.compute_q_target(next_states, rewards, dones)
     # Compute q
     q = self.comput_q(states, actions)
-    
-    # self.logger.debug(f'q size: {q.size()}')
-    # self.logger.debug(f'q target size: {q_target.size()}')
-    
     # Take an optimization step
     loss = self.loss(q, q_target)
-
+    if self.show_tb:
+      self.logger.add_scalar(f'Loss', loss.item(), self.step_count)
     self.logger.debug(f'Step {self.step_count}: loss={loss.item()}')
-    
     self.optimizer.zero_grad()
     loss.backward()
     nn.utils.clip_grad_norm_(self.Q_net.parameters(), self.gradient_clip)
     self.optimizer.step()
 
   def compute_q_target(self, next_states, rewards, dones):
-    with torch.no_grad():
-      q_target = self.Q_net(next_states).detach().max(1)[0]
-      q_target = rewards + self.discount * q_target * (1 - dones)
+    q_next = self.Q_net(next_states).detach().max(1)[0]
+    q_target = rewards + self.discount * q_next * (1 - dones)
     return q_target
   
   def comput_q(self, states, actions):
     # Convert actions to long so they can be used as indexes
     actions = actions.long()
-    q = self.Q_net(states)
-    q = q.gather(1, actions).squeeze()
+    q = self.Q_net(states).gather(1, actions).squeeze()
     return q
 
-  def save_experience(self, experiences):
+  def save_experience(self):
     # Saves recent experience to replay buffer
-    self.replay_buffer.add(experiences)
+    experience = [self.state, self.action, self.next_state, self.reward, self.done]
+    self.replay_buffer.add([experience])
 
   def get_action_size(self):
     if isinstance(self.env.action_space, Discrete):
