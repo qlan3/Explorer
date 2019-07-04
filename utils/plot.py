@@ -69,7 +69,7 @@ def merge_game_agent_allIndex(game, agent, mode):
 
 def sort_merged_test_result(game, agent):
   '''
-  Sort merged test result by 'Average Return' and 'Return std'
+  Sort merged test result by 'Average Return' and 'Return ste'
   '''
   total_combination = get_total_combination(game, agent)
   for config_idx_ in range(1, total_combination+1):
@@ -85,10 +85,10 @@ def sort_merged_test_result(game, agent):
                                   'Agent': agent,
                                   'Config Index': config_idx,
                                   'Average Return': result['Return'].mean(),
-                                  'Return std': result['Return'].std(ddof=0)}])
+                                  'Return ste': result['Return'].sem(ddof=0)}])
       new_results = new_result if new_results is None else new_results.append(new_result, ignore_index=True)
       config_idx += total_combination
-    sorted_results = new_results.sort_values(by=['Average Return', 'Return std'], ascending=[False, True])
+    sorted_results = new_results.sort_values(by=['Average Return', 'Return ste'], ascending=[False, True])
     # Save sorted results
     sorted_results_file = f'./logs/{game}/{agent}/{config_idx_}/result_Test_merged_sorted.csv'
     sorted_results.to_csv(sorted_results_file, index=False)    
@@ -131,7 +131,7 @@ def plot_vanilla(data, image_path, title, y_label, show=False):
   '''
   Plot results for any data (vanilla)
   '''
-  ax = sns.lineplot(x='Episode', y=y_label, hue='Agent', data=data)
+  ax = sns.lineplot(x='Episode', y=y_label, hue='Agent', data=data, ci=68)
   ax.set_title(title)
   ax.get_figure().savefig(image_path)
   if show:
@@ -140,7 +140,7 @@ def plot_vanilla(data, image_path, title, y_label, show=False):
   plt.cla() # clear axis
   plt.close() # close window
 
-def plot_game_agent_index(game, agent, config_idx, title, y_label, show, merged, topKRun=0):
+def plot_game_agent_index(game, agent, config_idx, title, y_label, show, merged, topKRun=0, imgType='png'):
   '''
   Mode: Train
   Func: Given game, agent and config index, plot (merged) train result
@@ -153,13 +153,13 @@ def plot_game_agent_index(game, agent, config_idx, title, y_label, show, merged,
   result = get_result(game, agent, config_idx, 'Train', merged, topKRun)
   # Plot
   if merged:
-    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}_merged_topKRun{topKRun}.png'
+    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}_merged_topKRun{topKRun}.{imgType}'
   else:
-    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}.png'
+    image_path = f'./logs/{game}/{agent}/{config_idx}/{config_idx}.{imgType}'
   assert result is not None, 'No result!'
   plot_vanilla(result, image_path, title, y_label, show)
 
-def plot_game_agent_indexList(game, agent, indexList, title, y_label, show, merged, topKRun=0):
+def plot_game_agent_indexList(game, agent, indexList, title, y_label, show, merged, topKRun=0, imgType='png'):
   '''
   Mode: Train
   Func: Given game, agent and config index list, plot (merged) train result
@@ -176,13 +176,13 @@ def plot_game_agent_indexList(game, agent, indexList, title, y_label, show, merg
     results = result if results is None else results.append(result, ignore_index=True)
   # Plot
   if merged:
-    image_path = f'./logs/{game}/{agent}/0/indexList_merged_topKRun{topKRun}.png'
+    image_path = f'./logs/{game}/{agent}/0/indexList_merged_topKRun{topKRun}.{imgType}'
   else:
-    image_path = f'./logs/{game}/{agent}/0/indexList.png'
+    image_path = f'./logs/{game}/{agent}/0/indexList.{imgType}'
   assert results is not None, 'No results!'
   plot_vanilla(results, image_path, title, y_label, show)
 
-def plot_game_agentIndexList(game, agentIndexList, title, y_label, show, merged, topKRun=0):
+def plot_game_agentIndexList(game, agentIndexList, title, y_label, show, merged, topKRun=0, imgType='png'):
   '''
   Mode: Train
   Func: Given game, agent-index list, plot (merged) train result
@@ -200,13 +200,13 @@ def plot_game_agentIndexList(game, agentIndexList, title, y_label, show, merged,
     results = result if results is None else results.append(result, ignore_index=True)
   # Plot
   if merged:
-    image_path = f'./logs/{game}/{agent}/0/agentIndexList_merged_topKRun{topKRun}.png'
+    image_path = f'./logs/{game}/agentIndexList_merged_topKRun{topKRun}.{imgType}'
   else:
-    image_path = f'./logs/{game}/{agent}/0/agentIndexList.png'
+    image_path = f'./logs/{game}/agentIndexList.{imgType}'
   assert results is not None, 'No results!'
   plot_vanilla(results, image_path, title, y_label, show)
     
-def show_results(game, agent, mode, result_label, show, topKRun=0):
+def show_results(game, agent, mode, result_label, show, topKRun=0, imgType='png'):
   '''
   Merge: True
   Show results based on mode:
@@ -223,14 +223,14 @@ def show_results(game, agent, mode, result_label, show, topKRun=0):
     result = get_result(game, agent, config_idx, mode, True, topKRun)
     if mode == 'Train':
       # Plot train results
-      plot_game_agent_index(game, agent, config_idx, game, result_label, show, True, topKRun)
+      plot_game_agent_index(game, agent, config_idx, game, result_label, show, True, topKRun, imgType)
     elif mode == 'Test':
-      # Get mean and std of test results
+      # Get mean and ste of test results
       result_dict = {'Agent': agent,
                      'Game': game, 
                      'Config Index': config_idx, 
                      f'{result_label} (mean)': result[result_label].mean(),
-                     f'{result_label} (std)': result[result_label].std(ddof=0)}
+                     f'{result_label} (ste)': result[result_label].sem(ddof=0)}
       # Expand test result dict from config dict
       config_file = f'./logs/{game}/{agent}/{config_idx}/config.json'
       with open(config_file, 'r') as f:
@@ -241,8 +241,8 @@ def show_results(game, agent, mode, result_label, show, topKRun=0):
   if mode == 'Test':
     make_dir(f'./logs/{game}/{agent}/0/')
     results = pd.DataFrame(results_list)
-    # Sort by mean and std of test result label value
-    sorted_results = results.sort_values(by=[f'{result_label} (mean)', f'{result_label} (std)'], ascending=[False, True])
+    # Sort by mean and ste of test result label value
+    sorted_results = results.sort_values(by=[f'{result_label} (mean)', f'{result_label} (ste)'], ascending=[False, True])
     # Save sorted test results into a .csv file
     sorted_results_file = f'./logs/{game}/{agent}/0/TestResults_topKRun{topKRun}.csv'
     sorted_results.to_csv(sorted_results_file, index=False)
@@ -265,12 +265,12 @@ if __name__ == "__main__":
   agent = 'DQN'
   show = True
   topKRun = 0
+  imgType = 'png'
   test_result_label = 'Average Return'
   train_result_label = 'Rolling Return'
   
   merge_game_agent_allIndex(game, agent, mode='Test')
   merge_game_agent_allIndex(game, agent, mode='Train')
   sort_merged_test_result(game, agent)
-  show_results(game, agent, 'Test', test_result_label, show, topKRun)
-  show_results(game, agent, 'Train', train_result_label, show, topKRun)
-  
+  show_results(game, agent, 'Test', test_result_label, show, topKRun, imgType)
+  show_results(game, agent, 'Train', train_result_label, show, topKRun, imgType)

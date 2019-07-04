@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Get node
+# Get a node
 salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem-per-cpu=1G
 
 # Load singularity
@@ -12,16 +12,23 @@ singularity pull --name explorer-env.img shub://qlan3/singularity-deffile:explor
 # Change directary
 cd Explorer
 
-# Shell in
+# Kill
+killall -9 singularity python parallel
+
+# Shell in singularity container
 singularity shell -B /project ../explorer-env.img
 
+# Tensorboard
+tensorboard --logdir=./logs/ --host localhost
+
+# Run
 tmux new -s catcher-dqn
 singularity exec -B /project ../explorer-env.img parallel --eta --ungroup python main.py --config_file ./configs/Catcher/DQN.json --config_idx {1} ::: $(seq 1 60) &
 
 tmux new -s catcher-ddqn
 singularity exec -B /project ../explorer-env.img parallel --eta --ungroup python main.py --config_file ./configs/Catcher/DDQN.json --config_idx {1} ::: $(seq 1 60) &
 
-tmux new -s catcher-maxmin1
+tmux new -s catcher-maxmin
 singularity exec -B /project ../explorer-env.img parallel --eta --ungroup python main.py --config_file ./configs/Catcher/MaxminDQN.json --config_idx {1} ::: $(seq 1 480) &
 
 tmux new -s lunar-dqn

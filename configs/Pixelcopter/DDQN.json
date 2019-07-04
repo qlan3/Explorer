@@ -18,7 +18,7 @@
   "lr": [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
   "batch_size": [32],
   "max_episode_steps": [500],
-  "train_max_episodes": [2000],
+  "train_max_episodes": [4000],
   "test_max_episodes": [200],
   "display_interval": [100],
   "rolling_score_window": [100],
