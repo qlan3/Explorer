@@ -8,7 +8,10 @@ from envs.wrapper import *
 def make_env(env_name, max_episode_steps=200, episode_life=True):
   env = gym.make(env_name)
   env_group_title = get_env_group_title(env)
-  if env_group_title == 'atari':
+  # print(env_group_title, env_name)
+  if env_group_title == 'atari' and '-ram' in env_name:
+    make_atari_ram(env, max_episode_steps, scale=True)
+  elif env_group_title == 'atari':
     env = make_atari(env, max_episode_steps)
     env = ReturnWrapper(env)
     env = wrap_deepmind(env,

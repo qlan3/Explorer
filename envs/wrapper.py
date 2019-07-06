@@ -17,6 +17,15 @@ def make_atari(env, max_episode_steps):
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   return env
 
+def make_atari_ram(env, max_episode_steps, scale=True):
+  env = NoopResetEnv(env, noop_max=30)
+  env = MaxAndSkipEnv(env, skip=4)
+  if max_episode_steps != 0:
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
+  if scale:
+    env = ScaledFloatFrame(env)
+  return env
+
 def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, scale=False):
   # Configure environment for DeepMind-style Atari.
   if episode_life:

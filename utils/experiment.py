@@ -39,10 +39,10 @@ class Experiment(object):
     self.agent = getattr(agents, self.cfg.agent)(self.cfg)
     self.agent.env.seed(self.cfg.seed)
     # Train
-    self.train_result = self.agent.run_episodes(mode='Train', render=False)
+    self.train_result = self.agent.run_episodes(mode='Train', render=self.cfg.render)
     self.save_results(mode='Train')
     # Test
-    self.test_result = self.agent.run_episodes(mode='Test', render=False)
+    self.test_result = self.agent.run_episodes(mode='Test', render=self.cfg.render)
     self.save_results(mode='Test')
     # Save model
     self.save_model()
