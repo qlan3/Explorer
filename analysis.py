@@ -10,7 +10,7 @@ def maxmin():
       'Env': result['Env'][0],
       'Agent': result['Agent'][0],
       'Config Index': config_idx,
-      'Return (mean)': result['Return'].mean()
+      'Return (mean)': result['Return'][-100:].mean()
     }
     return result_dict
   
@@ -25,7 +25,7 @@ def maxmin():
     return result_dict
 
   cfg = {
-    'exp': 'test',
+    'exp': 'copter',
     'merged': True,
     'x_label': 'Step',
     'y_label': 'Average Return',
@@ -46,20 +46,19 @@ def maxmin():
   plotter.process_result('Train', get_process_result_dict)
   plotter.csv_results('Train', get_csv_result_dict)
 
-  
+  '''
   plotter.merge_allIndex('Test')
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
-
+  
   indexList = [1, 2, 3, 4]
   plotter.plot_indexList(indexList, 'Train', title)
-  plotter.plot_indexList(indexList, 'Test', title)
   
   exp = 'test'
   expIndexList = [[exp, 4, 'Train'], [exp, 4, 'Test']]
   image_name = 'test'
   plotter.plot_expIndexList(expIndexList, change_hue_label, title, image_name)
-  
+  '''
 if __name__ == "__main__":
   maxmin()

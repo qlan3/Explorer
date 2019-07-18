@@ -22,10 +22,7 @@ def make_env(env_name, max_episode_steps=200, episode_life=True):
     if len(env.observation_space.shape) == 3:
       env = TransposeImage(env)
     env = FrameStack(env, 4)
-  elif env_group_title == 'classic_control':
-    if max_episode_steps != 0: # Set max episode steps
-      env = TimeLimit(env.unwrapped, max_episode_steps)
-  elif env_group_title == 'gym_pygame':
+  elif env_group_title in ['classic_control', 'gym_pygame']:
     if max_episode_steps != 0: # Set max episode steps
       env = TimeLimit(env.unwrapped, max_episode_steps)
   return env
