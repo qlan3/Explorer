@@ -14,7 +14,7 @@ def maxmin():
     }
     return result_dict
   
-  def get_show_test_result_dict(result, config_idx):
+  def get_csv_result_dict(result, config_idx):
     result_dict = {
       'Env': result['Env'][0],
       'Agent': result['Agent'][0],
@@ -44,13 +44,13 @@ def maxmin():
   plotter.merge_allIndex('Train')
   plotter.plot_results('Train', title)
   plotter.process_result('Train', get_process_result_dict)
-  plotter.csv_results('Train', get_show_test_result_dict)
+  plotter.csv_results('Train', get_csv_result_dict)
 
   
   plotter.merge_allIndex('Test')
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
-  plotter.csv_results('Test', get_show_test_result_dict)
+  plotter.csv_results('Test', get_csv_result_dict)
 
   indexList = [1, 2, 3, 4]
   plotter.plot_indexList(indexList, 'Train', title)
