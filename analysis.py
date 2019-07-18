@@ -1,38 +1,65 @@
 import os
-from utils.plot import *
-
-show = False
-merged = True
-topKRun = 0
-imgType = 'png'
-test_result_label = 'Average Return'
-train_result_label = 'Rolling Return'
+from utils.plot import Plotter
 
 def maxmin():
-  # game = 'Pixelcopter'
-  # game = 'LunarLander'
-  # game = 'Catcher'
-  for agent in ['MaxminDQN', 'DQN', 'DDQN']:
-    for game in ['Pixelcopter', 'Catcher', 'LunarLander']:
-      merge_game_agent_allIndex(game, agent, mode='Test')
-      merge_game_agent_allIndex(game, agent, mode='Train')
-      sort_merged_test_result(game, agent)
-      show_results(game, agent, 'Test', test_result_label, show, topKRun, imgType)
-      show_results(game, agent, 'Train', train_result_label, show, topKRun, imgType)
+  def change_hue_label(exp, hue_label, config_idx, mode):
+    return f'[{exp}]-{mode} {hue_label} {config_idx}'
 
+  def get_process_result_dict(result, config_idx):
+    result_dict = {
+      'Env': result['Env'][0],
+      'Agent': result['Agent'][0],
+      'Config Index': config_idx,
+      'Return (mean)': result['Return'].mean()
+    }
+    return result_dict
+  
+  def get_show_test_result_dict(result, config_idx):
+    result_dict = {
+      'Env': result['Env'][0],
+      'Agent': result['Agent'][0],
+      'Config Index': config_idx,
+      'Return (mean)': result['Return (mean)'].mean(),
+      'Return (se)': result['Return (mean)'].sem(ddof=0)
+      }
+    return result_dict
+
+  cfg = {
+    'exp': 'test',
+    'merged': True,
+    'x_label': 'Step',
+    'y_label': 'Average Return',
+    'hue_label': 'Agent',
+    'show': False,
+    'imgType': 'png',
+    'ci': 68,
+    'EMA': True,
+    'sweep_keys': ['lr', 'target_networks_num'],
+    'sort_by': ['Return (mean)', 'Return (se)'],
+    'ascending': [False, True]
+  }
+  plotter = Plotter(cfg)
+  title = 'Pixelcopter'
+  
+  plotter.merge_allIndex('Train')
+  plotter.plot_results('Train', title)
+  plotter.process_result('Train', get_process_result_dict)
+  plotter.csv_results('Train', get_show_test_result_dict)
+
+  
+  plotter.merge_allIndex('Test')
+  plotter.plot_results('Test', title)
+  plotter.process_result('Test', get_process_result_dict)
+  plotter.csv_results('Test', get_show_test_result_dict)
+
+  indexList = [1, 2, 3, 4]
+  plotter.plot_indexList(indexList, 'Train', title)
+  plotter.plot_indexList(indexList, 'Test', title)
+  
+  exp = 'test'
+  expIndexList = [[exp, 4, 'Train'], [exp, 4, 'Test']]
+  image_name = 'test'
+  plotter.plot_expIndexList(expIndexList, change_hue_label, title, image_name)
+  
 if __name__ == "__main__":
   maxmin()
-  # unfinished_index('LunarLander', 'MaxminDQN', runs=20)
-  '''
-  game = 'Pixelcopter'
-  agentIndexList = [['DQN', 5], ['DDQN', 5], ['MaxminDQN', 32]]
-  plot_game_agentIndexList(game, agentIndexList, game, train_result_label, show, merged, topKRun, imgType)
-  
-  game = 'Catcher'
-  agentIndexList = [['DQN', 4], ['DDQN', 4], ['MaxminDQN', 25]]
-  plot_game_agentIndexList(game, agentIndexList, game, train_result_label, show, merged, topKRun, imgType)
-  
-  game = 'LunarLander'
-  agentIndexList = [['DQN', 3], ['DDQN', 3], ['MaxminDQN', 14]]
-  plot_game_agentIndexList(game, agentIndexList, game, train_result_label, show, merged, topKRun, imgType)
-  '''

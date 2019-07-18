@@ -9,6 +9,7 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 - Deep Q-Learning (DQN)
 - Double Deep Q-learning (DDQN)
 - Maxmin Deep Q-learning (MaxminDQN)
+- Averaged Deep Q-learning (AveragedDQN)
 
 
 # References

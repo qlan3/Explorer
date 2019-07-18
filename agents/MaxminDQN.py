@@ -9,12 +9,12 @@ class MaxminDQN(VanillaDQN):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.target_network_update_freqency = cfg.target_network_update_freqency
-    self.k = cfg.target_networks_num # number of target networks
+    self.target_network_update_freqency = cfg['target_network_update_freqency']
+    self.k = cfg['agent']['target_networks_num'] # number of target networks
     # Create target Q value network
     self.Q_net_target = [None] * self.k
     for i in range(self.k):
-      self.Q_net_target[i] = self.creatNN(cfg.input_type).to(self.device)
+      self.Q_net_target[i] = self.creatNN(cfg['env']['input_type']).to(self.device)
       # Load target Q value network
       self.Q_net_target[i].load_state_dict(self.Q_net.state_dict())
       self.Q_net_target[i].eval()

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 # Get node
-salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem-per-cpu=1G
+salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem-per-cpu=512M
+salloc --time=24:0:0 --cpus-per-task=48 --account=rrg-whitem --mem-per-cpu=512M
+salloc --time=24:0:0 --cpus-per-task=48 --account=def-whitem --mem-per-cpu=512M
+
 
 # Load singularity
 module load singularity/2.6
@@ -17,6 +20,9 @@ singularity shell -B /project ../explorer-env.img
 
 # kill 
 killall singularity parallel python
+
+# Tensorboard
+tensorboard --logdir=./logs/ --host localhost
 
 # Run
 tmux new -s catcher-dqn

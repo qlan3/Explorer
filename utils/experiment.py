@@ -19,14 +19,15 @@ class Experiment(object):
     self.train_result = None
     self.test_result = None
     self.cfg = copy.deepcopy(cfg)
-    self.config_idx = cfg.config_idx
-    self.game = cfg.game
-    if self.cfg.generate_random_seed:
-      self.cfg.seed = np.random.randint(int(1e6))
-    self.train_log_path = self.cfg.train_log_path
-    self.test_log_path = self.cfg.test_log_path
-    self.model_path = self.cfg.model_path
-    self.cfg_path = self.cfg.cfg_path
+    self.config_idx = cfg['config_idx']
+    self.env_name = cfg['env']['name']
+    self.agent_name = cfg['agent']['name']
+    if self.cfg['generate_random_seed']:
+      self.cfg['seed'] = np.random.randint(int(1e6))
+    self.train_log_path = self.cfg['train_log_path']
+    self.test_log_path = self.cfg['test_log_path']
+    self.model_path = self.cfg['model_path']
+    self.cfg_path = self.cfg['cfg_path']
     self.save_config()
 
   def run(self):
@@ -35,14 +36,12 @@ class Experiment(object):
     '''
     set_one_thread()
     self.start_time = time.time()
-    set_random_seed(self.cfg.seed)
-    self.agent = getattr(agents, self.cfg.agent)(self.cfg)
-    self.agent.env.seed(self.cfg.seed)
-    # Train
-    self.train_result = self.agent.run_episodes(mode='Train', render=self.cfg.render)
+    set_random_seed(self.cfg['seed'])
+    self.agent = getattr(agents, self.agent_name)(self.cfg)
+    self.agent.env.seed(self.cfg['seed'])
+    # Train && Test
+    self.train_result, self.test_result = self.agent.run_steps(render=self.cfg['render'])
     self.save_results(mode='Train')
-    # Test
-    self.test_result = self.agent.run_episodes(mode='Test', render=self.cfg.render)
     self.save_results(mode='Test')
     # Save model
     self.save_model()
@@ -63,8 +62,7 @@ class Experiment(object):
     self.agent.Q_net.load_state_dict(torch.load(self.model_path))
 
   def save_config(self):
-    cfg_json = json.dumps(self.cfg.__dict__, indent=2)
-    # print(cfg_json, end='\n')
+    cfg_json = json.dumps(self.cfg, indent=2)
     f = open(self.cfg_path, 'w')
     f.write(cfg_json)
     f.close()

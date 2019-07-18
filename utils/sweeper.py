@@ -5,7 +5,6 @@ import argparse
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
-from utils.config import Config
 
 class Sweeper(object):
   '''
@@ -15,43 +14,82 @@ class Sweeper(object):
   def __init__(self, config_file):
     with open(config_file, 'r') as f:
       self.config_dicts = json.load(f)
-    self.total_combinations = 1
-    self.set_total_combinations()
-    # print('Total combinations:', self.total_combinations)
+    self.get_num_combinations_of_dict(self.config_dicts)
 
-  def set_total_combinations(self):
+  def get_num_combinations_of_dict(self, config_dict):
     '''
-    Calculate total combinations of configurations
+    Get # of combinations for configurations in a config dict
     '''
-    self.total_combinations = 1
-    for _, values in self.config_dicts.items():
-      self.total_combinations *= len(values)
+    assert type(config_dict) == dict, 'Config file must be a dict!'
+    num_combinations_of_dict = 1
+    for key, values in config_dict.items():
+      num_combinations_of_list = self.get_num_combinations_of_list(values)
+      num_combinations_of_dict *= num_combinations_of_list
+    config_dict['num_combinations'] = num_combinations_of_dict
 
-  def generate_config_from_idx(self, idx):
+  def get_num_combinations_of_list(self, config_list):
     '''
-    Generate the Config object and config dict given the index.
-    Index is from 1 to # of total conbinations.
+    Get # of combinations for configurations in a config list
     '''
-    cfg = Config()
-    # Set config index and total combinations
-    setattr(cfg, 'config_idx', idx)
-    setattr(cfg, 'total_combinations', self.total_combinations)
-    idx = (idx-1) % self.total_combinations
-    
-    for key, values in self.config_dicts.items():
-      value_len = len(values)
-      value = values[idx % value_len]
-      if key in ['lr'] and type(value) == str:
-        value = eval(value)
-      setattr(cfg, key, value)
-      idx = idx // value_len
-    
+    assert type(config_list) == list, 'Elements in a config dict must be a list!'
+    num_combinations_of_list = 0
+    for value in config_list:
+      if type(value) == dict:
+        if not('num_combinations' in value.keys()):
+          self.get_num_combinations_of_dict(value)
+        num_combinations_of_list += value['num_combinations']
+      else:
+        num_combinations_of_list += 1
+    return num_combinations_of_list
+
+  def generate_config_for_idx(self, idx):
+    '''
+    Generate a config dict for the index.
+    Index is from 1 to # of conbinations.
+    '''
+    # Get config dict given the index
+    cfg = self.get_dict_value(self.config_dicts, (idx-1) % self.config_dicts['num_combinations'])
+    # Set config index
+    cfg['config_idx'] = idx
+    # Set number of combinations
+    cfg['num_combinations'] = self.config_dicts['num_combinations']
+
     return cfg
 
+  def get_list_value(self, config_list, idx):
+    for value in config_list:
+      if type(value) == dict:
+        if idx + 1 - value['num_combinations'] <= 0:
+          return self.get_dict_value(value, idx)
+        else:
+          idx -= value['num_combinations']
+      else:
+        if idx == 0:
+          return value
+        else:
+          idx -= 1
+  
+  def get_dict_value(self, config_dict, idx):
+    cfg = dict()
+    for key, values in config_dict.items():
+      if key == 'num_combinations':
+        continue
+      num_combinations_of_list = self.get_num_combinations_of_list(values)
+      value = self.get_list_value(values, idx % num_combinations_of_list)
+      cfg[key] = value
+      idx = idx // num_combinations_of_list
+    return cfg
+  
+  def print_config_dict(self, config_dict):
+    cfg_json = json.dumps(config_dict, indent=2)
+    print(cfg_json, end='\n')
+
+
 if __name__ == "__main__":
-  for game in os.listdir('./configs/'):
-    game_dir = os.path.join('./configs/', game)
-    for agent_config in os.listdir(game_dir):
-      config_file = os.path.join(game_dir, agent_config)
-      sweeper = Sweeper(config_file)
-      print(f'Total Combinations for {config_file}: {sweeper.total_combinations}')
+  for agent_config in os.listdir('./configs/'):
+    config_file = os.path.join('./configs/', agent_config)
+    if not os.path.isfile(config_file): continue
+    sweeper = Sweeper(config_file)
+    # sweeper.print_config_dict(sweeper.config_dicts)
+    # sweeper.print_config_dict(sweeper.generate_config_for_idx(213))
+    print(f'Number of total combinations in {agent_config}:', sweeper.config_dicts['num_combinations'])

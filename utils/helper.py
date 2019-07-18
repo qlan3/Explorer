@@ -6,6 +6,7 @@ import psutil
 import numpy as np
 import datetime
 
+
 def get_time_str():
   return datetime.datetime.now().strftime("%y.%m.%d-%H:%M:%S")
 

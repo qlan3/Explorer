@@ -22,60 +22,63 @@ class VanillaDQN(BaseAgent):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.game_name = cfg.game
-    self.agent_name = cfg.agent
-    self.max_episode_steps = int(cfg.max_episode_steps)
-    self.env = make_env(cfg.env, max_episode_steps=self.max_episode_steps)
-    self.config_idx = cfg.config_idx
-    self.device = torch.device(cfg.device)
-    self.batch_size = cfg.batch_size
-    self.discount = cfg.discount
-    self.train_max_episodes = int(cfg.train_max_episodes)
-    self.test_max_episodes = int(cfg.test_max_episodes)
-    self.display_interval = cfg.display_interval
-    self.gradient_clip = cfg.gradient_clip
+    self.env_name = cfg['env']['name']
+    self.agent_name = cfg['agent']['name']
+    self.max_episode_steps = int(cfg['env']['max_episode_steps'])
+    self.env = make_env(cfg['env']['name'], max_episode_steps=self.max_episode_steps)
+    self.config_idx = cfg['config_idx']
+    self.device = torch.device(cfg['device'])
+    self.batch_size = cfg['batch_size']
+    self.discount = cfg['discount']
+    self.train_steps = int(cfg['env']['train_steps'])
+    self.test_per_episodes = int(cfg['env']['test_per_episodes'])
+    self.display_interval = cfg['display_interval']
+    self.gradient_clip = cfg['gradient_clip']
     self.action_size = self.get_action_size()
     self.state_size = self.get_state_size()
-    self.rolling_score_window = cfg.rolling_score_window
-    self.history_length = cfg.history_length
-    self.sgd_update_frequency = cfg.sgd_update_frequency
-    self.show_tb = cfg.show_tb
+    self.rolling_score_window = {
+      'Train': cfg['rolling_score_window'],
+      'Test': int(cfg['rolling_score_window'] / self.test_per_episodes)
+    }
+    self.history_length = cfg['history_length']
+    self.sgd_update_frequency = cfg['sgd_update_frequency']
+    self.show_tb = cfg['show_tb']
     
-    if cfg.input_type == 'pixel':
-      self.layer_dims = [cfg.feature_dim] + cfg.hidden_layers + [self.action_size]
+    if cfg['env']['input_type'] == 'pixel':
+      self.layer_dims = [cfg['feature_dim']] + cfg['hidden_layers'] + [self.action_size]
       self.state_normalizer = ImageNormalizer()
       self.reward_normalizer = SignNormalizer()
-    elif cfg.input_type == 'feature':
-      self.layer_dims = [self.state_size] + cfg.hidden_layers + [self.action_size]
+    elif cfg['env']['input_type'] == 'feature':
+      self.layer_dims = [self.state_size] + cfg['hidden_layers'] + [self.action_size]
       self.state_normalizer = RescaleNormalizer()
       self.reward_normalizer = RescaleNormalizer()
     else:
-      raise ValueError(f'{cfg.input_type} is not supported.')
+      raise ValueError(f"{cfg['env']['input_type']} is not supported.")
     # Create Q value network
-    self.Q_net = self.creatNN(cfg.input_type).to(self.device)
+    self.Q_net = self.creatNN(cfg['env']['input_type']).to(self.device)
     # Set replay buffer
-    self.replay_buffer = getattr(components.replay, cfg.memory_type)(cfg.memory_size, self.batch_size, self.device)
+    self.replay_buffer = getattr(components.replay, cfg['memory_type'])(cfg['memory_size'], self.batch_size, self.device)
     # Set exploration strategy
     epsilon = {
-      'steps': float(cfg.epsilon_steps),
-      'start': cfg.epsilon_start,
-      'end': cfg.epsilon_end,
-      'decay': cfg.epsilon_decay
+      'steps': float(cfg['epsilon_steps']),
+      'start': cfg['epsilon_start'],
+      'end': cfg['epsilon_end'],
+      'decay': cfg['epsilon_decay']
       }
-    self.exploration_steps = cfg.exploration_steps
+    self.exploration_steps = cfg['exploration_steps']
     # Set exploration strategy
-    self.exploration = getattr(components.exploration, cfg.exploration_type)(cfg.exploration_steps, epsilon)
+    self.exploration = getattr(components.exploration, cfg['exploration_type'])(cfg['exploration_steps'], epsilon)
     # Set loss function
-    self.loss = getattr(torch.nn, cfg.loss)(reduction='mean')
+    self.loss = getattr(torch.nn, cfg['loss'])(reduction='mean')
     # Set optimizer
-    self.optimizer = getattr(torch.optim, cfg.optimizer)(self.Q_net.parameters(), cfg.lr)
+    self.optimizer = getattr(torch.optim, cfg['optimizer'])(self.Q_net.parameters(), cfg['lr'])
     # Set tensorboard
     if self.show_tb: self.logger.init_writer()
     
   def creatNN(self, input_type):
     if input_type == 'pixel':
       feature_net = Conv2d_NN(in_channels=self.history_length, feature_dim=self.layer_dims[0])
-      value_net = MLP(layer_dims=self.layer_dims)
+      value_net = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
       NN = NetworkGlue(feature_net, value_net)
     elif input_type == 'feature':
       NN = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
@@ -93,39 +96,39 @@ class VanillaDQN(BaseAgent):
     self.total_episode_reward = 0
     self.episode_step_count = 0
 
-  def run_episodes(self, mode='Train', render=False):
+  def run_steps(self, render=False):
     # Run for multiple episodes
     self.step_count = 0
     self.episode_count = 0
-    result = []
-    total_episode_reward_list = []
-
-    if mode == 'Train':
-      max_episodes = self.train_max_episodes
-    elif mode == 'Test':
-      max_episodes = self.test_max_episodes
-      # self.Q_net.eval() # Set network in evaluation mode
-    
-    while self.episode_count < max_episodes:
+    result = {'Train': [], 'Test': []}
+    total_episode_reward_list = {'Train': [], 'Test': []}
+    mode = 'Train'
+    while self.step_count < self.train_steps:
+      if mode == 'Train' and self.episode_count % self.test_per_episodes == 0:
+        mode = 'Test'
+        self.Q_net.eval() # Set network to evaluation mode
+      else:
+        mode = 'Train'
+        self.Q_net.train() # Set network back to training mode
       # Run for one episode
       self.run_episode(mode, render)
       # Save result
-      total_episode_reward_list.append(self.total_episode_reward)
-      rolling_score = np.mean(total_episode_reward_list[-1 * self.rolling_score_window:])
-      result_dict = {'Game': self.game_name,
+      total_episode_reward_list[mode].append(self.total_episode_reward)
+      rolling_score = np.mean(total_episode_reward_list[mode][-1 * self.rolling_score_window[mode]:])
+      result_dict = {'Env': self.env_name,
                      'Agent': self.agent_name,
                      'Episode': self.episode_count, 
                      'Step': self.step_count, 
                      'Return': self.total_episode_reward,
-                     'Rolling Return': rolling_score}
-      result.append(result_dict)
+                     'Average Return': rolling_score}
+      result[mode].append(result_dict)
       if self.show_tb:
         self.logger.add_scalar(f'{mode}_Return', self.total_episode_reward, self.step_count)
-        self.logger.add_scalar(f'{mode}_Rolling_Return', rolling_score, self.step_count)
+        self.logger.add_scalar(f'{mode}_Average_Return', rolling_score, self.step_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Rolling Return({self.rolling_score_window})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
-    
-    return pd.DataFrame(result)
+        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.total_episode_reward:.2f}')
+
+    return pd.DataFrame(result['Train']), pd.DataFrame(result['Test'])
 
   def run_episode(self, mode, render):
     # Run for one episode
@@ -138,13 +141,15 @@ class VanillaDQN(BaseAgent):
       self.next_state = self.state_normalizer(self.next_state)
       self.reward = self.reward_normalizer(self.reward)
       if mode == 'Train':
-        if self.time_to_learn(): self.learn() # Update policy
+        if self.time_to_learn():
+          self.learn() # Update policy
         self.save_experience()
-      self.state = self.next_state
-      self.episode_step_count += 1
-      self.step_count += 1
+        self.episode_step_count += 1
+        self.step_count += 1
       self.total_episode_reward += self.reward
-    self.episode_count += 1
+      self.state = self.next_state
+    if mode == 'Train':
+      self.episode_count += 1
 
   def get_action(self, mode='Train'):
     '''
