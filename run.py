@@ -12,7 +12,7 @@ def main():
   # Check time interval in minutes
   cfg['check_time_interval'] = 5
   # cluster_name: cluster_capacity
-  cfg['clusters'] = {'Mp2': 1000}
+  cfg['clusters'] = {'Graham': 1000}
 
   submitter = Submitter(cfg)
   submitter.submit()
