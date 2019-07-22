@@ -12,7 +12,16 @@ class Submitter(object):
   
   def submit_jobs(self, num_jobs, cluster_name):
     # Get job indexes and submit jobs
-    job_indexes = ','.join(self.job_list[:num_jobs])
+    flag = True
+    for i in range(num_jobs):
+      if int(self.job_list[i]) != int(self.job_list[0]) + i:
+        flag = False
+        break
+    if flag == True:
+      job_indexes = f'{self.job_list[0]}-{self.job_list[num_jobs-1]}'
+    else:
+      job_indexes = ','.join(self.job_list[:num_jobs])
+
     bash_script = f'cd {self.project_dir}; sbatch --array={job_indexes} {self.script_path}'
     myCmd = os.popen(bash_script).read()
     print(myCmd)

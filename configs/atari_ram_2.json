@@ -1,21 +1,16 @@
 {
   "env": [
     {
-      "name": ["BeamRider-ram-v4", "Enduro-ram-v4", "Breakout-ram-v4",
-               "Pong-ram-v4", "Qbert-ram-v4", "Seaquest-ram-v4", "SpaceInvaders-ram-v4"],
-      "max_episode_steps": [1e5],
-      "train_steps": [3e7],
+      "name": ["BeamRider-ram-v4", "Enduro-ram-v4", "Pong-ram-v4",
+               "Qbert-ram-v4", "Seaquest-ram-v4", "SpaceInvaders-ram-v4"],
+      "train_steps": [1e8],
       "test_per_episodes": [10],
       "input_type": ["feature"]
     }
   ],
   "agent": [
     {
-      "name": ["DQN", "DDQN"]
-    },
-    {
-      "name": ["MaxminDQN", "AveragedDQN"],
-      "target_networks_num": [8]
+      "name": ["DQN"]
     }
   ],
   "device": ["cpu"],
@@ -38,7 +33,7 @@
   "seed": [1],
   "show_tb": [true],
   "gradient_clip": [5],
-  "target_network_update_freqency": [1000],
+  "target_network_update_freqency": [10, 100, 1000, 10000],
   "sgd_update_frequency": [4],
   "generate_random_seed": [true]
 }
