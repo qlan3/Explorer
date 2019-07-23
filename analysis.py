@@ -10,7 +10,7 @@ def maxmin():
       'Env': result['Env'][0],
       'Agent': result['Agent'][0],
       'Config Index': config_idx,
-      'Return (mean)': result['Return'][-100:].mean()
+      'Return (mean)': result['Return'][-1000:].mean()
     }
     return result_dict
   
@@ -25,7 +25,7 @@ def maxmin():
     return result_dict
 
   cfg = {
-    'exp': 'copter',
+    'exp': 'atari_ram_3',
     'merged': True,
     'x_label': 'Step',
     'y_label': 'Average Return',
@@ -34,31 +34,34 @@ def maxmin():
     'imgType': 'png',
     'ci': 68,
     'EMA': True,
-    'sweep_keys': ['lr', 'target_networks_num'],
+    'sweep_keys': ['hidden_layers', 'lr'],
     'sort_by': ['Return (mean)', 'Return (se)'],
     'ascending': [False, True]
   }
   plotter = Plotter(cfg)
-  title = 'Pixelcopter'
+  title = 'Atari Ram'
   
   plotter.merge_allIndex('Train')
   plotter.plot_results('Train', title)
   plotter.process_result('Train', get_process_result_dict)
   plotter.csv_results('Train', get_csv_result_dict)
-
-  '''
+  
   plotter.merge_allIndex('Test')
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
-  
-  indexList = [1, 2, 3, 4]
-  plotter.plot_indexList(indexList, 'Train', title)
-  
-  exp = 'test'
-  expIndexList = [[exp, 4, 'Train'], [exp, 4, 'Test']]
-  image_name = 'test'
-  plotter.plot_expIndexList(expIndexList, change_hue_label, title, image_name)
+
   '''
+  indexList = [10, 22, 16]
+  title = 'Qbert-ram-v4'
+  plotter.plot_indexList(indexList, 'Train', title)
+
+  exp = 'atari_ram_2'
+  expIndexList = [[exp, 20, 'Train'], [exp, 2, 'Train'], [exp, 8, 'Train']]
+  title = 'Enduro-ram-v4'
+  image_name = 'Enduro-ram-v4'
+  plotter.plot_expIndexList(expIndexList, change_hue_label, title, image_name) 
+  '''
+  
 if __name__ == "__main__":
   maxmin()
