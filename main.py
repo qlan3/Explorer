@@ -11,7 +11,7 @@ def main(argv):
   # python main.py --config_file ./configs/LunarLander-DQN.json --config_idx 1
   # python main.py --config_file ./configs/Pixelcopter-DQN.json --config_idx 1
   # python main.py --config_file ./configs/Breakout-DQN.json --config_idx 1
-  # python main.py --config_file ./configs/minatar.json --config_idx 1
+  # python main.py --config_file ./configs/minatar_1.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--config_file', type=str, default='./configs/atari_ram1.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')

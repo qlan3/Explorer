@@ -32,7 +32,7 @@
   "exploration_steps": [5e3],
   "epsilon_steps": [1e5],
   "epsilon_start": [1.0],
-  "epsilon_end": [0.1],
+  "epsilon_end": [0.01],
   "loss": ["SmoothL1Loss"],
   "optimizer": [
     {
@@ -41,7 +41,7 @@
     }
   ],
   "batch_size": [32],
-  "display_interval": [100],
+  "display_interval": [1000],
   "rolling_score_window": [100],
   "discount": [0.99],
   "seed": [1],
