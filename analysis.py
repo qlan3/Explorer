@@ -25,7 +25,7 @@ def maxmin():
     return result_dict
 
   cfg = {
-    'exp': 'atari_ram_3',
+    'exp': 'minatar_1',
     'merged': True,
     'x_label': 'Step',
     'y_label': 'Average Return',
@@ -34,12 +34,12 @@ def maxmin():
     'imgType': 'png',
     'ci': 68,
     'EMA': True,
-    'sweep_keys': ['hidden_layers', 'lr'],
+    'sweep_keys': ['lr', 'target_networks_num'],
     'sort_by': ['Return (mean)', 'Return (se)'],
     'ascending': [False, True]
   }
   plotter = Plotter(cfg)
-  title = 'Atari Ram'
+  title = 'MinAtar'
   
   plotter.merge_allIndex('Train')
   plotter.plot_results('Train', title)
@@ -54,7 +54,8 @@ def maxmin():
   '''
   indexList = [10, 22, 16]
   title = 'Qbert-ram-v4'
-  plotter.plot_indexList(indexList, 'Train', title)
+  image_name = 'Qbert-ram-v4'
+  plotter.plot_indexList(indexList, 'Train', title, image_name)
 
   exp = 'atari_ram_2'
   expIndexList = [[exp, 20, 'Train'], [exp, 2, 'Train'], [exp, 8, 'Train']]

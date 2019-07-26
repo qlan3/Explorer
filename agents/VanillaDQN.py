@@ -40,13 +40,19 @@ class VanillaDQN(BaseAgent):
       'Train': cfg['rolling_score_window'],
       'Test': int(cfg['rolling_score_window'] / self.test_per_episodes)
     }
-    self.history_length = cfg['history_length']
+    if 'MinAtar' in self.env_name:
+      self.history_length = self.env.game.state_shape()[2]
+    else:
+      self.history_length = cfg['history_length']
     self.sgd_update_frequency = cfg['sgd_update_frequency']
     self.show_tb = cfg['show_tb']
     
     if cfg['env']['input_type'] == 'pixel':
       self.layer_dims = [cfg['feature_dim']] + cfg['hidden_layers'] + [self.action_size]
-      self.state_normalizer = ImageNormalizer()
+      if 'MinAtar' in self.env_name:
+        self.state_normalizer = RescaleNormalizer()
+      else:
+        self.state_normalizer = ImageNormalizer()
       self.reward_normalizer = SignNormalizer()
     elif cfg['env']['input_type'] == 'feature':
       self.layer_dims = [self.state_size] + cfg['hidden_layers'] + [self.action_size]
@@ -71,13 +77,16 @@ class VanillaDQN(BaseAgent):
     # Set loss function
     self.loss = getattr(torch.nn, cfg['loss'])(reduction='mean')
     # Set optimizer
-    self.optimizer = getattr(torch.optim, cfg['optimizer'])(self.Q_net.parameters(), cfg['lr'])
+    self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.Q_net.parameters(), **cfg['optimizer']['kwargs'])
     # Set tensorboard
     if self.show_tb: self.logger.init_writer()
-    
+
   def creatNN(self, input_type):
     if input_type == 'pixel':
-      feature_net = Conv2d_NN(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+      if 'MinAtar' in self.env_name:
+        feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+      else:
+        feature_net = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
       value_net = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
       NN = NetworkGlue(feature_net, value_net)
     elif input_type == 'feature':
@@ -191,7 +200,8 @@ class VanillaDQN(BaseAgent):
     self.logger.debug(f'Step {self.step_count}: loss={loss.item()}')
     self.optimizer.zero_grad()
     loss.backward()
-    nn.utils.clip_grad_norm_(self.Q_net.parameters(), self.gradient_clip)
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.Q_net.parameters(), self.gradient_clip)
     self.optimizer.step()
 
   def compute_q_target(self, next_states, rewards, dones):

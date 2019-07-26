@@ -13,14 +13,22 @@ def make_atari(env, max_episode_steps):
   print('set time limit:', max_episode_steps)
   env = NoopResetEnv(env, noop_max=30)
   env = MaxAndSkipEnv(env, skip=4)
-  if max_episode_steps != 0:
+  if max_episode_steps > 0:
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   return env
 
 def make_atari_ram(env, max_episode_steps, scale=True):
   env = NoopResetEnv(env, noop_max=30)
   env = MaxAndSkipEnv(env, skip=4)
-  if max_episode_steps != 0:
+  if max_episode_steps > 0:
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
+  if scale:
+    env = ScaledFloatFrame(env)
+  return env
+
+def make_minatar(env, max_episode_steps, scale=True):
+  env = MaxAndSkipEnv(env, skip=4)
+  if max_episode_steps > 0:
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   if scale:
     env = ScaledFloatFrame(env)
@@ -295,7 +303,7 @@ class TransposeImage(gym.ObservationWrapper):
     self.observation_space = Box(
       self.observation_space.low[0, 0, 0],
       self.observation_space.high[0, 0, 0],
-      [obs_shape[2], obs_shape[1], obs_shape[0]],
+      [obs_shape[2], obs_shape[0], obs_shape[1]],
       dtype=self.observation_space.dtype)
 
   def observation(self, observation):

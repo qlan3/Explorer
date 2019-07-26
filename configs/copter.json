@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["Pixelcopter-v0"],
+      "name": ["Pixelcopter-PLE-v0"],
       "max_episode_steps": [500],
       "train_steps": [4e5],
       "test_per_episodes": [10],

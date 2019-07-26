@@ -300,7 +300,7 @@ class Plotter(object):
       image_path = f'./logs/{self.exp}/{config_idx}/{config_idx}_{mode}_{self.y_label}.{self.imgType}'
     self.plot_vanilla(result, title, image_path)
 
-  def plot_indexList(self, indexList, mode, title):
+  def plot_indexList(self, indexList, mode, title, image_name):
     '''
     Func: Given self.exp and config index list
     - merged == True: plot merged train result for all runs.
@@ -321,9 +321,9 @@ class Plotter(object):
     make_dir(f'./logs/{self.exp}/0/')
     # Plot
     if self.merged:
-      image_path = f'./logs/{self.exp}/0/{mode}_indexList_merged.{self.imgType}'
+      image_path = f'./logs/{self.exp}/0/{mode}_{image_name}_indexList_merged.{self.imgType}'
     else:
-      image_path = f'./logs/{self.exp}/0/{mode}_indexList.{self.imgType}'
+      image_path = f'./logs/{self.exp}/0/{mode}_{image_name}_indexList.{self.imgType}'
     self.plot_vanilla(results, title, image_path)
 
   def plot_expIndexList(self, expIndexList, change_hue_label, title, image_name):

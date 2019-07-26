@@ -1,6 +1,6 @@
 {
   "game": ["Catcher"],
-  "env": ["Catcher-v0"],
+  "env": ["Catcher-PLE-v0"],
   "agent": ["DDQN"],
   "input_type": ["feature"],
   "device": ["cpu"],

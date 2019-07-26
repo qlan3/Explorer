@@ -1,6 +1,6 @@
 {
   "game": ["Pixelcopter"],
-  "env": ["Pixelcopter-v0"],
+  "env": ["Pixelcopter-PLE-v0"],
   "agent": ["DDQN"],
   "input_type": ["feature"],
   "device": ["cpu"],
