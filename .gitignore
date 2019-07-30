@@ -4,6 +4,7 @@
 # Logs
 *logs/
 *output/
+*diary*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

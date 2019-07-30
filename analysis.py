@@ -1,5 +1,5 @@
 import os
-from utils.plot import Plotter
+from utils.plot import Plotter, unfinished_index
 
 def maxmin():
   def change_hue_label(exp, hue_label, config_idx, mode):
@@ -25,15 +25,16 @@ def maxmin():
     return result_dict
 
   cfg = {
-    'exp': 'minatar_1',
+    'exp': 'minatar_2',
     'merged': True,
-    'x_label': 'Step',
+    'x_label': 'Epoch',
     'y_label': 'Average Return',
     'hue_label': 'Agent',
     'show': False,
     'imgType': 'png',
     'ci': 68,
-    'EMA': True,
+    'EMA': False,
+    'loc': 'lower right',
     'sweep_keys': ['lr', 'target_networks_num'],
     'sort_by': ['Return (mean)', 'Return (se)'],
     'ascending': [False, True]
@@ -51,18 +52,6 @@ def maxmin():
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
 
-  '''
-  indexList = [10, 22, 16]
-  title = 'Qbert-ram-v4'
-  image_name = 'Qbert-ram-v4'
-  plotter.plot_indexList(indexList, 'Train', title, image_name)
-
-  exp = 'atari_ram_2'
-  expIndexList = [[exp, 20, 'Train'], [exp, 2, 'Train'], [exp, 8, 'Train']]
-  title = 'Enduro-ram-v4'
-  image_name = 'Enduro-ram-v4'
-  plotter.plot_expIndexList(expIndexList, change_hue_label, title, image_name) 
-  '''
-  
 if __name__ == "__main__":
   maxmin()
+  #unfinished_index('minatar_2', 2)

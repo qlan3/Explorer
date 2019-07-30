@@ -17,13 +17,15 @@ def make_atari(env, max_episode_steps):
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   return env
 
-def make_atari_ram(env, max_episode_steps, scale=True):
+def make_atari_ram(env, max_episode_steps, scale=True, episode_life=True):
   env = NoopResetEnv(env, noop_max=30)
   env = MaxAndSkipEnv(env, skip=4)
   if max_episode_steps > 0:
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   if scale:
     env = ScaledFloatFrame(env)
+  if episode_life:
+    env = EpisodicLifeEnv(env)
   return env
 
 def make_minatar(env, max_episode_steps, scale=True):

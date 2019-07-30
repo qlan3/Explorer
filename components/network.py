@@ -5,7 +5,8 @@ import torch.nn.functional as F
 def layer_init(layer, w_scale=1.0):
   # Initialize all weights and biases in layer and return it
   # nn.init.orthogonal_(layer.weight.data)
-  nn.init.xavier_normal_(layer.weight.data, gain=1)
+  # nn.init.xavier_normal_(layer.weight.data, gain=1)
+  nn.init.kaiming_normal_(layer.weight.data, mode='fan_in', nonlinearity='relu')
   layer.weight.data.mul_(w_scale)
   nn.init.constant_(layer.bias.data, 0) # layer.bias.data.zero_()
   return layer
@@ -78,7 +79,7 @@ class Conv2d_MinAtar(nn.Module):
     def size_linear_unit(size, kernel_size=3, stride=1):
       return (size - (kernel_size - 1) - 1) // stride + 1
     linear_input_size = size_linear_unit(10) * size_linear_unit(10) * 16
-    self.fc2 = nn.Linear(linear_input_size, feature_dim)
+    self.fc2 = layer_init(nn.Linear(linear_input_size, feature_dim))
     
   def forward(self, x):
     y = F.relu(self.conv1(x))
