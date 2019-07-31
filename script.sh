@@ -4,7 +4,7 @@
 salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem-per-cpu=512M
 salloc --time=24:0:0 --cpus-per-task=48 --account=rrg-whitem --mem-per-cpu=512M
 salloc --time=24:0:0 --cpus-per-task=48 --account=def-whitem --mem-per-cpu=512M
-salloc --time=1:0:0 --cpus-per-task=1 --account=def-whitem --mem-per-cpu=4000M
+salloc --time=0:30:0 --cpus-per-task=1 --account=def-whitem --mem-per-cpu=4000M
 
 # Check Slurm
 scontrol show config | grep Max
@@ -32,4 +32,8 @@ killall singularity parallel python
 tensorboard --logdir=./logs/ --host localhost
 
 # Run
-python main.py --config_file ./configs/minatar_1.json --config_idx 1
+python main.py --config_file ./configs/minatar_2.json --config_idx 1
+parallel --eta --ungroup python main.py --config_file ./configs/minatar_2.json --config_idx {1} ::: $(seq 1 4)
+
+# Speed
+Beluga (60 steps/s) > Graham (35 steps/s) = Cedar (35 steps/s) > Mp2 (10 steps/s)

@@ -37,12 +37,12 @@ class Plotter(object):
     '''
     result_list = []
     while True:
-      result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.csv'
+      result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.feather'
       # If result file doesn't exist, break
       if not os.path.isfile(result_file):
         break
       # Read result file
-      result = pd.read_csv(result_file)
+      result = pd.read_feather(result_file)
       # Add config index as a column
       result['Config Index'] = config_idx
       result_list.append(result)
@@ -90,8 +90,8 @@ class Plotter(object):
         print(f'[{self.exp}]: No {mode} results for {config_idx}')
         continue
       # Save results
-      results_file = f'./logs/{self.exp}/{config_idx}/result_{mode}_merged.csv'
-      results.to_csv(results_file, index=False)
+      results_file = f'./logs/{self.exp}/{config_idx}/result_{mode}_merged.feather'
+      results.to_feather(results_file)
 
   def process_result(self, mode, get_result_dict):
     '''
@@ -103,18 +103,18 @@ class Plotter(object):
       new_results = None
       config_idx = config_idx_
       while True:
-        result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.csv'
+        result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.feather'
         if not os.path.isfile(result_file): break
-        result = pd.read_csv(result_file)
+        result = pd.read_feather(result_file)
         new_result = pd.DataFrame([get_result_dict(result, config_idx)])
         new_results = new_result if new_results is None else new_results.append(new_result, ignore_index=True)
         config_idx += self.total_combination
       # Save sorted results
       if new_results is not None:
-        new_results_file = f'./logs/{self.exp}/{config_idx_}/result_{mode}_merged_processed.csv'
-        new_results.to_csv(new_results_file, index=False)
+        new_results_file = f'./logs/{self.exp}/{config_idx_}/result_{mode}_merged_processed.feather'
+        new_results.to_feather(new_results_file)
       else:
-        print(f'[{self.exp}]: No result_{mode}.csv file for {config_idx}')    
+        print(f'[{self.exp}]: No result_{mode}.feather file for {config_idx}')    
 
   def get_result(self, exp, config_idx, mode, processed=False):
     '''
@@ -123,17 +123,17 @@ class Plotter(object):
     - merged == False: Return unmerged result of one single run.
     '''
     if self.merged == False:
-      result_file = f'./logs/{exp}/{config_idx}/result_{mode}.csv'
+      result_file = f'./logs/{exp}/{config_idx}/result_{mode}.feather'
     elif self.merged == True:
       if processed:
-        result_file = f'./logs/{exp}/{config_idx}/result_{mode}_merged_processed.csv'
+        result_file = f'./logs/{exp}/{config_idx}/result_{mode}_merged_processed.feather'
       elif mode in ['Train', 'Valid', 'Test']:
-        result_file = f'./logs/{exp}/{config_idx}/result_{mode}_merged.csv'
+        result_file = f'./logs/{exp}/{config_idx}/result_{mode}_merged.feather'
 
     if not os.path.isfile(result_file):
       print(f'[{exp}]: No such file <{result_file}>')
       return None
-    result = pd.read_csv(result_file)
+    result = pd.read_feather(result_file)
     if result is None:
       print(f'[{exp}]: No result in file <{result_file}>')
       return None
@@ -257,7 +257,7 @@ class Plotter(object):
     results = pd.DataFrame(results_list)
     # Sort by mean and ste of test result label value
     sorted_results = results.sort_values(by=self.sort_by, ascending=self.ascending)
-    # Save sorted test results into a .csv file
+    # Save sorted test results into a .feather file
     sorted_results_file = f'./logs/{self.exp}/0/{mode}_results.csv'
     sorted_results.to_csv(sorted_results_file, index=False)
 
@@ -376,12 +376,12 @@ def get_total_combination(exp):
 
 def unfinished_index(exp, runs):
   '''
-  Find unfinished config indexes based on the existence of file `result_Test.csv`
+  Find unfinished config indexes based on the existence of file `result_Test.feather`
   '''
   largest_config_idx = runs * get_total_combination(exp)
   print(f'[{exp}]: ', end=' ')
   for config_idx in range(1, largest_config_idx + 1):
-    result_file = f'./logs/{exp}/{config_idx}/result_Test.csv'
+    result_file = f'./logs/{exp}/{config_idx}/result_Test.feather'
     if not os.path.isfile(result_file):
       print(config_idx, end=', ')
   print()

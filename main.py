@@ -32,8 +32,8 @@ def main(argv):
   # Set experiment name and log paths
   cfg['exp'] = args.config_file.split('/')[-1].split('.')[0]
   logs_dir = f"./logs/{cfg['exp']}/{cfg['config_idx']}/"
-  train_log_path = logs_dir + 'result_Train.csv'
-  test_log_path = logs_dir + 'result_Test.csv'
+  train_log_path = logs_dir + 'result_Train.feather'
+  test_log_path = logs_dir + 'result_Test.feather'
   model_path = logs_dir + 'model.pt'
   cfg_path = logs_dir + 'config.json'
   cfg['logs_dir'] = logs_dir

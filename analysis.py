@@ -27,7 +27,7 @@ def maxmin():
   cfg = {
     'exp': 'minatar_2',
     'merged': True,
-    'x_label': 'Epoch',
+    'x_label': 'Episode',
     'y_label': 'Average Return',
     'hue_label': 'Agent',
     'show': False,
@@ -51,6 +51,11 @@ def maxmin():
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
+  
+  expIndexModeList = [['minatar_2', 1, 'Train'], ['minatar_2', 2, 'Train'], ['minatar_2', 3, 'Train']]
+  title = 'test'
+  image_name = 'test_image'
+  plotter.plot_expIndexModeList(expIndexModeList, change_hue_label, title, image_name)
 
 if __name__ == "__main__":
   maxmin()

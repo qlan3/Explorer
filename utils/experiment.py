@@ -16,16 +16,14 @@ class Experiment(object):
   Train the agent to play the game.
   '''
   def __init__(self, cfg):
-    self.train_result = None
-    self.test_result = None
+    self.results = {'Train': None, 'Test': None}
     self.cfg = copy.deepcopy(cfg)
     self.config_idx = cfg['config_idx']
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
     if self.cfg['generate_random_seed']:
       self.cfg['seed'] = np.random.randint(int(1e6))
-    self.train_log_path = self.cfg['train_log_path']
-    self.test_log_path = self.cfg['test_log_path']
+    self.log_path = {'Train': self.cfg['train_log_path'], 'Test': self.cfg['test_log_path']}
     self.model_path = self.cfg['model_path']
     self.cfg_path = self.cfg['cfg_path']
     self.save_config()
@@ -40,7 +38,7 @@ class Experiment(object):
     self.agent = getattr(agents, self.agent_name)(self.cfg)
     self.agent.env.seed(self.cfg['seed'])
     # Train && Test
-    self.train_result, self.test_result = self.agent.run_steps(render=self.cfg['render'])
+    self.results['Train'], self.results['Test'] = self.agent.run_steps(render=self.cfg['render'])
     self.save_results(mode='Train')
     self.save_results(mode='Test')
     # Save model
@@ -50,10 +48,9 @@ class Experiment(object):
     print(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')
 
   def save_results(self, mode):
-    if mode == 'Train':
-      self.train_result.to_csv(self.train_log_path, index=False)
-    elif mode == 'Test':
-      self.test_result.to_csv(self.test_log_path, index=False)
+    self.results[mode]['Env'] = self.results[mode]['Env'].astype('category')
+    self.results[mode]['Agent'] = self.results[mode]['Agent'].astype('category')
+    self.results[mode].to_feather(self.log_path[mode])
   
   def save_model(self):
     torch.save(self.agent.Q_net.state_dict(), self.model_path)
