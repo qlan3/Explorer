@@ -1,4 +1,5 @@
 import gym
+import time
 import torch
 import numpy as np
 import pandas as pd
@@ -118,7 +119,12 @@ class VanillaDQN(BaseAgent):
         mode = 'Train'
         self.Q_net.train() # Set network back to training mode
       # Run for one episode
+      start_time = time.time()
+      start_step_count = self.step_count
       self.run_episode(mode, render)
+      end_time = time.time()
+      end_step_count = self.step_count + 1
+      speed = (end_step_count - start_step_count) / (end_time - start_time)
       # Save result
       total_episode_reward_list[mode].append(self.total_episode_reward)
       rolling_score[mode] = self.rolling_score_ratio * rolling_score[mode] \
@@ -134,7 +140,7 @@ class VanillaDQN(BaseAgent):
         self.logger.add_scalar(f'{mode}_Return', self.total_episode_reward, self.step_count)
         self.logger.add_scalar(f'{mode}_Average_Return', rolling_score[mode], self.step_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_ratio})={rolling_score[mode]:.2f}, Return={self.total_episode_reward:.2f}')
+        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_ratio})={rolling_score[mode]:.2f}, Return={self.total_episode_reward:.2f}, Speed={speed:.2f}(steps/s)')
 
     return pd.DataFrame(result['Train']), pd.DataFrame(result['Test'])
 

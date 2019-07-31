@@ -41,7 +41,7 @@
     }
   ],
   "batch_size": [32],
-  "display_interval": [1000],
+  "display_interval": [100],
   "rolling_score_ratio": [0.99],
   "discount": [0.99],
   "seed": [1],

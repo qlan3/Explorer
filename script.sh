@@ -4,6 +4,7 @@
 salloc --time=24:0:0 --cpus-per-task=48 --account=def-afyshe-ab --mem-per-cpu=512M
 salloc --time=24:0:0 --cpus-per-task=48 --account=rrg-whitem --mem-per-cpu=512M
 salloc --time=24:0:0 --cpus-per-task=48 --account=def-whitem --mem-per-cpu=512M
+salloc --time=1:0:0 --cpus-per-task=1 --account=def-whitem --mem-per-cpu=4000M
 
 # Check Slurm
 scontrol show config | grep Max
