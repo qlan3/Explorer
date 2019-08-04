@@ -34,7 +34,7 @@
     }
   ],
   "batch_size": [32],
-  "display_interval": [10],
+  "display_interval": [100],
   "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
   "seed": [1],
