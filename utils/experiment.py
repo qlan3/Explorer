@@ -42,7 +42,7 @@ class Experiment(object):
     self.save_results(mode='Train')
     self.save_results(mode='Test')
     # Save model
-    self.save_model()
+    # self.save_model()
     self.end_time = time.time()
     print(f'Memory usage: {rss_memory_usage():.2f} MB')
     print(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')

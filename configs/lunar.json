@@ -1,9 +1,9 @@
 {
   "env": [
     {
-      "name": ["Pixelcopter-PLE-v0"],
-      "train_steps": [9e5],
-      "max_episode_steps": [500],
+      "name": ["LunarLander-v2"],
+      "train_steps": [1.5e6],
+      "max_episode_steps": [1000],
       "test_per_episodes": [10],
       "input_type": ["feature"]
     }
@@ -30,11 +30,11 @@
   "optimizer": [
     {
       "name": ["RMSprop"],
-      "kwargs": [{"lr": [1e-3, 3e-4, 1e-4, 3e-5, 1e-5]}]
+      "kwargs": [{"lr": [3e-3, 1e-3, 3e-4, 1e-4, 3e-4]}]
     }
   ],
   "batch_size": [32],
-  "display_interval": [100],
+  "display_interval": [10],
   "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
   "seed": [1],

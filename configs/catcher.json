@@ -1,9 +1,9 @@
 {
   "env": [
     {
-      "name": ["Pixelcopter-PLE-v0"],
-      "train_steps": [9e5],
-      "max_episode_steps": [500],
+      "name": ["Catcher-PLE-v0"],
+      "train_steps": [3.5e6],
+      "max_episode_steps": [2000],
       "test_per_episodes": [10],
       "input_type": ["feature"]
     }
@@ -34,7 +34,7 @@
     }
   ],
   "batch_size": [32],
-  "display_interval": [100],
+  "display_interval": [10],
   "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
   "seed": [1],

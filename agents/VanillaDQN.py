@@ -37,7 +37,7 @@ class VanillaDQN(BaseAgent):
     self.gradient_clip = cfg['gradient_clip']
     self.action_size = self.get_action_size()
     self.state_size = self.get_state_size()
-    self.rolling_score_ratio = cfg['rolling_score_ratio']
+    self.rolling_score_window = cfg['rolling_score_window']
     if 'MinAtar' in self.env_name:
       self.history_length = self.env.game.state_shape()[2]
     else:
@@ -49,9 +49,10 @@ class VanillaDQN(BaseAgent):
       self.layer_dims = [cfg['feature_dim']] + cfg['hidden_layers'] + [self.action_size]
       if 'MinAtar' in self.env_name:
         self.state_normalizer = RescaleNormalizer()
+        self.reward_normalizer = RescaleNormalizer()
       else:
         self.state_normalizer = ImageNormalizer()
-      self.reward_normalizer = SignNormalizer()
+        self.reward_normalizer = SignNormalizer()
     elif cfg['env']['input_type'] == 'feature':
       self.layer_dims = [self.state_size] + cfg['hidden_layers'] + [self.action_size]
       self.state_normalizer = RescaleNormalizer()
@@ -127,8 +128,7 @@ class VanillaDQN(BaseAgent):
       speed = (end_step_count - start_step_count) / (end_time - start_time)
       # Save result
       total_episode_reward_list[mode].append(self.total_episode_reward)
-      rolling_score[mode] = self.rolling_score_ratio * rolling_score[mode] \
-        + (1 - self.rolling_score_ratio) * self.total_episode_reward
+      rolling_score[mode] = np.mean(total_episode_reward_list[mode][-1 * self.rolling_score_window[mode]:])
       result_dict = {'Env': self.env_name,
                      'Agent': self.agent_name,
                      'Episode': self.episode_count, 
@@ -140,7 +140,7 @@ class VanillaDQN(BaseAgent):
         self.logger.add_scalar(f'{mode}_Return', self.total_episode_reward, self.step_count)
         self.logger.add_scalar(f'{mode}_Average_Return', rolling_score[mode], self.step_count)
       if self.episode_count % self.display_interval == 0:
-        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_ratio})={rolling_score[mode]:.2f}, Return={self.total_episode_reward:.2f}, Speed={speed:.2f}(steps/s)')
+        self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score[mode]:.2f}, Return={self.total_episode_reward:.2f}, Speed={speed:.2f}(steps/s)')
 
     return pd.DataFrame(result['Train']), pd.DataFrame(result['Test'])
 

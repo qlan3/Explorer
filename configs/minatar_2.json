@@ -42,7 +42,7 @@
   ],
   "batch_size": [32],
   "display_interval": [1000],
-  "rolling_score_ratio": [0.99],
+  "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
   "seed": [1],
   "show_tb": [false],
