@@ -42,7 +42,7 @@ def get_env_group_title(env):
     - gym_pygame
   '''
   # env_name = env.unwrapped.spec.id
-  s = env.unwrapped.spec._entry_point
+  s = env.unwrapped.spec.entry_point
   if 'gym_ple' in s:        # e.g. 'gym_ple:PLEEnv'
     group_title = 'gym_ple'
   elif 'gym_pygame' in s:   # e.g. 'gym_pygame.envs:CatcherEnv'
