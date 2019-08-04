@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=catcher
 #SBATCH --account=rrg-whitem
-#SBATCH --time=0-15:00:00
+#SBATCH --time=0-06:00:00
 #SBATCH --mem-per-cpu=2000M
 #SBATCH --output=output/%x/%j.txt
 #SBATCH --mail-user=qlan3@ualberta.ca
