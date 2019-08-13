@@ -14,6 +14,9 @@ class Plotter(object):
     # Set default value for symmetric EMA (exponential moving average)
     # Note that EMA only works when merged is True
     cfg.setdefault('EMA', False)
+    cfg.setdefault('ci', None)
+    cfg.setdefault('xlim', {'min': None, 'max': None})
+    cfg.setdefault('ylim', {'min': None, 'max': None})
     # Copy parameters
     self.exp = cfg['exp']
     self.merged = cfg['merged']
@@ -23,6 +26,8 @@ class Plotter(object):
     self.show = cfg['show']
     self.imgType = cfg['imgType']
     self.ci = cfg['ci']
+    self.xlim = cfg['xlim']
+    self.ylim = cfg['ylim']
     self.EMA = cfg['EMA']
     self.sweep_keys = cfg['sweep_keys']
     self.sort_by = cfg['sort_by']
@@ -147,6 +152,8 @@ class Plotter(object):
     ax = sns.lineplot(x=self.x_label, y=self.y_label, hue=self.hue_label, data=data, ci=self.ci)
     ax.set_title(title)
     ax.legend(loc=self.loc)
+    ax.set_xlim(self.xlim['min'], self.xlim['max'])
+    ax.set_ylim(self.ylim['min'], self.ylim['max'])
     ax.get_figure().savefig(image_path)
     if self.show:
       plt.show()

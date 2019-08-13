@@ -28,8 +28,7 @@ def make_atari_ram(env, max_episode_steps, scale=True, episode_life=True):
     env = EpisodicLifeEnv(env)
   return env
 
-def make_minatar(env, max_episode_steps, scale=True):
-  env = MaxAndSkipEnv(env, skip=4)
+def make_minatar(env, max_episode_steps, scale=False):
   if max_episode_steps > 0:
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
   if scale:

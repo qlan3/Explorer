@@ -2,13 +2,13 @@
   "env": [
     {
       "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "Freeway-MinAtar-v0", "Space_invaders-MinAtar-v0"],
-      "train_steps": [6e6],
+      "train_steps": [5e6],
       "test_per_episodes": [100],
       "input_type": ["pixel"]
     },
     {
       "name": ["Seaquest-MinAtar-v0"],
-      "train_steps": [6e6],
+      "train_steps": [5e6],
       "max_episode_steps": [1e4],
       "test_per_episodes": [100],
       "input_type": ["pixel"]

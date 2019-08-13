@@ -26,7 +26,7 @@
   "epsilon_steps": [1e3],
   "epsilon_start": [1.0],
   "epsilon_end": [0.01],
-  "loss": ["SmoothL1Loss"],
+  "loss": ["MSELoss"],
   "optimizer": [
     {
       "name": ["RMSprop"],
@@ -39,7 +39,7 @@
   "discount": [0.99],
   "seed": [1],
   "show_tb": [false],
-  "gradient_clip": [-1],
+  "gradient_clip": [5],
   "target_network_update_freqency": [200],
   "sgd_update_frequency": [1],
   "generate_random_seed": [true]

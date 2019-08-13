@@ -11,7 +11,7 @@ def make_env(env_name, max_episode_steps, episode_life=True):
   env_group_title = get_env_group_title(env)
   # print(env_group_title, env_name)
   if env_group_title == 'gym_minatar':
-    env = make_minatar(env, max_episode_steps, scale=True)
+    env = make_minatar(env, max_episode_steps, scale=False)
     if len(env.observation_space.shape) == 3:
       env = TransposeImage(env)
   elif env_group_title == 'atari' and '-ram' in env_name:
