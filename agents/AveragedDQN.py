@@ -1,9 +1,9 @@
 import torch
 
-from agents.MaxminDQN import MaxminDQN
+from agents.MaxminDQN import MaxminDQN, MaxminDQN_v1
 
 
-class AveragedDQN(MaxminDQN):
+class AveragedDQN(MaxminDQN_v1):
   '''
   Implementation of Averaged DQN with target network and replay buffer
   '''

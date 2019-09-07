@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns; sns.set(style='darkgrid')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 from utils.helper import make_dir
 from utils.sweeper import Sweeper
@@ -15,6 +16,8 @@ class Plotter(object):
     # Note that EMA only works when merged is True
     cfg.setdefault('EMA', False)
     cfg.setdefault('ci', None)
+    cfg.setdefault('x_format', None)
+    cfg.setdefault('y_format', None)
     cfg.setdefault('xlim', {'min': None, 'max': None})
     cfg.setdefault('ylim', {'min': None, 'max': None})
     # Copy parameters
@@ -26,6 +29,8 @@ class Plotter(object):
     self.show = cfg['show']
     self.imgType = cfg['imgType']
     self.ci = cfg['ci']
+    self.x_format = cfg['x_format']
+    self.y_format = cfg['y_format']
     self.xlim = cfg['xlim']
     self.ylim = cfg['ylim']
     self.EMA = cfg['EMA']
@@ -33,6 +38,7 @@ class Plotter(object):
     self.sort_by = cfg['sort_by']
     self.ascending = cfg['ascending']
     self.loc = cfg['loc']
+    self.runs = cfg['runs']
     # Get total combination of configurations
     self.total_combination = get_total_combination(self.exp)
 
@@ -41,16 +47,15 @@ class Plotter(object):
     Given self.exp and config index, merge the results of multiple runs
     '''
     result_list = []
-    while True:
+    for _ in range(self.runs):
       result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.feather'
-      # If result file doesn't exist, break
-      if not os.path.isfile(result_file):
-        break
-      # Read result file
-      result = pd.read_feather(result_file)
-      # Add config index as a column
-      result['Config Index'] = config_idx
-      result_list.append(result)
+      # If result file exist, read and merge
+      if os.path.isfile(result_file):
+        # Read result file
+        result = pd.read_feather(result_file)
+        # Add config index as a column
+        result['Config Index'] = config_idx
+        result_list.append(result)
       config_idx += self.total_combination
     
     if len(result_list) == 0:
@@ -107,12 +112,12 @@ class Plotter(object):
       print(f'[{self.exp}]: Process {mode} results: {config_idx_}/{self.total_combination}')
       new_results = None
       config_idx = config_idx_
-      while True:
+      for _ in range(self.runs):
         result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.feather'
-        if not os.path.isfile(result_file): break
-        result = pd.read_feather(result_file)
-        new_result = pd.DataFrame([get_result_dict(result, config_idx)])
-        new_results = new_result if new_results is None else new_results.append(new_result, ignore_index=True)
+        if os.path.isfile(result_file):
+          result = pd.read_feather(result_file)
+          new_result = pd.DataFrame([get_result_dict(result, config_idx)])
+          new_results = new_result if new_results is None else new_results.append(new_result, ignore_index=True)
         config_idx += self.total_combination
       # Save sorted results
       if new_results is not None:
@@ -154,6 +159,11 @@ class Plotter(object):
     ax.legend(loc=self.loc)
     ax.set_xlim(self.xlim['min'], self.xlim['max'])
     ax.set_ylim(self.ylim['min'], self.ylim['max'])
+    if not (self.x_format is None):
+      ax.xaxis.set_major_formatter(FuncFormatter(self.x_format))
+    if not (self.y_format is None):
+      ax.yaxis.set_major_formatter(FuncFormatter(self.y_format))
+    ax.locator_params(nbins=5, axis='x')
     ax.get_figure().savefig(image_path)
     if self.show:
       plt.show()
@@ -381,13 +391,12 @@ def get_total_combination(exp):
   sweeper = Sweeper(config_file)
   return sweeper.config_dicts['num_combinations']
 
-def unfinished_index(exp, runs):
+def unfinished_index(exp, l):
   '''
   Find unfinished config indexes based on the existence of file `result_Test.feather`
   '''
-  largest_config_idx = runs * get_total_combination(exp)
   print(f'[{exp}]: ', end=' ')
-  for config_idx in range(1, largest_config_idx + 1):
+  for config_idx in l:
     result_file = f'./logs/{exp}/{config_idx}/result_Test.feather'
     if not os.path.isfile(result_file):
       print(config_idx, end=', ')
