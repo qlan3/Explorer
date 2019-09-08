@@ -10,6 +10,8 @@ def change_hue_label(exp, hue_label, config_idx, mode):
 def change_hue_label_paper(exp, hue_label, config_idx, mode):
   if 'Maxmin' in hue_label:
     return 'Maxmin DQN'
+  elif 'Averaged' in hue_label:
+    return 'Averaged DQN'
   else:
     return hue_label
 
@@ -74,16 +76,18 @@ def maxmin(exp):
   plotter.plot_results('Train', title)
   plotter.process_result('Train', get_process_result_dict)
   plotter.csv_results('Train', get_csv_result_dict)
-  '''
+  
   plotter.merge_allIndex('Test')
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
-  '''
+  
   # plotter.ci = 68
-  #plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
+  plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
 
 if __name__ == "__main__":
+  for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
+    maxmin(exp)
   ''' The first index is the best.
   - copter: 
       DQN: 55,37,73
@@ -103,12 +107,24 @@ if __name__ == "__main__":
       AveragedDQN: 42,40,44,58,64,88
       MaxminDQN: 45,53,39,47
   - catcher_maxmin: 13
-  - MinAtar: 
-      DQN:
-      DDQN:
-      AveragedDQN:
-      MaxminDQN:
+  - Space_invaders: 
+      DQN: 184,274
+      DDQN: 189,279
+      AveragedDQN: 229,209,219
+      MaxminDQN: 214,234,224,254,244
+  - Seaquest: 
+      DQN: 190
+      DDQN: 185
+      AveragedDQN: 260,270,250
+      MaxminDQN: 215,225,235,245
+  - Breakout: 
+      DQN: 92,182,2
+      DDQN: 97,367
+      AveragedDQN: 87,37,67,47,77
+      MaxminDQN: 172,162,142,132
+  - Asterix: 
+      DQN: 271
+      DDQN: 276
+      AveragedDQN: 296,316,306
+      MaxminDQN: 261,291,331,311,241
   '''
-  #for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
-    #maxmin(exp)
-  maxmin('test')
