@@ -60,7 +60,11 @@ class VanillaDQN(BaseAgent):
     else:
       raise ValueError(f"{cfg['env']['input_type']} is not supported.")
     # Create Q value network
-    self.Q_net = self.creatNN(cfg['env']['input_type']).to(self.device)
+    self.Q_net = [None]
+    self.Q_net[0] = self.creatNN(cfg['env']['input_type']).to(self.device)
+    # Set optimizer
+    self.optimizer = [None]
+    self.optimizer[0] = getattr(torch.optim, cfg['optimizer']['name'])(self.Q_net[0].parameters(), **cfg['optimizer']['kwargs'])
     # Set replay buffer
     self.replay_buffer = getattr(components.replay, cfg['memory_type'])(cfg['memory_size'], self.batch_size, self.device)
     # Set exploration strategy
@@ -75,10 +79,10 @@ class VanillaDQN(BaseAgent):
     self.exploration = getattr(components.exploration, cfg['exploration_type'])(cfg['exploration_steps'], epsilon)
     # Set loss function
     self.loss = getattr(torch.nn, cfg['loss'])(reduction='mean')
-    # Set optimizer
-    self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.Q_net.parameters(), **cfg['optimizer']['kwargs'])
     # Set tensorboard
     if self.show_tb: self.logger.init_writer()
+    # Set the index of Q_net to be udpated
+    self.update_Q_net_index = 0
 
   def creatNN(self, input_type):
     if input_type == 'pixel':
@@ -115,10 +119,9 @@ class VanillaDQN(BaseAgent):
     while self.step_count < self.train_steps:
       if mode == 'Train' and self.episode_count % self.test_per_episodes == 0:
         mode = 'Test'
-        self.Q_net.eval() # Set network to evaluation mode
       else:
         mode = 'Train'
-        self.Q_net.train() # Set network back to training mode
+      self.set_Q_net_mode(mode) # Set Q network back to training/evaluation mode
       # Run for one episode
       start_time = time.time()
       start_step_count = self.step_count
@@ -155,9 +158,9 @@ class VanillaDQN(BaseAgent):
       self.next_state = self.state_normalizer(self.next_state)
       self.reward = self.reward_normalizer(self.reward)
       if mode == 'Train':
+        self.save_experience()
         if self.time_to_learn():
           self.learn() # Update policy
-        self.save_experience()
         self.episode_step_count += 1
         self.step_count += 1
       self.total_episode_reward += self.reward
@@ -173,8 +176,7 @@ class VanillaDQN(BaseAgent):
     '''
     state = to_tensor(self.state, device=self.device)
     state = state.unsqueeze(0) # Add a batch dimension (Batch, Channel, Height, Width)
-    q_values = self.Q_net(state)
-    q_values = to_numpy(q_values).flatten()
+    q_values = self.get_action_selection_q_values(state)
     if mode == 'Train':
       action = self.exploration.select_action(q_values, self.step_count)
     elif mode == 'Test':
@@ -203,21 +205,21 @@ class VanillaDQN(BaseAgent):
     if self.show_tb:
       self.logger.add_scalar(f'Loss', loss.item(), self.step_count)
     self.logger.debug(f'Step {self.step_count}: loss={loss.item()}')
-    self.optimizer.zero_grad()
+    self.optimizer[self.update_Q_net_index].zero_grad()
     loss.backward()
     if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.Q_net.parameters(), self.gradient_clip)
-    self.optimizer.step()
+      nn.utils.clip_grad_norm_(self.Q_net[self.update_Q_net_index].parameters(), self.gradient_clip)
+    self.optimizer[self.update_Q_net_index].step()
 
   def compute_q_target(self, next_states, rewards, dones):
-    q_next = self.Q_net(next_states).detach().max(1)[0]
+    q_next = self.Q_net[0](next_states).detach().max(1)[0]
     q_target = rewards + self.discount * q_next * (1 - dones)
     return q_target
   
   def comput_q(self, states, actions):
     # Convert actions to long so they can be used as indexes
     actions = actions.long()
-    q = self.Q_net(states).gather(1, actions).squeeze()
+    q = self.Q_net[self.update_Q_net_index](states).gather(1, actions).squeeze()
     return q
 
   def save_experience(self):
@@ -235,3 +237,16 @@ class VanillaDQN(BaseAgent):
     
   def get_state_size(self):
     return int(np.prod(self.env.observation_space.shape))
+
+  def set_Q_net_mode(self, mode):
+    if mode == 'Test':
+      for i in range(len(self.Q_net)):
+        self.Q_net[i].eval() # Set Q network to evaluation mode
+    elif mode == 'Train':
+      for i in range(len(self.Q_net)):
+        self.Q_net[i].train() # Set Q network back to training mode
+  
+  def get_action_selection_q_values(self, state):
+    q_values = self.Q_net[0](state)
+    q_values = to_numpy(q_values).flatten()
+    return q_values

@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "Freeway-MinAtar-v0", "Space_invaders-MinAtar-v0"],
+      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "Space_invaders-MinAtar-v0"],
       "train_steps": [5e6],
       "test_per_episodes": [100],
       "input_type": ["pixel"]
@@ -20,7 +20,7 @@
     },
     {
       "name": ["MaxminDQN", "AveragedDQN"],
-      "target_networks_num": [1,2,3,4,5,6,7,8]
+      "target_networks_num": [2,3,4,5,6,7,8,9]
     }
   ],
   "device": ["cpu"],

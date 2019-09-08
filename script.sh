@@ -27,9 +27,10 @@ killall singularity parallel python
 tensorboard --logdir=./logs/ --host localhost
 
 # Run
-python main.py --config_file ./configs/minatar_2.json --config_idx 1
+python main.py --config_file ./configs/minatar_2.json
+ --config_idx 1
 parallel --eta --ungroup python main.py --config_file ./configs/minatar_2.json --config_idx {1} ::: $(seq 1 4)
-
+parallel --eta --ungroup python main.py --config_file ./configs/test.json --config_idx {1} ::: 37 38 42 31
 # Speed
 With singularity:
     MinAtar: Beluga (60 steps/s) > Graham (35 steps/s) = Cedar (35 steps/s) > Mp2 (10 steps/s)

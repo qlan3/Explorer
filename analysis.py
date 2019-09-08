@@ -65,21 +65,23 @@ def maxmin(exp):
   elif 'lunar' in exp:
     title = 'Lunarlander'
     expIndexModeList = [('lunar', 73, 'Train'), ('lunar', 74, 'Train'), ('lunar_maxmin', 10, 'Train')]
-  else:
+  elif 'minatar' in exp:
     title = 'MinAtar'
-  '''
+  else:
+    title = exp
+  
   plotter.merge_allIndex('Train')
   plotter.plot_results('Train', title)
   plotter.process_result('Train', get_process_result_dict)
   plotter.csv_results('Train', get_csv_result_dict)
-  
+  '''
   plotter.merge_allIndex('Test')
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
   '''
   # plotter.ci = 68
-  plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
+  #plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
 
 if __name__ == "__main__":
   ''' The first index is the best.
@@ -107,5 +109,6 @@ if __name__ == "__main__":
       AveragedDQN:
       MaxminDQN:
   '''
-  for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
-    maxmin(exp)
+  #for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
+    #maxmin(exp)
+  maxmin('test')

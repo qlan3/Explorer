@@ -13,8 +13,8 @@ echo "Current working directory: `pwd`"
 echo "Starting run at: `date`"
 # ---------------------------------------------------------------------
 export OMP_NUM_THREADS=1
-module load singularity/3.2
-singularity exec -B /project ../explorer-env.img python main.py --config_file ./configs/catcher.json --config_idx $SLURM_ARRAY_TASK_ID
+python main.py --config_file ./configs/catcher.json --config_idx $SLURM_ARRAY_TASK_ID
 # ---------------------------------------------------------------------
 echo "Job finished with exit code $? at: `date`"
 # ---------------------------------------------------------------------
+# Run on Cedar

@@ -2,7 +2,7 @@
   "env": [
     {
       "name": ["LunarLander-v2"],
-      "train_steps": [1.2e6],
+      "train_steps": [1.5e6],
       "max_episode_steps": [1000],
       "test_per_episodes": [10],
       "input_type": ["feature"]
@@ -14,7 +14,7 @@
     },
     {
       "name": ["MaxminDQN", "AveragedDQN"],
-      "target_networks_num": [1,2,3,4,5,6,7,8]
+      "target_networks_num": [2,3,4,5,6,7,8,9]
     }
   ],
   "device": ["cpu"],
