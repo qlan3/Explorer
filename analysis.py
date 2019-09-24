@@ -41,8 +41,8 @@ cfg = {
   'y_label': 'Average Return',
   'hue_label': 'Agent',
   'show': False,
-  'imgType': 'png',
-  'ci': 'sd',
+  'imgType': 'pdf',
+  'ci': 'se',
   'x_format': None,
   'y_format': None,
   'xlim': {'min': None, 'max': None},
@@ -60,7 +60,7 @@ def maxmin(exp):
   plotter = Plotter(cfg)
   if 'copter' in exp:
     title = 'Pixelcopter'
-    expIndexModeList = [('copter', 55, 'Train'), ('copter', 56, 'Train'), ('copter_maxmin', 13, 'Train')]
+    expIndexModeList = [('copter', 55, 'Train'), ('copter', 56, 'Train'), ('copter', 70, 'Train'), ('copter_maxmin', 13, 'Train')]
   elif 'catcher' in exp:
     title = 'Catcher'
     expIndexModeList = [('catcher', 37, 'Train'), ('catcher', 38, 'Train'), ('catcher_maxmin', 13, 'Train')]
@@ -71,7 +71,7 @@ def maxmin(exp):
     title = 'MinAtar'
   else:
     title = exp
-  
+  '''
   plotter.merge_allIndex('Train')
   plotter.plot_results('Train', title)
   plotter.process_result('Train', get_process_result_dict)
@@ -81,13 +81,13 @@ def maxmin(exp):
   plotter.plot_results('Test', title)
   plotter.process_result('Test', get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict)
-  
-  # plotter.ci = 68
+  '''
   plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
 
 if __name__ == "__main__":
   for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
     maxmin(exp)
+  
   ''' The first index is the best.
   - copter: 
       DQN: 55,37,73

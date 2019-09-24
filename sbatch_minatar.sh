@@ -3,7 +3,7 @@
 #SBATCH --account=def-afyshe-ab
 #SBATCH --time=1-08:00:00
 #SBATCH --mem-per-cpu=4000M
-#SBATCH --output=output/%x/%j.txt
+#SBATCH --output=output/%x/%a.txt
 #SBATCH --mail-user=qlan3@ualberta.ca
 #SBATCH --mail-type=ALL
 #SBATCH --mail-type=TIME_LIMIT

@@ -11,6 +11,9 @@ from agents.VanillaDQN import VanillaDQN
 class MaxminDQN(VanillaDQN):
   '''
   Implementation of Maxmin DQN with target network and replay buffer
+
+  We can update all Q_nets for every update. However, this makes training really slow.
+  Instead, we randomly choose one to update.
   '''
   def __init__(self, cfg):
     super().__init__(cfg)

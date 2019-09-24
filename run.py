@@ -14,6 +14,7 @@ def main(argv):
   # python run.py --job_name catcher --script_path  ./sbatch_catcher.sh
   # python run.py --job_name lunar --script_path  ./sbatch_lunar.sh
   # python run.py --job_name copter --script_path  ./sbatch_copter.sh
+  # python run.py --job_name copter_ensemble --script_path  ./sbatch_copter_ensemble.sh
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--user', type=str, default='qlan3', help='user name')
   parser.add_argument('--project_dir', type=str, default='/home/qlan3/projects/def-afyshe-ab/qlan3/Explorer', help='project directory')
@@ -30,7 +31,7 @@ def main(argv):
   # Sbatch script path
   cfg['script_path'] = args.script_path
   # Job indexes list
-  cfg['job_list'] = list(range(1,450+1))
+  cfg['job_list'] = list(range(1,40*5+1))
   # Check time interval in minutes
   cfg['check_time_interval'] = args.check_time_interval
   # cluster_name: cluster_capacity

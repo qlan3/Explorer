@@ -1,8 +1,9 @@
 import os
 import json
+import math
 import numpy as np
 import pandas as pd
-import seaborn as sns; sns.set(style='darkgrid')
+import seaborn as sns; sns.set(style="ticks"); sns.set_context("paper") #sns.set_context("talk")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
@@ -154,7 +155,24 @@ class Plotter(object):
     '''
     Plot results for any data (vanilla)
     '''
-    ax = sns.lineplot(x=self.x_label, y=self.y_label, hue=self.hue_label, data=data, ci=self.ci)
+    #ax = sns.lineplot(x=self.x_label, y=self.y_label, hue=self.hue_label, data=data, ci=self.ci)
+    fig, ax = plt.subplots()
+    for label in np.unique(data[self.hue_label].to_numpy()):
+      result = data[data[self.hue_label]==label]
+      xs = result[self.x_label].to_numpy()
+      ys = result[self.y_label].to_numpy()
+      x_mean, y_mean, y_ci = sorted(np.unique(xs)), [], []
+      for x in x_mean:
+        y_ = ys[xs == x]
+        y_mean.append(np.mean(y_))
+        if self.ci == 'sd':
+          y_ci.append(np.std(y_, ddof=0))
+        elif self.ci == 'se':
+          y_ci.append(np.std(y_, ddof=0)/math.sqrt(len(y_)))
+      y_mean, y_ci = np.array(y_mean), np.array(y_ci)
+      plt.plot(x_mean, y_mean, linewidth=1.0, label=label)
+      if self.ci in ['sd', 'se']:
+        plt.fill_between(x_mean, y_mean - y_ci, y_mean + y_ci, alpha=0.5)
     ax.set_title(title)
     ax.legend(loc=self.loc)
     ax.set_xlim(self.xlim['min'], self.xlim['max'])
@@ -163,7 +181,7 @@ class Plotter(object):
       ax.xaxis.set_major_formatter(FuncFormatter(self.x_format))
     if not (self.y_format is None):
       ax.yaxis.set_major_formatter(FuncFormatter(self.y_format))
-    ax.locator_params(nbins=5, axis='x')
+    #ax.locator_params(nbins=5, axis='x')
     ax.get_figure().savefig(image_path)
     if self.show:
       plt.show()

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=copter
+#SBATCH --job-name=copter_ensemble
 #SBATCH --account=rrg-whitem
 #SBATCH --time=0-5:00:00
 #SBATCH --mem-per-cpu=2000M
@@ -13,7 +13,7 @@ echo "Current working directory: `pwd`"
 echo "Starting run at: `date`"
 # ---------------------------------------------------------------------
 export OMP_NUM_THREADS=1
-python main.py --config_file ./configs/copter.json --config_idx $SLURM_ARRAY_TASK_ID
+python main.py --config_file ./configs/copter_ensemble.json --config_idx $SLURM_ARRAY_TASK_ID
 # ---------------------------------------------------------------------
 echo "Job finished with exit code $? at: `date`"
 # ---------------------------------------------------------------------
