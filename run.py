@@ -6,7 +6,7 @@ from utils.submitter import Submitter
 #from utils.helper import make_dir
 
 def make_dir(dir):
-  if not os.path.exists(dir): 
+  if not os.path.exists(dir):
     os.makedirs(dir, exist_ok=True)
 
 def main(argv):
@@ -15,6 +15,7 @@ def main(argv):
   # python run.py --job_name lunar --script_path  ./sbatch_lunar.sh
   # python run.py --job_name copter --script_path  ./sbatch_copter.sh
   # python run.py --job_name copter_ensemble --script_path  ./sbatch_copter_ensemble.sh
+  # python run.py --job_name copter_maxmin --script_path  ./sbatch_copter_maxmin.sh
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--user', type=str, default='qlan3', help='user name')
   parser.add_argument('--project_dir', type=str, default='/home/qlan3/projects/def-afyshe-ab/qlan3/Explorer', help='project directory')
