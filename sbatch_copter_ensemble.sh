@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=copter_ensemble
-#SBATCH --account=def-whitem
-#SBATCH --time=0-2:00:00
+#SBATCH --account=rrg-whitem
+#SBATCH --time=0-5:00:00
 #SBATCH --mem-per-cpu=2000M
 #SBATCH --output=output/%x/%a.txt
 #SBATCH --mail-user=qlan3@ualberta.ca
