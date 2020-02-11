@@ -6,6 +6,7 @@
 *output/
 *diary*
 *figure*
+plot_paper.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
