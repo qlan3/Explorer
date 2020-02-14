@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import argparse
+import numpy as np
+import matplotlib.pyplot as plt
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
@@ -85,10 +87,100 @@ class Sweeper(object):
     print(cfg_json, end='\n')
 
 
+def time_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=10000):
+  time_list = []
+  # Read config file
+  config_file = f'./configs/{exp}.json'
+  sweeper = Sweeper(config_file)
+  # Read a list of logs
+  for i in range(runs * sweeper.config_dicts['num_combinations']):
+    log_file = f'./logs/{exp}/{i+1}/{file_name}'
+    try:
+      with open(log_file, 'r') as f:
+        # Get last line
+        try:
+          f.seek(-max_line_length, os.SEEK_END)
+        except IOError:
+          # either file is too small, or too many lines requested
+          f.seek(0)
+        last_line = f.readlines()[-1]
+        # Get time info in last line
+        try:
+          t = float(last_line.split(' ')[-2])
+          time_list.append(t)
+        except:
+          print('No time info in file: '+log_file)
+          continue
+    except:
+      continue
+  
+  time_list = np.array(time_list)
+  print(f'{exp} max time: {np.max(time_list):.2f} minutes')
+  print(f'{exp} mean time: {np.mean(time_list):.2f} minutes')
+  print(f'{exp} min time: {np.min(time_list):.2f} minutes')
+  
+  # Plot histogram of time distribution
+  from utils.helper import make_dir
+  make_dir(f'./logs/{exp}/0/')
+  num, bins, patches = plt.hist(time_list, nbins)
+  plt.xlabel('Time (min)')
+  plt.ylabel('Counts in the bin')
+  plt.savefig(f'./logs/{exp}/0/time_info.png')
+  # plt.show()
+  plt.clf()   # clear figure
+  plt.cla()   # clear axis
+  plt.close() # close window
+  
+  
+def memory_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=10000):
+  mem_list = []
+  # Read config file
+  config_file = f'./configs/{exp}.json'
+  sweeper = Sweeper(config_file)
+  # Read a list of logs
+  for i in range(runs * sweeper.config_dicts['num_combinations']):
+    log_file = f'./logs/{exp}/{i+1}/{file_name}'
+    try:
+      with open(log_file, 'r') as f:
+        # Get last line
+        try:
+          f.seek(-max_line_length, os.SEEK_END)
+        except IOError:
+          # either file is too small, or too many lines requested
+          f.seek(0)
+        last_second_line = f.readlines()[-2]
+        # Get memory info in last line
+        try:
+          m = float(last_second_line.split(' ')[-2])
+          mem_list.append(m)
+        except:
+          print('No memory info in file: '+log_file)
+          continue
+    except:
+      continue
+  
+  mem_list = np.array(mem_list)
+  print(f'{exp} max memory: {np.max(mem_list):.2f} MB')
+  print(f'{exp} mean memory: {np.mean(mem_list):.2f} MB')
+  print(f'{exp} min memory: {np.min(mem_list):.2f} MB')
+  
+  # Plot histogram of time distribution
+  from utils.helper import make_dir
+  make_dir(f'./logs/{exp}/0/')
+  num, bins, patches = plt.hist(mem_list, nbins)
+  plt.xlabel('Memory (MB)')
+  plt.ylabel('Counts in the bin')
+  plt.savefig(f'./logs/{exp}/0/memory_info.png')
+  # plt.show()
+  plt.clf()   # clear figure
+  plt.cla()   # clear axis
+  plt.close() # close window
+
 if __name__ == "__main__":
   for agent_config in os.listdir('./configs/'):
+    if not '.json' in agent_config:
+      continue
     config_file = os.path.join('./configs/', agent_config)
-    if not os.path.isfile(config_file): continue
     sweeper = Sweeper(config_file)
     # sweeper.print_config_dict(sweeper.config_dicts)
     # sweeper.print_config_dict(sweeper.generate_config_for_idx(213))

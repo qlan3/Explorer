@@ -28,7 +28,7 @@ class VanillaDQN(BaseAgent):
     self.max_episode_steps = int(cfg['env']['max_episode_steps'])
     self.env = make_env(cfg['env']['name'], max_episode_steps=self.max_episode_steps)
     self.config_idx = cfg['config_idx']
-    self.device = torch.device(cfg['device'])
+    self.device = cfg['device']
     self.batch_size = cfg['batch_size']
     self.discount = cfg['discount']
     self.train_steps = int(cfg['env']['train_steps'])
@@ -250,3 +250,15 @@ class VanillaDQN(BaseAgent):
     q_values = self.Q_net[0](state)
     q_values = to_numpy(q_values).flatten()
     return q_values
+
+  def save_model(self, model_path):
+    state_dicts = {} 
+    for i in range(len(self.Q_net)):
+      state_dicts[i] = self.Q_net[i].state_dict()
+    torch.save(state_dicts, model_path)
+  
+  def load_model(self, model_path):
+    state_dicts = torch.load(model_path)
+    for i in range(len(self.Q_net)):
+      self.Q_net[i].load_state_dict(state_dicts[i])
+      self.Q_net[i] = self.Q_net[i].to(self.device)

@@ -1,19 +1,9 @@
 import os
-from utils.plot import Plotter, unfinished_index
+import math
+from utils.plotter import Plotter, unfinished_index
+from utils.sweeper import time_info, memory_info
+from utils.helper import set_one_thread
 
-def x_format(x, pos):
-  return '$%.1f$x$10^{6}$' % (x/1e6)
-
-def change_hue_label(exp, hue_label, config_idx, mode):
-  return f'[{exp}]-{mode} {hue_label} {config_idx}'
-
-def change_hue_label_paper(exp, hue_label, config_idx, mode):
-  if 'Maxmin' in hue_label:
-    return 'Maxmin DQN'
-  elif 'Averaged' in hue_label:
-    return 'Averaged DQN'
-  else:
-    return hue_label
 
 def get_process_result_dict(result, config_idx):
   result_dict = {
@@ -41,7 +31,7 @@ cfg = {
   'y_label': 'Average Return',
   'hue_label': 'Agent',
   'show': False,
-  'imgType': 'pdf',
+  'imgType': 'png',
   'ci': 'se',
   'x_format': None,
   'y_format': None,
@@ -52,41 +42,42 @@ cfg = {
   'sweep_keys': ['lr', 'target_networks_num'],
   'sort_by': ['Return (mean)', 'Return (se)'],
   'ascending': [False, True],
-  'runs': 20
+  'runs': 5
 }
 
 def maxmin(exp):
+  set_one_thread()
   cfg['exp'] = exp
   plotter = Plotter(cfg)
+
+
+  plotter.csv_results('Train', get_csv_result_dict, get_process_result_dict)
+  plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
+  plotter.plot_results(mode='Train', indexes='all')
+
+
   if 'copter' in exp:
     title = 'Pixelcopter'
-    expIndexModeList = [('copter', 55, 'Train'), ('copter', 56, 'Train'), ('copter', 70, 'Train'), ('copter_maxmin', 13, 'Train')]
+    indexList = [55, 56, 70, 29]
   elif 'catcher' in exp:
     title = 'Catcher'
-    expIndexModeList = [('catcher', 37, 'Train'), ('catcher', 38, 'Train'), ('catcher_maxmin', 13, 'Train')]
+    indexList = [37, 38, 42, 29]
   elif 'lunar' in exp:
     title = 'Lunarlander'
-    expIndexModeList = [('lunar', 73, 'Train'), ('lunar', 74, 'Train'), ('lunar_maxmin', 10, 'Train')]
+    indexList = [73, 74, 46, 41]
   elif 'minatar' in exp:
     title = 'MinAtar'
   else:
     title = exp
-  '''
-  plotter.merge_allIndex('Train')
-  plotter.plot_results('Train', title)
-  plotter.process_result('Train', get_process_result_dict)
-  plotter.csv_results('Train', get_csv_result_dict)
   
-  plotter.merge_allIndex('Test')
-  plotter.plot_results('Test', title)
-  plotter.process_result('Test', get_process_result_dict)
-  plotter.csv_results('Test', get_csv_result_dict)
-  '''
-  plotter.plot_expIndexModeList(expIndexModeList, change_hue_label_paper, title, f'Train_{exp}')
+  plotter.plot_indexList(indexList=indexList, mode='Train', image_name=f'Train_{exp}')
+
 
 if __name__ == "__main__":
-  for exp in ['copter_maxmin', 'lunar_maxmin', 'catcher_maxmin']:
-    maxmin(exp)
+  unfinished_index('copter_maxmin', range(1, 40+1))
+  memory_info('copter_maxmin', runs=5)
+  time_info('copter_maxmin', runs=5)
+  maxmin('copter_maxmin')
   
   ''' The first index is the best.
   - copter: 

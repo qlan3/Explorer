@@ -1,10 +1,10 @@
 import os
 import time
 
+
 class Submitter(object):
   def __init__(self, cfg):
     self.user = cfg['user']
-    self.project_dir = cfg['project_dir']
     self.script_path = cfg['script_path']
     self.job_list = [str(x) for x in cfg['job_list']]
     self.check_time_interval = cfg['check_time_interval'] * 60
@@ -22,7 +22,7 @@ class Submitter(object):
     else:
       job_indexes = ','.join(self.job_list[:num_jobs])
 
-    bash_script = f'cd {self.project_dir}; sbatch --array={job_indexes} {self.script_path}'
+    bash_script = f'sbatch --array={job_indexes} {self.script_path}'
     myCmd = os.popen(bash_script).read()
     print(myCmd)
     print(f'Submit jobs from {self.job_list[0]} to {self.job_list[num_jobs-1]}')

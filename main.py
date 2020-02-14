@@ -3,14 +3,14 @@ import sys
 import argparse
 
 from utils.sweeper import Sweeper
-from utils.experiment import Experiment
 from utils.helper import make_dir
+from experiment import Experiment
 
 def main(argv):
   # python main.py --config_file ./configs/catcher.json --config_idx 1
   # python main.py --config_file ./configs/lunar.json --config_idx 1
   # python main.py --config_file ./configs/copter.json --config_idx 1
-  # python main.py --config_file ./configs/minatar_2.json --config_idx 1
+  # python main.py --config_file ./configs/minatar.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--config_file', type=str, default='./configs/atari_ram1.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')

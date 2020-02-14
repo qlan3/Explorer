@@ -2,10 +2,13 @@ import logging
 from utils.helper import *
 from tensorboardX import SummaryWriter
 
-logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s')
-
 class Logger(object):
-  def __init__(self, tb_logs_dir):
+  def __init__(self, logs_dir, file_name='log.txt', filemode='w'):
+    logging.basicConfig(
+      format='%(asctime)s - %(levelname)s: %(message)s',
+      filename=f'{logs_dir}/{file_name}',
+      filemode=filemode
+    )
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     # logger.setLevel(logging.DEBUG)
@@ -15,11 +18,11 @@ class Logger(object):
     self.error = logger.error
     self.critical = logger.critical
     
-    self.tb_logs_dir = tb_logs_dir
+    self.logs_dir = logs_dir
     self.writer = None
 
   def init_writer(self):
-    self.writer = SummaryWriter(self.tb_logs_dir)
+    self.writer = SummaryWriter(self.logs_dir)
 
   def add_scalar(self, tag, scalar_value, global_step=None):
     self.writer.add_scalar(tag, scalar_value, global_step)
