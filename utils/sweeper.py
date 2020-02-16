@@ -87,6 +87,24 @@ class Sweeper(object):
     print(cfg_json, end='\n')
 
 
+def unfinished_index(exp, file_name='result_Test.feather', runs=1):
+  '''
+  Find unfinished config indexes based on the existence of file `result_Test.feather`
+  '''
+  # Read config files
+  config_file = f'./configs/{exp}.json'
+  sweeper = Sweeper(config_file)
+  # Read a list of logs
+  for i in 
+  
+  print(f'[{exp}]: ', end=' ')
+  for i in range(runs * sweeper.config_dicts['num_combinations']):
+    result_file = f'./logs/{exp}/{i+1}/{file_name}'
+    if not os.path.isfile(result_file):
+      print(config_idx, end=', ')
+  print()
+
+
 def time_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=10000):
   time_list = []
   # Read config file

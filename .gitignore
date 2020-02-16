@@ -1,11 +1,12 @@
 # Created by https://www.gitignore.io/api/python,windows,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=python,windows,visualstudiocode
 
-# Logs
-*logs/
-*output/
-*diary*
+# Mine ignores
+logs/
+output/
 *figure*
+*.sh
+run.py
 plot_paper.py
 
 ### Python ###

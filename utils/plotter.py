@@ -369,17 +369,6 @@ def get_total_combination(exp):
   sweeper = Sweeper(config_file)
   return sweeper.config_dicts['num_combinations']
 
-def unfinished_index(exp, l):
-  '''
-  Find unfinished config indexes based on the existence of file `result_Test.feather`
-  '''
-  print(f'[{exp}]: ', end=' ')
-  for config_idx in l:
-    result_file = f'./logs/{exp}/{config_idx}/result_Test.feather'
-    if not os.path.isfile(result_file):
-      print(config_idx, end=', ')
-  print()
-
 def find_key_value(config_dict, key):
   '''
   Find key value in config dict recursively
