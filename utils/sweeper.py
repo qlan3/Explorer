@@ -95,8 +95,6 @@ def unfinished_index(exp, file_name='result_Test.feather', runs=1):
   config_file = f'./configs/{exp}.json'
   sweeper = Sweeper(config_file)
   # Read a list of logs
-  for i in 
-  
   print(f'[{exp}]: ', end=' ')
   for i in range(runs * sweeper.config_dicts['num_combinations']):
     result_file = f'./logs/{exp}/{i+1}/{file_name}'
