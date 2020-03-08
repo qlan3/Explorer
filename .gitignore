@@ -6,7 +6,7 @@ logs/
 output/
 *figure*
 *.sh
-run.py
+# run.py
 plot_paper.py
 
 ### Python ###
