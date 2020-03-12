@@ -1,5 +1,5 @@
 tqdm==4.31.1
-psutil==5.6.1
+psutil==5.6.6
 opencv_python==4.1.0.25
 matplotlib==3.0.3
 numpy==1.15.4
