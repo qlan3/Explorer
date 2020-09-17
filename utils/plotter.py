@@ -35,13 +35,15 @@ class Plotter(object):
     # Get total combination of configurations
     self.total_combination = get_total_combination(self.exp)
 
-  def merge_index(self, config_idx, mode, processed):
+  def merge_index(self, config_idx, mode, processed, exp=None):
     '''
-    Given self.exp and config index, merge the results of multiple runs
+    Given exp and config index, merge the results of multiple runs
     '''
+    if exp is None:
+      exp = self.exp
     result_list = []
     for _ in range(self.runs):
-      result_file = f'./logs/{self.exp}/{config_idx}/result_{mode}.feather'
+      result_file = f'./logs/{exp}/{config_idx}/result_{mode}.feather'
       # If result file exist, read and merge
       result = read_file(result_file)
       if result is not None:
@@ -70,7 +72,7 @@ class Plotter(object):
         result_list[i] = result_list[i][:n]
         result_list[i].loc[:, self.x_label] = new_x
         result_list[i].loc[:, self.y_label] = new_y
-    elif processed == False:
+    else:
       # Cut off redundant results
       n = min(len(result) for result in result_list)
       for i in range(len(result_list)):
@@ -93,17 +95,17 @@ class Plotter(object):
     
     if self.merged == True or processed == True:
       # Check mode
-      if not (mode in ['Train', 'Valid', 'Test']):
+      if not (mode in ['Train', 'Valid', 'Test', 'Dynamic']):
         return None
       # Merge results
-      print(f'[{self.exp}]: Merge {mode} results: {config_idx}/{self.total_combination}')
-      result_list = self.merge_index(config_idx, mode, processed)
+      print(f'[{exp}]: Merge {mode} results: {config_idx}/{self.total_combination}')
+      result_list = self.merge_index(config_idx, mode, processed, exp)
       if result_list is None:
-        print(f'[{self.exp}]: No {mode} results for {config_idx}')
+        print(f'[{exp}]: No {mode} results for {config_idx}')
         return None
       # Process result
       if processed:
-        print(f'[{self.exp}]: Process {mode} results: {config_idx}/{self.total_combination}')
+        print(f'[{exp}]: Process {mode} results: {config_idx}/{self.total_combination}')
         for i in range(len(result_list)):
           new_result = get_process_result_dict(result_list[i], config_idx)
           result_list[i] = new_result
@@ -369,6 +371,7 @@ def get_total_combination(exp):
   sweeper = Sweeper(config_file)
   return sweeper.config_dicts['num_combinations']
 
+
 def find_key_value(config_dict, key):
   '''
   Find key value in config dict recursively
@@ -381,6 +384,7 @@ def find_key_value(config_dict, key):
       if value is not '/':
         return value
   return '/'
+
 
 def read_file(result_file):
   if not os.path.isfile(result_file):
