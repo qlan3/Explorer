@@ -5,7 +5,8 @@
 logs/
 output/
 *figure*
-*.sh
+sbatch_*.sh
+script.sh
 # run.py
 plot_paper.py
 
