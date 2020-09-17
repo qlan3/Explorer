@@ -1,6 +1,14 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+activations = {
+  'ReLU': nn.ReLU(),
+  'LeakyReLU': nn.LeakyReLU(),
+  'Tanh': nn.Tanh(),
+  'Sigmoid': nn.Sigmoid(),
+  'Softmax': nn.Softmax()
+}
+
 
 def layer_init(layer, w_scale=1.0):
   # Initialize all weights and biases in layer and return it
@@ -31,7 +39,7 @@ class MLP(nn.Module):
   '''
   Multilayer Perceptron
   '''
-  def __init__(self, layer_dims, hidden_activation=nn.ReLU(), output_activation=None):
+  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
     super().__init__()
     # Create layers
     self.mlp = nn.ModuleList([])
@@ -39,9 +47,10 @@ class MLP(nn.Module):
       dim_in, dim_out = layer_dims[i], layer_dims[i+1]
       self.mlp.append(layer_init(nn.Linear(dim_in, dim_out, bias=True)))
       if i+2 != len(layer_dims):
-        self.mlp.append(hidden_activation)
-      elif output_activation != None:
-        self.mlp.append(output_activation)  
+        if hidden_activation != 'None':
+          self.mlp.append(activations[hidden_activation])
+      elif output_activation != 'None':
+        self.mlp.append(activations[output_activation])  
   
   def forward(self, x):
     for layer in self.mlp:

@@ -90,10 +90,10 @@ class VanillaDQN(BaseAgent):
         feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
       else:
         feature_net = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
-      value_net = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
+      value_net = MLP(layer_dims=self.layer_dims, hidden_activation='ReLU', output_activation='None')
       NN = NetworkGlue(feature_net, value_net)
     elif input_type == 'feature':
-      NN = MLP(layer_dims=self.layer_dims, hidden_activation=nn.ReLU())
+      NN = MLP(layer_dims=self.layer_dims, hidden_activation='ReLU', output_activation='None')
     else:
       raise ValueError(f'{input_type} is not supported.')
     return NN
