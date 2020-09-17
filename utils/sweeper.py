@@ -99,7 +99,7 @@ def unfinished_index(exp, file_name='result_Test.feather', runs=1):
   for i in range(runs * sweeper.config_dicts['num_combinations']):
     result_file = f'./logs/{exp}/{i+1}/{file_name}'
     if not os.path.isfile(result_file):
-      print(config_idx, end=', ')
+      print(i+1, end=', ')
   print()
 
 
