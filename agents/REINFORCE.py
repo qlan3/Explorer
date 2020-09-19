@@ -62,11 +62,11 @@ class REINFORCE(BaseAgent):
     self.hidden_activation, self.output_activation = cfg['hidden_activation'], cfg['output_activation']
 
     # Create policy network
-    self.policy_net = self.creatNN(cfg['env']['input_type']).to(self.device)
+    self.policy_net = self.createNN(cfg['env']['input_type']).to(self.device)
     # Set optimizer
     self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.policy_net.parameters(), **cfg['optimizer']['kwargs'])
 
-  def creatNN(self, input_type):
+  def createNN(self, input_type):
     if input_type == 'pixel':
       if 'MinAtar' in self.env_name:
         feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])

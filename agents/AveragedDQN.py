@@ -12,7 +12,7 @@ class AveragedDQN(VanillaDQN):
     # Create target Q value network
     self.Q_net_target = [None] * self.k
     for i in range(self.k):
-      self.Q_net_target[i] = self.creatNN(cfg['env']['input_type']).to(self.device)
+      self.Q_net_target[i] = self.createNN(cfg['env']['input_type']).to(self.device)
       # Load target Q value network
       self.Q_net_target[i].load_state_dict(self.Q_net[0].state_dict())
       self.Q_net_target[i].eval()

@@ -10,7 +10,7 @@ class DQN(VanillaDQN):
     self.target_network_update_freqency = cfg['target_network_update_freqency']
     # Create target Q value network
     self.Q_net_target = [None]
-    self.Q_net_target[0] = self.creatNN(cfg['env']['input_type']).to(self.device)
+    self.Q_net_target[0] = self.createNN(cfg['env']['input_type']).to(self.device)
     # Load target Q value network
     self.Q_net_target[0].load_state_dict(self.Q_net[0].state_dict())
     self.Q_net_target[0].eval()

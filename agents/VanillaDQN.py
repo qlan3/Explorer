@@ -59,9 +59,11 @@ class VanillaDQN(BaseAgent):
       self.reward_normalizer = RescaleNormalizer()
     else:
       raise ValueError(f"{cfg['env']['input_type']} is not supported.")
+    self.hidden_activation, self.output_activation = cfg['hidden_activation'], 'None'
+    
     # Create Q value network
     self.Q_net = [None]
-    self.Q_net[0] = self.creatNN(cfg['env']['input_type']).to(self.device)
+    self.Q_net[0] = self.createNN(cfg['env']['input_type']).to(self.device)
     # Set optimizer
     self.optimizer = [None]
     self.optimizer[0] = getattr(torch.optim, cfg['optimizer']['name'])(self.Q_net[0].parameters(), **cfg['optimizer']['kwargs'])
@@ -84,18 +86,17 @@ class VanillaDQN(BaseAgent):
     # Set the index of Q_net to be udpated
     self.update_Q_net_index = 0
 
-  def creatNN(self, input_type):
+  def createNN(self, input_type):
     if input_type == 'pixel':
       if 'MinAtar' in self.env_name:
         feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
       else:
         feature_net = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
-      value_net = MLP(layer_dims=self.layer_dims, hidden_activation='ReLU', output_activation='None')
-      NN = NetworkGlue(feature_net, value_net)
     elif input_type == 'feature':
-      NN = MLP(layer_dims=self.layer_dims, hidden_activation='ReLU', output_activation='None')
-    else:
-      raise ValueError(f'{input_type} is not supported.')
+      feature_net = nn.Identity()
+    
+    value_net = MLP(layer_dims=self.layer_dims, hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+    NN = DQNNet(feature_net, value_net)
     return NN
 
   def reset_game(self):

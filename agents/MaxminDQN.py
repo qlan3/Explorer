@@ -24,8 +24,8 @@ class MaxminDQN(VanillaDQN):
     self.Q_net_target = [None] * self.k
     self.optimizer = [None] * self.k
     for i in range(self.k):
-      self.Q_net[i] = self.creatNN(cfg['env']['input_type']).to(self.device)
-      self.Q_net_target[i] = self.creatNN(cfg['env']['input_type']).to(self.device)
+      self.Q_net[i] = self.createNN(cfg['env']['input_type']).to(self.device)
+      self.Q_net_target[i] = self.createNN(cfg['env']['input_type']).to(self.device)
       self.optimizer[i] = getattr(torch.optim, cfg['optimizer']['name'])(self.Q_net[i].parameters(), **cfg['optimizer']['kwargs'])
       # Load target Q value network
       self.Q_net_target[i].load_state_dict(self.Q_net[i].state_dict())
