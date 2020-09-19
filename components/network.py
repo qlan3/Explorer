@@ -1,12 +1,18 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical, Normal
+
 
 activations = {
   'ReLU': nn.ReLU(),
   'LeakyReLU': nn.LeakyReLU(),
   'Tanh': nn.Tanh(),
   'Sigmoid': nn.Sigmoid(),
-  'Softmax': nn.Softmax()
+  'Softmax-1': nn.Softmax(dim=-1),
+  'Softmax0': nn.Softmax(dim=0),
+  'Softmax1': nn.Softmax(dim=1),
+  'Softmax2': nn.Softmax(dim=2)
 }
 
 
@@ -19,21 +25,6 @@ def layer_init(layer, w_scale=1.0):
   nn.init.constant_(layer.bias.data, 0) # layer.bias.data.zero_()
   return layer
 
-class NetworkGlue(nn.Module):
-  '''
-  Glue the feature net with value net
-    - feature net: generate feature given raw input
-    - value net: output action value given feature input
-  '''
-  def __init__(self, feature_net, value_net):
-    super().__init__()
-    self.feature_net = feature_net
-    self.value_net = value_net
-
-  def forward(self, x):
-    f = self.feature_net(x)
-    v = self.value_net(f)
-    return v
 
 class MLP(nn.Module):
   '''
@@ -78,6 +69,7 @@ class Conv2d_Atari(nn.Module):
     y = F.relu(self.fc4(y))
     return y
 
+
 class Conv2d_MinAtar(nn.Module):
   '''
   2D convolution neural network for MinAtar games
@@ -95,3 +87,54 @@ class Conv2d_MinAtar(nn.Module):
     y = y.view(y.size(0), -1)
     y = F.relu(self.fc2(y))
     return y
+
+
+class DQNNet(nn.Module):
+  '''
+  Glue the feature net with value net
+    - feature net: generate feature given raw input
+    - value net: output action value given feature input
+  '''
+  def __init__(self, feature_net=nn.Identity(), value_net=nn.Identity()):
+    super().__init__()
+    self.feature_net = feature_net
+    self.value_net = value_net
+
+  def forward(self, x):
+    f = self.feature_net(x)
+    v = self.value_net(f)
+    return v
+
+
+class CategoricalREINFORCENet(nn.Module):
+  def __init__(self, feature_net=nn.Identity(), actor_net=nn.Identity()):
+    super().__init__()
+    self.feature_net = feature_net
+    self.actor_net = actor_net
+
+  def forward(self, x):
+    # Get a probability distribution over action space
+    action_probs = self.actor_net(self.feature_net(x))
+    # Sample an action
+    action_distribution = Categorical(probs=action_probs)
+    action = action_distribution.sample()
+    log_prob = action_distribution.log_prob(action)
+    return {'action': action, 'log_prob': log_prob}
+
+
+class GaussianREINFORCENet(nn.Module):
+  def __init__(self, feature_net=nn.Identity(), actor_net=nn.Identity(), action_size=-1):
+    super().__init__()
+    self.feature_net = feature_net
+    self.actor_net = actor_net
+    # The action std is independent of states
+    self.action_std = nn.Parameter(torch.zeros(action_size))
+    
+  def forward(self, x):
+    # Get the mean of probability distribution over action space
+    action_mean = self.actor_net(self.feature_net(x)).squeeze(0)
+    # Sample an action
+    action_distribution = Normal(action_mean, F.softplus(self.action_std))
+    action = action_distribution.sample()
+    log_prob = action_distribution.log_prob(action)
+    return {'action': action, 'log_prob': log_prob}

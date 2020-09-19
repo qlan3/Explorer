@@ -1,0 +1,31 @@
+{
+  "env": [
+    {
+      "name": ["LunarLanderContinuous-v2"],
+      "train_steps": [4e5],
+      "max_episode_steps": [1000],
+      "test_per_episodes": [10],
+      "input_type": ["feature"]
+    }
+  ],
+  "agent": [
+    {
+      "name": ["REINFORCE"]
+    }
+  ],
+  "device": ["cpu"],
+  "hidden_layers": [[64,64]],
+  "hidden_activation": ["ReLU"],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "kwargs": [{"lr": [1e-3]}]
+    }
+  ],
+  "display_interval": [50],
+  "rolling_score_window": [{"Train": [100], "Test": [10]}],
+  "discount": [0.99],
+  "seed": [100],
+  "show_tb": [true],
+  "generate_random_seed": [false]
+}

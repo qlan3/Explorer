@@ -5,3 +5,5 @@ from .DDQN import *
 from .MaxminDQN import *
 from .EnsembleDQN import *
 from .AveragedDQN import *
+
+from .REINFORCE import *

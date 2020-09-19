@@ -1,0 +1,31 @@
+{
+  "env": [
+    {
+      "name": ["CartPole-v0"],
+      "train_steps": [3e5],
+      "max_episode_steps": [-1],
+      "test_per_episodes": [100],
+      "input_type": ["feature"]
+    }
+  ],
+  "agent": [
+    {
+      "name": ["REINFORCE"]
+    }
+  ],
+  "device": ["cpu"],
+  "hidden_layers": [[64,64]],
+  "hidden_activation": ["ReLU"],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "kwargs": [{"lr": [1e-3]}]
+    }
+  ],
+  "display_interval": [100],
+  "rolling_score_window": [{"Train": [100], "Test": [10]}],
+  "discount": [0.99],
+  "seed": [100],
+  "show_tb": [true],
+  "generate_random_seed": [false]
+}
