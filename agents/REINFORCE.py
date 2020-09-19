@@ -62,9 +62,9 @@ class REINFORCE(BaseAgent):
     self.hidden_activation, self.output_activation = cfg['hidden_activation'], cfg['output_activation']
 
     # Create policy network
-    self.policy_net = self.createNN(cfg['env']['input_type']).to(self.device)
+    self.network = self.createNN(cfg['env']['input_type']).to(self.device)
     # Set optimizer
-    self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.policy_net.parameters(), **cfg['optimizer']['kwargs'])
+    self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.network.parameters(), **cfg['optimizer']['kwargs'])
 
   def createNN(self, input_type):
     if input_type == 'pixel':
@@ -167,7 +167,7 @@ class REINFORCE(BaseAgent):
     state = to_tensor(self.state, device=self.device)
     # Add a batch dimension (Batch, Channel, Height, Width)
     state = state.unsqueeze(0)
-    prediction = self.policy_net(state)
+    prediction = self.network(state)
     action, log_prob = prediction['action'], prediction['log_prob']
     action = to_numpy(action)
     # print('prediction: ', prediction)
@@ -200,7 +200,7 @@ class REINFORCE(BaseAgent):
     self.optimizer.zero_grad()
     loss.backward()
     if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.policy_net.parameters(), self.gradient_clip)
+      nn.utils.clip_grad_norm_(self.network.parameters(), self.gradient_clip)
     self.optimizer.step()
 
   def save_experience(self):
@@ -223,17 +223,17 @@ class REINFORCE(BaseAgent):
 
   def set_net_mode(self, mode):
     if mode == 'Test':
-      self.policy_net.eval() # Set network to evaluation mode
+      self.network.eval() # Set network to evaluation mode
     elif mode == 'Train':
-      self.policy_net.train() # Set network back to training mode
+      self.network.train() # Set network back to training mode
 
   def save_model(self, model_path):
     state_dicts = {
-      'policy': self.policy_net.state_dict()
+      'policy': self.network.state_dict()
     } 
     torch.save(state_dicts, model_path)
   
   def load_model(self, model_path):
     state_dicts = torch.load(model_path)
-    self.policy_net.load_state_dict(state_dicts['policy'])
-    self.policy_net = self.policy_net.to(self.device)
+    self.network.load_state_dict(state_dicts['policy'])
+    self.network = self.network.to(self.device)
