@@ -7,12 +7,8 @@ from utils.helper import make_dir
 from experiment import Experiment
 
 def main(argv):
-  # python main.py --config_file ./configs/catcher.json --config_idx 1
-  # python main.py --config_file ./configs/lunar.json --config_idx 1
-  # python main.py --config_file ./configs/copter.json --config_idx 1
-  # python main.py --config_file ./configs/minatar.json --config_idx 1
   parser = argparse.ArgumentParser(description="Config file")
-  parser.add_argument('--config_file', type=str, default='./configs/atari_ram1.json', help='Configuration file for the chosen model')
+  parser.add_argument('--config_file', type=str, default='./configs/catcher.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')
   args = parser.parse_args()
   
@@ -27,6 +23,9 @@ def main(argv):
   cfg.setdefault('show_tb', False)
   cfg.setdefault('render', False)
   cfg.setdefault('gradient_clip', -1)
+  cfg.setdefault('hidden_activation', 'ReLU')
+  cfg.setdefault('output_activation', 'None')
+  
 
   # Set experiment name and log paths
   cfg['exp'] = args.config_file.split('/')[-1].split('.')[0]
