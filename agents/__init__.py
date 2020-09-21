@@ -7,3 +7,5 @@ from .EnsembleDQN import *
 from .AveragedDQN import *
 
 from .REINFORCE import *
+from .REINFORCEWithBaseline import *
+from .A2C import *

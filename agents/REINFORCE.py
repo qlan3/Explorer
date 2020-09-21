@@ -22,6 +22,7 @@ class REINFORCE(BaseAgent):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
+    self.cfg = cfg
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
     self.max_episode_steps = int(cfg['env']['max_episode_steps'])
@@ -46,7 +47,6 @@ class REINFORCE(BaseAgent):
     if self.show_tb: self.logger.init_writer()
     
     if cfg['env']['input_type'] == 'pixel':
-      self.layer_dims = [cfg['feature_dim']] + cfg['hidden_layers'] + [self.action_size]
       if 'MinAtar' in self.env_name:
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
@@ -54,7 +54,6 @@ class REINFORCE(BaseAgent):
         self.state_normalizer = ImageNormalizer()
         self.reward_normalizer = SignNormalizer()
     elif cfg['env']['input_type'] == 'feature':
-      self.layer_dims = [self.state_size] + cfg['hidden_layers'] + [self.action_size]
       self.state_normalizer = RescaleNormalizer()
       self.reward_normalizer = RescaleNormalizer()
     else:
@@ -67,19 +66,24 @@ class REINFORCE(BaseAgent):
     self.optimizer = getattr(torch.optim, cfg['optimizer']['name'])(self.network.parameters(), **cfg['optimizer']['kwargs'])
 
   def createNN(self, input_type):
+    # Set feature network
     if input_type == 'pixel':
+      self.layer_dims = [self.cfg['feature_dim']] + self.cfg['hidden_layers']
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+        feature_net_head = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
       else:
-        feature_net = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+        feature_net_head = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+      feature_net_body = MLP(layer_dims=self.layer_dims, hidden_activation=self.hidden_activation, output_activation=self.hidden_activation)
+      feature_net = NetworkGlue(feature_net_head, feature_net_body)
     elif input_type == 'feature':
-      feature_net = nn.Identity()
-    
+      self.layer_dims = [self.state_size] + self.cfg['hidden_layers']
+      feature_net = MLP(layer_dims=self.layer_dims, hidden_activation=self.hidden_activation, output_activation=self.hidden_activation)
+    # Set actor network and model
     if self.action_type == 'DISCRETE':
-      actor_net = MLP(layer_dims=self.layer_dims, hidden_activation=self.hidden_activation, output_activation='Softmax-1')
+      actor_net = MLP(layer_dims=[self.layer_dims[-1], self.action_size], hidden_activation=self.hidden_activation, output_activation='Softmax-1')
       NN = CategoricalREINFORCENet(feature_net, actor_net)
-    else: # self.action_type == 'CONTINUOUS'
-      actor_net = MLP(layer_dims=self.layer_dims, hidden_activation=self.hidden_activation, output_activation='None')
+    elif self.action_type == 'CONTINUOUS':
+      actor_net = MLP(layer_dims=[self.layer_dims[-1], self.action_size], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
       NN = GaussianREINFORCENet(feature_net, actor_net, self.action_size)
       
     return NN
@@ -93,9 +97,12 @@ class REINFORCE(BaseAgent):
     self.reward = None
     self.done = False
     self.total_episode_reward = 0
-    self.episode_step_count = 0
-    self.episode_rewards = []
-    self.episode_log_probs = []
+    self.episode = {
+      'step_count': 0,
+      'reward': [],
+      'done': [],
+      'log_prob': []
+    }
 
   def run_steps(self, render=False):
     # Run for multiple episodes
@@ -141,17 +148,18 @@ class REINFORCE(BaseAgent):
     # Run for one episode
     self.reset_game()
     while not self.done:
-      self.action, self.log_prob = self.get_action(mode) # Take a step
+      prediction = self.get_action(mode)
+      self.action = prediction['action']
       if render:
         self.env.render()
-      self.next_state, self.reward, self.done, _ = self.env.step(self.action)
+      self.next_state, self.reward, self.done, _ = self.env.step(self.action) # Take a step
       self.next_state = self.state_normalizer(self.next_state)
       self.reward = self.reward_normalizer(self.reward)
       if mode == 'Train':
-        self.save_experience()
+        self.save_experience(prediction)
         if self.time_to_learn():
           self.learn() # Update policy
-        self.episode_step_count += 1
+        self.episode['step_count'] += 1
         self.step_count += 1
       self.total_episode_reward += self.reward
       self.state = self.next_state
@@ -168,12 +176,11 @@ class REINFORCE(BaseAgent):
     # Add a batch dimension (Batch, Channel, Height, Width)
     state = state.unsqueeze(0)
     prediction = self.network(state)
-    action, log_prob = prediction['action'], prediction['log_prob']
-    action = to_numpy(action)
-    # print('prediction: ', prediction)
-    if action.size == 1:
+    action = to_numpy(prediction['action'])
+    if action.size == 1 and self.env_name == 'CartPole-v0':
       action = action[0]
-    return action, log_prob
+    prediction['action'] = action
+    return prediction
     
   def time_to_learn(self):
     """
@@ -184,15 +191,16 @@ class REINFORCE(BaseAgent):
 
   def learn(self):
     # Calculate the cumulative discounted return for an episode
-    discounted_returns = copy.deepcopy(self.episode_rewards)
-    loss = []
+    discounted_returns = to_tensor(self.episode['reward'], device=self.device)
+    dones = to_tensor(self.episode['done'], device=self.device)
     for i in range(len(discounted_returns)-2, -1, -1):
-      discounted_returns[i] = discounted_returns[i] + self.discount * discounted_returns[i+1]
-    discounted_returns = torch.tensor(discounted_returns)
-    for log_prob, discounted_return in zip(self.episode_log_probs, discounted_returns):
+      discounted_returns[i] = discounted_returns[i] + (1-dones[i]) * self.discount * discounted_returns[i+1]
+    # Compute loss
+    loss = []
+    for log_prob, discounted_return in zip(self.episode['log_prob'], discounted_returns):
       loss.append(-log_prob * discounted_return)
     loss = torch.cat(loss).sum()
-    
+
     if self.show_tb:
       self.logger.add_scalar(f'Loss', loss.item(), self.step_count)
     self.logger.debug(f'Step {self.step_count}: loss={loss.item()}')
@@ -203,10 +211,11 @@ class REINFORCE(BaseAgent):
       nn.utils.clip_grad_norm_(self.network.parameters(), self.gradient_clip)
     self.optimizer.step()
 
-  def save_experience(self):
+  def save_experience(self, prediction):
     # Save reward and log_prob for loss computation
-    self.episode_rewards.append(self.reward)
-    self.episode_log_probs.append(self.log_prob)
+    self.episode['reward'].append(self.reward)
+    self.episode['done'].append(self.done)
+    self.episode['log_prob'].append(prediction['log_prob'])
 
   def get_action_size(self):
     if isinstance(self.env.action_space, Discrete):
@@ -228,12 +237,8 @@ class REINFORCE(BaseAgent):
       self.network.train() # Set network back to training mode
 
   def save_model(self, model_path):
-    state_dicts = {
-      'policy': self.network.state_dict()
-    } 
-    torch.save(state_dicts, model_path)
+    torch.save(self.network.state_dict(), model_path)
   
   def load_model(self, model_path):
-    state_dicts = torch.load(model_path)
-    self.network.load_state_dict(state_dicts['policy'])
+    self.network.load_state_dict(torch.load(model_path))
     self.network = self.network.to(self.device)

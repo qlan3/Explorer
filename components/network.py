@@ -89,13 +89,27 @@ class Conv2d_MinAtar(nn.Module):
     return y
 
 
+class NetworkGlue(nn.Module):
+  '''
+  Glue two networks
+  '''
+  def __init__(self, net1, net2):
+    super().__init__()
+    self.net1 = net1
+    self.net2 = net2
+
+  def forward(self, x):
+    y = self.net2(self.net1(x))
+    return y
+
+
 class DQNNet(nn.Module):
   '''
   Glue the feature net with value net
     - feature net: generate feature given raw input
     - value net: output action value given feature input
   '''
-  def __init__(self, feature_net=nn.Identity(), value_net=nn.Identity()):
+  def __init__(self, feature_net, value_net):
     super().__init__()
     self.feature_net = feature_net
     self.value_net = value_net
@@ -107,7 +121,7 @@ class DQNNet(nn.Module):
 
 
 class CategoricalREINFORCENet(nn.Module):
-  def __init__(self, feature_net=nn.Identity(), actor_net=nn.Identity()):
+  def __init__(self, feature_net, actor_net):
     super().__init__()
     self.feature_net = feature_net
     self.actor_net = actor_net
@@ -123,7 +137,7 @@ class CategoricalREINFORCENet(nn.Module):
 
 
 class GaussianREINFORCENet(nn.Module):
-  def __init__(self, feature_net=nn.Identity(), actor_net=nn.Identity(), action_size=-1):
+  def __init__(self, feature_net, actor_net, action_size=-1):
     super().__init__()
     self.feature_net = feature_net
     self.actor_net = actor_net
@@ -138,3 +152,43 @@ class GaussianREINFORCENet(nn.Module):
     action = action_distribution.sample()
     log_prob = action_distribution.log_prob(action)
     return {'action': action, 'log_prob': log_prob}
+
+
+class CategoricalActorCriticNet(nn.Module):
+  def __init__(self, feature_net, actor_net, critic_net):
+    super().__init__()
+    self.feature_net = feature_net
+    self.actor_net = actor_net
+    self.critic_net = critic_net
+
+  def forward(self, x):
+    # Get a probability distribution over action space
+    phi = self.feature_net(x)
+    action_probs = self.actor_net(phi)
+    state_value = self.critic_net(phi)
+    # Sample an action
+    action_distribution = Categorical(probs=action_probs)
+    action = action_distribution.sample()
+    log_prob = action_distribution.log_prob(action)
+    return {'action': action, 'log_prob': log_prob, 'state_value': state_value}
+
+  
+class GaussianActorCriticNet(nn.Module):
+  def __init__(self, feature_net, actor_net, critic_net, action_size=-1):
+    super().__init__()
+    self.feature_net = feature_net
+    self.actor_net = actor_net
+    self.critic_net = critic_net
+    # The action std is independent of states
+    self.action_std = nn.Parameter(torch.zeros(action_size))
+    
+  def forward(self, x):
+    # Get the mean of probability distribution over action space
+    phi = self.feature_net(x)
+    action_mean = self.actor_net(phi).squeeze(0)
+    state_value = self.critic_net(phi).squeeze(0)
+    # Sample an action
+    action_distribution = Normal(action_mean, F.softplus(self.action_std))
+    action = action_distribution.sample()
+    log_prob = action_distribution.log_prob(action)
+    return {'action': action, 'log_prob': log_prob, 'state_value': state_value}

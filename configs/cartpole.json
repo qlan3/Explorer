@@ -10,19 +10,20 @@
   ],
   "agent": [
     {
-      "name": ["REINFORCE"]
+      "name": ["REINFORCE", "REINFORCEWithBaseline", "A2C"]
     }
   ],
+  "critic_loss_weight": [1.0],
   "device": ["cpu"],
   "hidden_layers": [[64,64]],
-  "hidden_activation": ["ReLU"],
+  "hidden_activation": ["Tanh"],
   "optimizer": [
     {
       "name": ["Adam"],
       "kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "display_interval": [100],
+  "display_interval": [50],
   "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
   "seed": [100],
