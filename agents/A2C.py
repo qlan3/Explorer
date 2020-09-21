@@ -8,7 +8,7 @@ from agents.REINFORCEWithBaseline import REINFORCEWithBaseline
 
 class A2C(REINFORCEWithBaseline):
   '''
-  Implementation of REINFORCE with baseline
+  Implementation of Actor-Critic
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
