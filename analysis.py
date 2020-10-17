@@ -21,7 +21,7 @@ def get_csv_result_dict(result, config_idx):
     'Config Index': config_idx,
     'Return (mean)': result['Return (mean)'].mean(),
     'Return (se)': result['Return (mean)'].sem(ddof=0)
-    }
+  }
   return result_dict
 
 cfg = {

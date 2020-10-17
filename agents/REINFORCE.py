@@ -177,7 +177,7 @@ class REINFORCE(BaseAgent):
     state = state.unsqueeze(0)
     prediction = self.network(state)
     action = to_numpy(prediction['action'])
-    if action.size == 1 and self.env_name == 'CartPole-v0':
+    if action.size == 1 and 'CartPole' in self.env_name:
       action = action[0]
     prediction['action'] = action
     return prediction

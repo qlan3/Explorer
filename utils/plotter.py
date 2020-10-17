@@ -50,7 +50,7 @@ class Plotter(object):
         # Add config index as a column
         result['Config Index'] = config_idx
         result_list.append(result)
-      config_idx += self.total_combination
+      config_idx += get_total_combination(exp)
     
     if len(result_list) == 0:
       return None
@@ -98,14 +98,14 @@ class Plotter(object):
       if not (mode in ['Train', 'Valid', 'Test', 'Dynamic']):
         return None
       # Merge results
-      print(f'[{exp}]: Merge {mode} results: {config_idx}/{self.total_combination}')
+      print(f'[{exp}]: Merge {mode} results: {config_idx}/{get_total_combination(exp)}')
       result_list = self.merge_index(config_idx, mode, processed, exp)
       if result_list is None:
         print(f'[{exp}]: No {mode} results for {config_idx}')
         return None
       # Process result
       if processed:
-        print(f'[{exp}]: Process {mode} results: {config_idx}/{self.total_combination}')
+        print(f'[{exp}]: Process {mode} results: {config_idx}/{get_total_combination(exp)}')
         for i in range(len(result_list)):
           new_result = get_process_result_dict(result_list[i], config_idx)
           result_list[i] = new_result
