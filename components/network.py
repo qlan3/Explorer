@@ -5,6 +5,7 @@ from torch.distributions import Categorical, Normal
 
 
 activations = {
+  'None': nn.Identity(),
   'ReLU': nn.ReLU(),
   'LeakyReLU': nn.LeakyReLU(),
   'Tanh': nn.Tanh(),

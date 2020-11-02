@@ -5,10 +5,11 @@
 logs/
 output/
 *figure*
-sbatch_*.sh
+sbatch*
 script.sh
 # run.py
 plot_paper.py
+*DS_Store*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
