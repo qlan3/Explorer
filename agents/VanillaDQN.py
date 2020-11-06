@@ -15,8 +15,7 @@ class VanillaDQN(BaseAgent):
     super().__init__(cfg)
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
-    self.max_episode_steps = int(cfg['env']['max_episode_steps'])
-    self.env = make_env(cfg['env']['name'], max_episode_steps=self.max_episode_steps)
+    self.env = make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
     self.config_idx = cfg['config_idx']
     self.device = cfg['device']
     self.batch_size = cfg['batch_size']
@@ -28,10 +27,6 @@ class VanillaDQN(BaseAgent):
     self.action_size = self.get_action_size()
     self.state_size = self.get_state_size()
     self.rolling_score_window = cfg['rolling_score_window']
-    if 'MinAtar' in self.env_name:
-      self.history_length = self.env.game.state_shape()[2]
-    else:
-      self.history_length = cfg['history_length']
     self.sgd_update_frequency = cfg['sgd_update_frequency']
     self.show_tb = cfg['show_tb']
     
@@ -79,9 +74,9 @@ class VanillaDQN(BaseAgent):
   def createNN(self, input_type):
     if input_type == 'pixel':
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+        feature_net = Conv2d_MinAtar(in_channels=self.env.game.state_shape()[2], feature_dim=self.layer_dims[0])
       else:
-        feature_net = Conv2d_Atari(in_channels=self.history_length, feature_dim=self.layer_dims[0])
+        feature_net = Conv2d_Atari(in_channels=4, feature_dim=self.layer_dims[0])
     elif input_type == 'feature':
       feature_net = nn.Identity()
     
