@@ -86,12 +86,12 @@ class Storage(object):
     if path_len < 0:
       path_len = self.memory_size
     data = [getattr(self, k)[:path_len] for k in keys]
+    '''
     for i in range(len(keys)):
       if len(data[i]) > 0:
-        if keys[i] in ['v', 'ret', 'adv']:
-          data[i] = torch.cat(data[i], dim=0)
-        else: # ['reward', 'mask', 'log_prob', 'action', 'state', 'next_state']
-          data[i] = torch.stack(data[i])
+        data[i] = torch.stack(data[i])
+    '''
     # data = map(lambda x: torch.cat(x, dim=0), data)
+    data = map(lambda x: torch.stack(x), data)
     Entry = namedtuple('Entry', keys)
     return Entry(*list(data))

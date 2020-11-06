@@ -10,7 +10,7 @@
   ],
   "agent": [
     {
-      "name": ["REINFORCE", "REINFORCEWithBaseline", "A2C"]
+      "name": ["REINFORCE", "REINFORCEWithBaseline"]
     }
   ],
   "critic_loss_weight": [1.0],

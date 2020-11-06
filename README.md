@@ -11,9 +11,18 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 - [Maxmin Deep Q-learning (MaxminDQN)](https://openreview.net/pdf?id=Bkg0u3Etwr)
 - [Averaged Deep Q-learning (AveragedDQN)](https://arxiv.org/pdf/1611.01929.pdf)
 - [Ensemble Deep Q-learning (EnsembleDQN)](https://arxiv.org/pdf/1611.01929.pdf)
-- REINFORCE
-- REINFORCE with baseline
-- Actor-Critic
+- [REINFORCE](http://incompleteideas.net/book/RLbook2020.pdf)
+- [REINFORCE with baseline](http://incompleteideas.net/book/RLbook2020.pdf)
+- [Actor-Critic](http://incompleteideas.net/book/RLbook2020.pdf)
+- [Syncrhonous Advantage Actor-Critic (A2C)](https://arxiv.org/pdf/1602.01783.pdf)
+
+
+# To do list
+
+- [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
+- [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
+- [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
+- [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
 
 
 ## Requirements
@@ -94,3 +103,4 @@ Enjoy!
 - [DeepRL](https://github.com/ShangtongZhang/DeepRL)
 - [Deep Reinforcement Learning Algorithms with PyTorch](https://github.com/p-christ/Deep-Reinforcement-Learning-Algorithms-with-PyTorch)
 - [Classic Control](https://github.com/muhammadzaheer/classic-control)
+- [Spinning Up in Deep RL](https://github.com/openai/spinningup)

@@ -174,9 +174,6 @@ class MLPGaussianActor(Actor):
     
   def log_prob_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
-    print('action:', action)
-    print('log_prob:', action_distribution.log_prob(action))
-    print('log_prob_sum:', action_distribution.log_prob(action).sum(axis=-1))
     return action_distribution.log_prob(action).sum(axis=-1)
 
 
@@ -196,7 +193,7 @@ class ActorCriticNet(nn.Module):
     v = self.critic_net(phi)
     # Sample an action
     action_distribution, action, log_prob = self.actor_net(phi, action)
-    return {'action': action, 'log_prob': log_prob, 'v': v}
+    return {'action': action, 'log_prob': log_prob, 'v': v.squeeze(-1)}
 
 
 class REINFORCENet(nn.Module):

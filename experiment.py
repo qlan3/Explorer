@@ -28,7 +28,6 @@ class Experiment(object):
     self.agent_name = cfg['agent']['name']
     if self.cfg['generate_random_seed']:
       self.cfg['seed'] = np.random.randint(int(1e6))
-    self.log_path = {'Train': self.cfg['train_log_path'], 'Test': self.cfg['test_log_path']}
     self.model_path = self.cfg['model_path']
     self.cfg_path = self.cfg['cfg_path']
     self.save_config()
@@ -43,19 +42,12 @@ class Experiment(object):
     self.agent = getattr(agents, self.agent_name)(self.cfg)
     self.agent.env.seed(self.cfg['seed'])
     # Train && Test
-    self.results['Train'], self.results['Test'] = self.agent.run_steps(render=self.cfg['render'])
-    self.save_results(mode='Train')
-    self.save_results(mode='Test')
+    self.agent.run_steps(render=self.cfg['render'])
     # Save model
     self.save_model()
     self.end_time = time.time()
     self.agent.logger.info(f'Memory usage: {rss_memory_usage():.2f} MB')
     self.agent.logger.info(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')
-
-  def save_results(self, mode):
-    self.results[mode]['Env'] = self.results[mode]['Env'].astype('category')
-    self.results[mode]['Agent'] = self.results[mode]['Agent'].astype('category')
-    self.results[mode].to_feather(self.log_path[mode])
   
   def save_model(self):
     self.agent.save_model(self.model_path)

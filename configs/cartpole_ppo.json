@@ -1,0 +1,31 @@
+{
+  "env": [
+    {
+      "name": ["CartPole-v1"],
+      "input_type": ["feature"]
+    }
+  ],
+  "train_steps": [3e5],
+  "steps_per_epoch": [500],
+  "max_episode_steps": [-1],
+  "test_per_epochs": [40],
+  "agent": [{"name": ["PPO"]}],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "actor_kwargs": [{"lr": [3e-4]}],
+      "critic_kwargs": [{"lr": [1e-3]}]
+    }
+  ],
+  "gradient_clip": [-1],
+  "hidden_layers": [[64,64]],
+  "hidden_activation": ["Tanh"],
+  "display_interval": [50],
+  "rolling_score_window": [{"Train": [100], "Test": [10]}],
+  "discount": [0.99],
+  "gae": [-1, 0.97],
+  "seed": [1],
+  "device": ["cpu"],
+  "show_tb": [true],
+  "generate_random_seed": [true]
+}

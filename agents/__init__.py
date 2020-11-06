@@ -8,4 +8,5 @@ from .AveragedDQN import *
 
 from .REINFORCE import *
 from .REINFORCEWithBaseline import *
+from .ActorCritic import *
 from .A2C import *
