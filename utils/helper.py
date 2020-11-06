@@ -36,10 +36,7 @@ def to_tensor(x, device):
   '''
   Convert an array to tensor
   '''
-  if isinstance(x, torch.Tensor):
-    return x
-  x = np.asarray(x, dtype=np.float)
-  x = torch.tensor(x, device=device, dtype=torch.float32)
+  x = torch.as_tensor(x, device=device, dtype=torch.float32)
   return x
 
 def to_numpy(t):
