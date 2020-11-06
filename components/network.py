@@ -121,75 +121,94 @@ class DQNNet(nn.Module):
     return v
 
 
-class CategoricalREINFORCENet(nn.Module):
-  def __init__(self, feature_net, actor_net):
+class MLPCritic(nn.Module):
+  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
     super().__init__()
-    self.feature_net = feature_net
-    self.actor_net = actor_net
+    self.value_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
 
-  def forward(self, x):
-    # Get a probability distribution over action space
-    action_probs = self.actor_net(self.feature_net(x))
-    # Sample an action
-    action_distribution = Categorical(probs=action_probs)
-    action = action_distribution.sample()
-    log_prob = action_distribution.log_prob(action)
-    return {'action': action, 'log_prob': log_prob}
+  def forward(self, phi):
+    return self.value_net(phi)
 
 
-class GaussianREINFORCENet(nn.Module):
-  def __init__(self, feature_net, actor_net, action_size=-1):
+class Actor(nn.Module):
+  def distribution(self, phi):
+    raise NotImplementedError
+
+  def log_prob_from_distribution(self, action_distribution, action):
+    raise NotImplementedError
+
+  def forward(self, phi, action=None):
+    # Compute action distribution and the log_prob of given actions
+    action_distribution = self.distribution(phi)
+    if action is None:
+      action = action_distribution.sample()
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    return action_distribution, action, log_prob
+
+
+class MLPCategoricalActor(Actor):
+  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
     super().__init__()
-    self.feature_net = feature_net
-    self.actor_net = actor_net
+    self.logits_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+
+  def distribution(self, phi):
+    logits = self.logits_net(phi)
+    return Categorical(logits=logits)
+
+  def log_prob_from_distribution(self, action_distribution, action):
+    return action_distribution.log_prob(action)
+
+
+class MLPGaussianActor(Actor):
+  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+    super().__init__()
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
     # The action std is independent of states
-    self.action_std = nn.Parameter(torch.zeros(action_size))
+    action_size = layer_dims[-1]
+    self.action_std = nn.Parameter(torch.zeros(action_size))    
+
+  def distribution(self, phi):
+    action_mean = self.actor_net(phi)
+    action_std = F.softplus(self.action_std)
+    return Normal(action_mean, action_std)
     
-  def forward(self, x):
-    # Get the mean of probability distribution over action space
-    action_mean = self.actor_net(self.feature_net(x)).squeeze(0)
-    # Sample an action
-    action_distribution = Normal(action_mean, F.softplus(self.action_std))
-    action = action_distribution.sample()
-    log_prob = action_distribution.log_prob(action)
-    return {'action': action, 'log_prob': log_prob}
+  def log_prob_from_distribution(self, action_distribution, action):
+    # Last axis sum needed for Torch Normal distribution
+    print('action:', action)
+    print('log_prob:', action_distribution.log_prob(action))
+    print('log_prob_sum:', action_distribution.log_prob(action).sum(axis=-1))
+    return action_distribution.log_prob(action).sum(axis=-1)
 
 
-class CategoricalActorCriticNet(nn.Module):
+class ActorCriticNet(nn.Module):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__()
     self.feature_net = feature_net
     self.actor_net = actor_net
     self.critic_net = critic_net
+    self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
+    self.critic_params = list(self.feature_net.parameters()) + list(self.critic_net.parameters())
 
-  def forward(self, x):
-    # Get a probability distribution over action space
-    phi = self.feature_net(x)
-    action_probs = self.actor_net(phi)
-    state_value = self.critic_net(phi)
+  def forward(self, obs, action=None):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute state value
+    v = self.critic_net(phi)
     # Sample an action
-    action_distribution = Categorical(probs=action_probs)
-    action = action_distribution.sample()
-    log_prob = action_distribution.log_prob(action)
-    return {'action': action, 'log_prob': log_prob, 'state_value': state_value}
+    action_distribution, action, log_prob = self.actor_net(phi, action)
+    return {'action': action, 'log_prob': log_prob, 'v': v}
 
-  
-class GaussianActorCriticNet(nn.Module):
-  def __init__(self, feature_net, actor_net, critic_net, action_size=-1):
+
+class REINFORCENet(nn.Module):
+  def __init__(self, feature_net, actor_net):
     super().__init__()
     self.feature_net = feature_net
     self.actor_net = actor_net
-    self.critic_net = critic_net
-    # The action std is independent of states
-    self.action_std = nn.Parameter(torch.zeros(action_size))
-    
-  def forward(self, x):
-    # Get the mean of probability distribution over action space
-    phi = self.feature_net(x)
-    action_mean = self.actor_net(phi).squeeze(0)
-    state_value = self.critic_net(phi).squeeze(0)
+    self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
+
+  def forward(self, obs, action=None):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
     # Sample an action
-    action_distribution = Normal(action_mean, F.softplus(self.action_std))
-    action = action_distribution.sample()
-    log_prob = action_distribution.log_prob(action)
-    return {'action': action, 'log_prob': log_prob, 'state_value': state_value}
+    _, action, log_prob = self.actor_net(phi, action)
+    return {'action': action, 'log_prob': log_prob}
