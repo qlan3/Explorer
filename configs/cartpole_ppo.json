@@ -17,6 +17,10 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
+  "batch_size": [100],
+  "clip_ratio": [0.2],
+  "target_kl": [0.01],
+  "optimize_epochs": [10],
   "gradient_clip": [-1],
   "hidden_layers": [[64,64]],
   "hidden_activation": ["Tanh"],

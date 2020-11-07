@@ -10,3 +10,4 @@ from .REINFORCE import *
 from .REINFORCEWithBaseline import *
 from .ActorCritic import *
 from .A2C import *
+from .PPO import *

@@ -5,22 +5,29 @@
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [4e5],
-  "max_episode_steps": [1000],
-  "test_per_episodes": [10],
-  "agent": [{"name": ["REINFORCE", "REINFORCEWithBaseline"]}],
+  "train_steps": [1.5e6],
+  "steps_per_epoch": [1000],
+  "max_episode_steps": [-1],
+  "test_per_epochs": [10],
+  "agent": [{"name": ["PPO"]}],
   "optimizer": [
     {
       "name": ["Adam"],
-      "actor_kwargs": [{"lr": [1e-3]}]
+      "actor_kwargs": [{"lr": [3e-4]}],
+      "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
+  "batch_size": [200],
+  "clip_ratio": [0.2],
+  "target_kl": [0.01],
+  "optimize_epochs": [10],
   "gradient_clip": [-1],
   "hidden_layers": [[64,64]],
   "hidden_activation": ["Tanh"],
   "display_interval": [50],
   "rolling_score_window": [{"Train": [100], "Test": [10]}],
   "discount": [0.99],
+  "gae": [-1, 0.97],
   "seed": [1],
   "device": ["cpu"],
   "show_tb": [true],

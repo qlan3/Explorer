@@ -88,8 +88,6 @@ class REINFORCE(BaseAgent):
     if self.reward is not None:
       prediction['mask'] = to_tensor(1-self.done, self.device)
       prediction['reward'] = to_tensor(self.reward, self.device)
-      # prediction['state'] = to_tensor(self.state, self.device)
-      # prediction['next_state'] = to_tensor(self.next_state, self.device)
     self.storage.add(prediction)
 
   def run_steps(self, render=False):

@@ -60,3 +60,9 @@ def set_random_seed(seed):
 def make_dir(dir):
   if not os.path.exists(dir): 
     os.makedirs(dir, exist_ok=True)
+
+def divide_to_batches(length, batch_size):
+  indices = np.asarray(np.random.permutation(length))
+  batches = indices[:length // batch_size * batch_size].reshape(-1, batch_size)
+  for batch in batches:
+    yield batch

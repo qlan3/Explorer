@@ -60,7 +60,7 @@ class Storage(object):
   def __init__(self, memory_size, keys=None):
     if keys is None:
       keys = []
-    self.keys = keys + ['action', 'reward', 'mask']
+    self.keys = keys + ['action', 'log_prob', 'reward', 'mask']
     self.memory_size = memory_size
     self.empty()
 
