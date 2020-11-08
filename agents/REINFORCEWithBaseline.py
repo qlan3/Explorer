@@ -12,8 +12,8 @@ class REINFORCEWithBaseline(REINFORCE):
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs']),
       'critic':  getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs'])
     }
-    # Set storage: memory size < 0 means infinity
-    self.storage = Storage(-1, keys=['reward', 'mask', 'v', 'log_prob', 'adv'])
+    # Set replay buffer
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'v', 'log_prob', 'adv'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -39,13 +39,13 @@ class REINFORCEWithBaseline(REINFORCE):
 
   def learn(self):
     # Compute advantage
-    self.storage.placeholder(self.episode_step_count)
+    self.replay.placeholder(self.episode_step_count)
     ret = torch.tensor(0.0)
     for i in reversed(range(self.episode_step_count)):
-      ret = self.storage.reward[i] + self.discount * self.storage.mask[i] * ret
-      self.storage.adv[i] = ret.detach() - self.storage.v[i]
+      ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
+      self.replay.adv[i] = ret.detach() - self.replay.v[i]
     # Get training data
-    entries = self.storage.get(['log_prob', 'adv'], self.episode_step_count)
+    entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count)
     # Compute loss
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
     critic_loss = 0.5 * entries.adv.pow(2).mean()

@@ -50,8 +50,8 @@ class REINFORCE(BaseAgent):
     self.optimizer = {
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs'])
     }
-    # Set storage: memory size < 0 means infinity
-    self.storage = Storage(-1, keys=['reward', 'mask', 'log_prob', 'ret'])
+    # Set replay buffer
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret'])
 
   def createNN(self, input_type):
     # Set feature network
@@ -88,7 +88,7 @@ class REINFORCE(BaseAgent):
     if self.reward is not None:
       prediction['mask'] = to_tensor(1-self.done, self.device)
       prediction['reward'] = to_tensor(self.reward, self.device)
-    self.storage.add(prediction)
+    self.replay.add(prediction)
 
   def run_steps(self, render=False):
     # Run for multiple episodes
@@ -134,7 +134,7 @@ class REINFORCE(BaseAgent):
       # Update policy
       self.learn()
       # Reset storage
-      self.storage.empty()
+      self.replay.empty()
     # Reset environment
     self.reset_game()
 
@@ -171,13 +171,13 @@ class REINFORCE(BaseAgent):
 
   def learn(self):
     # Compute return
-    self.storage.placeholder(self.episode_step_count)
+    self.replay.placeholder(self.episode_step_count)
     ret = torch.tensor(0.0)
     for i in reversed(range(self.episode_step_count)):
-      ret = self.storage.reward[i] + self.discount * self.storage.mask[i] * ret
-      self.storage.ret[i] = ret.detach()
+      ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
+      self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.storage.get(['log_prob', 'ret'], self.episode_step_count)
+    entries = self.replay.get(['log_prob', 'ret'], self.episode_step_count)
     # Compute loss
     actor_loss = -(entries.log_prob * entries.ret).mean()
     if self.show_tb:

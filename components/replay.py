@@ -29,8 +29,8 @@ class Replay(object):
   def sample(self):
     if self.is_empty():
       return None
-    sampled_indices = [np.random.randint(0, len(self.memory)) for _ in range(self.batch_size)]
-    sampled_data = [self.memory[idx] for idx in sampled_indices]
+    sampled_idxs = [np.random.randint(0, len(self.memory)) for _ in range(self.batch_size)]
+    sampled_data = [self.memory[idx] for idx in sampled_idxs]
     # Stack sampled data and convert them to tensors
     states = to_tensor([np.asarray(e.state) for e in sampled_data if e is not None], self.device)
     actions = to_tensor([np.asarray([e.action]) for e in sampled_data if e is not None], self.device)
@@ -53,15 +53,14 @@ class Replay(object):
     np.random.shuffle(self.memory)
 
 
-class Storage(object):
+class InfiniteReplay(object):
   '''
-  Storage buffer to store experiences for policy gradient methods
+  Infinite replay buffer to store experiences
   '''
-  def __init__(self, memory_size, keys=None):
+  def __init__(self, keys=None):
     if keys is None:
       keys = []
     self.keys = keys + ['action', 'log_prob', 'reward', 'mask']
-    self.memory_size = memory_size
     self.empty()
 
   def add(self, data):
@@ -70,28 +69,75 @@ class Storage(object):
         raise RuntimeError('Undefined key')
       getattr(self, k).append(v)
 
-  def placeholder(self, path_len=-1):
-    if path_len < 0:
-      path_len = self.memory_size
+  def placeholder(self, data_size):
     for k in self.keys:
       v = getattr(self, k)
       if len(v) == 0:
-        setattr(self, k, [None] * path_len)
+        setattr(self, k, [None] * data_size)
 
   def empty(self):
     for key in self.keys:
       setattr(self, key, [])
 
-  def get(self, keys, path_len=-1):
-    if path_len < 0:
-      path_len = self.memory_size
-    data = [getattr(self, k)[:path_len] for k in keys]
-    '''
-    for i in range(len(keys)):
-      if len(data[i]) > 0:
-        data[i] = torch.stack(data[i])
-    '''
-    # data = map(lambda x: torch.cat(x, dim=0), data)
+  def get(self, keys, data_size):
+    data = [getattr(self, k)[:data_size] for k in keys]
     data = map(lambda x: torch.stack(x), data)
     Entry = namedtuple('Entry', keys)
     return Entry(*list(data))
+
+
+class FiniteReplay(object):
+  '''
+  Finite replay buffer to store experiences
+  '''
+  def __init__(self, memory_size, keys=None):
+    if keys is None:
+      keys = []
+    self.keys = keys + ['action', 'log_prob', 'reward', 'mask']
+    self.memory_size = int(memory_size)
+    self.empty()
+
+  def empty(self):
+    self.pos = 0
+    self.full = False
+    for key in self.keys:
+      setattr(self, key, [None] * self.memory_size)
+
+  def add(self, data):
+    for k, v in data.items():
+      if k not in self.keys:
+        raise RuntimeError('Undefined key')
+      getattr(self, k)[self.pos] = v
+    self.pos = (self.pos + 1) % self.memory_size
+    if self.pos == 0:
+      self.full = True
+
+  def get(self, keys, data_size):
+    data = [getattr(self, k)[:data_size] for k in keys]
+    data = map(lambda x: torch.stack(x), data)
+    Entry = namedtuple('Entry', keys)
+    return Entry(*list(data))
+
+  def sample(self, keys, batch_size):
+    if self.size() < batch_size:
+      return None
+    idxs = list(np.random.randint(0, self.size(), size=batch_size))
+    data = [getattr(self, k)[idxs] for k in keys]
+    data = map(lambda x: torch.stack(x), data)
+    Entry = namedtuple('Entry', keys)
+    return Entry(*list(data))
+
+  def is_empty(self):
+    if self.pos == 0 and not self.full:
+      return True
+    else:
+      return False
+  
+  def is_full(self):
+    return self.full
+
+  def size(self):
+    if self.full:
+      return self.memory_size
+    else:
+      return self.pos 

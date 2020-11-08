@@ -10,8 +10,8 @@ class A2C(REINFORCEWithBaseline):
     super().__init__(cfg)
     self.test_per_epochs = cfg['test_per_epochs']
     self.steps_per_epoch = cfg['steps_per_epoch']
-    # Set storage
-    self.storage = Storage(self.steps_per_epoch, keys=['reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
+    # Set replay buffer
+    self.replay = FiniteReplay(self.steps_per_epoch+1, keys=['reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
 
   def run_steps(self, render=False):
     # Run for multiple episodes
@@ -62,7 +62,7 @@ class A2C(REINFORCEWithBaseline):
       # Update policy
       self.learn()
       # Reset storage
-      self.storage.empty()
+      self.replay.empty()
     elif mode == 'Test':
       # Run for one episode
       while not self.done:
@@ -83,20 +83,19 @@ class A2C(REINFORCEWithBaseline):
 
   def learn(self):
     # Compute return and advantage
-    self.storage.placeholder()
     adv = torch.tensor(0.0)
-    ret = self.storage.v[-1].detach()
+    ret = self.replay.v[-1].detach()
     for i in reversed(range(self.steps_per_epoch)):
-      ret = self.storage.reward[i] + self.discount * self.storage.mask[i] * ret
+      ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       if self.cfg['gae'] < 0:
-        adv = ret - self.storage.v[i].detach()
+        adv = ret - self.replay.v[i].detach()
       else:
-        td_error = self.storage.reward[i] + self.discount * self.storage.mask[i] * self.storage.v[i+1] - self.storage.v[i]
-        adv = self.discount * self.cfg['gae'] * self.storage.mask[i] * adv + td_error
-      self.storage.adv[i] = adv.detach()
-      self.storage.ret[i] = ret.detach()
+        td_error = self.replay.reward[i] + self.discount * self.replay.mask[i] * self.replay.v[i+1] - self.replay.v[i]
+        adv = self.discount * self.cfg['gae'] * self.replay.mask[i] * adv + td_error
+      self.replay.adv[i] = adv.detach()
+      self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.storage.get(['log_prob', 'v', 'ret', 'adv'], self.steps_per_epoch)
+    entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.steps_per_epoch)
     # Compute losses
     actor_loss = -(entries.log_prob * entries.adv).mean()
     critic_loss = 0.5 * (entries.ret - entries.v).pow(2).mean()
