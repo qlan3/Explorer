@@ -1,6 +1,7 @@
 import logging
 from utils.helper import *
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
+
 
 class Logger(object):
   def __init__(self, logs_dir, file_name='log.txt', filemode='w'):
