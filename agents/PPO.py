@@ -31,9 +31,7 @@ class PPO(A2C):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data and **detach** (IMPORTANT: we don't optimize old parameters)
-    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action'], self.steps_per_epoch)
-    EntryCLS = entries.__class__
-    entries = EntryCLS(*list(map(lambda x: x.detach(), entries)))
+    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action'], self.steps_per_epoch, detach=True)
     # Normalize advantages
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs

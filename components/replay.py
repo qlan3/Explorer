@@ -112,9 +112,11 @@ class FiniteReplay(object):
     if self.pos == 0:
       self.full = True
 
-  def get(self, keys, data_size):
+  def get(self, keys, data_size, detach=False):
     data = [getattr(self, k)[:data_size] for k in keys]
     data = map(lambda x: torch.stack(x), data)
+    if detach:
+      data = map(lambda x: x.detach(), data)
     Entry = namedtuple('Entry', keys)
     return Entry(*list(data))
 
