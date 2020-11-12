@@ -16,7 +16,6 @@ class Experiment(object):
   Train the agent to play the game.
   '''
   def __init__(self, cfg):
-    self.results = {'Train': None, 'Test': None}
     self.cfg = copy.deepcopy(cfg)
     if torch.cuda.is_available() and 'cuda' in cfg['device']:
       self.device = cfg['device']
@@ -44,7 +43,7 @@ class Experiment(object):
     # Train && Test
     self.agent.run_steps(render=self.cfg['render'])
     # Save model
-    self.save_model()
+    # self.save_model()
     self.end_time = time.time()
     self.agent.logger.info(f'Memory usage: {rss_memory_usage():.2f} MB')
     self.agent.logger.info(f'Time elapsed: {(self.end_time-self.start_time)/60:.2f} minutes')

@@ -11,3 +11,4 @@ from .REINFORCEWithBaseline import *
 from .ActorCritic import *
 from .A2C import *
 from .PPO import *
+from .SAC import *

@@ -151,7 +151,7 @@ class REINFORCE(BaseAgent):
     if self.show_tb:
       self.logger.add_scalar(f'{mode}_Return', self.episode_return, self.step_count)
       self.logger.add_scalar(f'{mode}_Average_Return', rolling_score, self.step_count)
-    if mode == 'Test' or self.episode_count % self.display_interval == 0:
+    if mode == 'Test' or self.episode_count % self.display_interval == 0 or self.step_count >= self.train_steps == 0:
       # Save result to files
       result = pd.DataFrame(self.result[mode])
       result['Env'] = result['Env'].astype('category')
@@ -196,6 +196,8 @@ class REINFORCE(BaseAgent):
       return self.env.action_space.n
     elif isinstance(self.env.action_space, Box):
       self.action_type = 'CONTINUOUS'
+      # Set the maximum abs value of action space, used for SAC.
+      self.action_lim = max(max(abs(self.env.action_space.low)), max(self.env.action_space.high))  
       return self.env.action_space.shape[0]
     else:
       raise ValueError('Unknown action type.')

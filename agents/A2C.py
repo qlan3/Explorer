@@ -6,7 +6,7 @@ class A2C(REINFORCEWithBaseline):
   Implementation of A2C (Syncrhonous Advantage Actor Critic, a synchronous deterministic version of A3C)
   '''
   def __init__(self, cfg):
-    cfg['test_per_episodes'] = -1 # To avoid an error of copying test_per_episodes in REINFORCEWithBaseline
+    cfg.setdefault('test_per_episodes', 0) # To avoid an error of copying test_per_episodes in REINFORCEWithBaseline
     super().__init__(cfg)
     self.test_per_epochs = cfg['test_per_epochs']
     self.steps_per_epoch = cfg['steps_per_epoch']

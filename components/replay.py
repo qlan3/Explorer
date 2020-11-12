@@ -123,8 +123,9 @@ class FiniteReplay(object):
   def sample(self, keys, batch_size):
     if self.size() < batch_size:
       return None
-    idxs = list(np.random.randint(0, self.size(), size=batch_size))
-    data = [getattr(self, k)[idxs] for k in keys]
+    idxs = np.random.randint(0, self.size(), size=batch_size)
+    # data = [getattr(self, k)[idxs] for k in keys]
+    data = [[getattr(self, k)[idx] for idx in idxs] for k in keys]
     data = map(lambda x: torch.stack(x), data)
     Entry = namedtuple('Entry', keys)
     return Entry(*list(data))
