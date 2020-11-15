@@ -20,8 +20,8 @@ class VanillaDQN(BaseAgent):
     self.device = cfg['device']
     self.batch_size = cfg['batch_size']
     self.discount = cfg['discount']
-    self.train_steps = int(cfg['env']['train_steps'])
-    self.test_per_episodes = int(cfg['env']['test_per_episodes'])
+    self.train_steps = int(cfg['train_steps'])
+    self.test_per_episodes = int(cfg['test_per_episodes'])
     self.display_interval = cfg['display_interval']
     self.gradient_clip = cfg['gradient_clip']
     self.action_size = self.get_action_size()

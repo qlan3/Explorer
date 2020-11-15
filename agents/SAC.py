@@ -96,9 +96,9 @@ class SAC(REINFORCE):
     """
     Return boolean to indicate whether it is time to learn:
     - The agent is not on exploration stage
-    - There are enough experiences in replay buffer
+    - It is time to update network
     """
-    if self.step_count > self.cfg['exploration_steps'] and self.step_count > self.cfg['batch_size'] and self.step_count % self.cfg['network_update_frequency'] == 0:
+    if self.step_count > self.cfg['exploration_steps'] and self.step_count % self.cfg['network_update_frequency'] == 0:
       return True
     else:
       return False
@@ -141,6 +141,9 @@ class SAC(REINFORCE):
           for p, p_target in zip(self.network.parameters(), self.network_target.parameters()):
             p_target.data.mul_(self.cfg['polyak'])
             p_target.data.add_((1-self.cfg['polyak'])*p.data)
+    if self.show_tb:
+      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
+      self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
 
   def compute_q_target(self, batch):
     with torch.no_grad():

@@ -121,8 +121,10 @@ class FiniteReplay(object):
     return Entry(*list(data))
 
   def sample(self, keys, batch_size):
+    '''
     if self.size() < batch_size:
       return None
+    '''
     idxs = np.random.randint(0, self.size(), size=batch_size)
     # data = [getattr(self, k)[idxs] for k in keys]
     data = [[getattr(self, k)[idx] for idx in idxs] for k in keys]

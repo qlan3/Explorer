@@ -33,6 +33,8 @@ class A2C(REINFORCEWithBaseline):
       self.set_net_mode(mode)
       # Run for one epoch
       self.run_epoch(mode, render)
+    self.save_episode_result('Train')
+    self.save_episode_result('Test')
 
   def run_epoch(self, mode, render):
     if mode == 'Train':

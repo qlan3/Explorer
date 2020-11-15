@@ -8,7 +8,7 @@
   ],
   "train_steps": [1.5e6],
   "steps_per_epoch": [1000],
-  "test_per_episodes": [10],
+  "test_per_epochs": [10],
   "agent": [{"name": ["A2C"]}],
   "optimizer": [
     {

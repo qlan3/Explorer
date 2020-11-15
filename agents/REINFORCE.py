@@ -15,7 +15,7 @@ class REINFORCE(BaseAgent):
     self.cfg = cfg
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
-    self.env = make_env(cfg['env']['name'], max_episode_steps=int(cfg['max_episode_steps']))
+    self.env = make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
     self.config_idx = cfg['config_idx']
     self.device = cfg['device']
     self.discount = cfg['discount']
@@ -108,6 +108,8 @@ class REINFORCE(BaseAgent):
       self.set_net_mode(mode)
       # Run for one episode
       self.run_episode(mode, render)
+    self.save_episode_result('Train')
+    self.save_episode_result('Test')
 
   def run_episode(self, mode, render):
     while not self.done:
@@ -151,7 +153,7 @@ class REINFORCE(BaseAgent):
     if self.show_tb:
       self.logger.add_scalar(f'{mode}_Return', self.episode_return, self.step_count)
       self.logger.add_scalar(f'{mode}_Average_Return', rolling_score, self.step_count)
-    if mode == 'Test' or self.episode_count % self.display_interval == 0 or self.step_count >= self.train_steps == 0:
+    if mode == 'Test' or self.episode_count % self.display_interval == 0 or self.step_count >= self.train_steps:
       # Save result to files
       result = pd.DataFrame(self.result[mode])
       result['Env'] = result['Env'].astype('category')
