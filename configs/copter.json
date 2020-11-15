@@ -2,9 +2,7 @@
   "env": [
     {
       "name": ["Pixelcopter-PLE-v0"],
-      "train_steps": [2e6],
       "max_episode_steps": [500],
-      "test_per_episodes": [10],
       "input_type": ["feature"]
     }
   ],
@@ -17,6 +15,8 @@
       "target_networks_num": [2,3,4,5,6,7,8,9]
     }
   ],
+  "train_steps": [2e6],
+  "test_per_episodes": [10],
   "device": ["cpu"],
   "hidden_layers": [[64,64]],
   "memory_type": ["Replay"],

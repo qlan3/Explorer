@@ -2,8 +2,6 @@
   "env": [
     {
       "name": ["Enduro-ram-v4", "Pong-ram-v4", "Qbert-ram-v4", "SpaceInvaders-ram-v4"],
-      "train_steps": [5e7],
-      "test_per_episodes": [10],
       "input_type": ["feature"]
     }
   ],
@@ -12,6 +10,8 @@
       "name": ["DQN"]
     }
   ],
+  "train_steps": [5e7],
+  "test_per_episodes": [10],
   "device": ["cpu"],
   "hidden_layers": [[128,128,128,128]],
   "memory_type": ["Replay"],

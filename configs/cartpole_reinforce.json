@@ -2,11 +2,11 @@
   "env": [
     {
       "name": ["CartPole-v1"],
+      "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
   "train_steps": [3e5],
-  "max_episode_steps": [-1],
   "test_per_episodes": [10],
   "agent": [{"name": ["REINFORCE"]}],
   "optimizer": [
