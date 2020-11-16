@@ -17,7 +17,6 @@ class MaxminDQN(VanillaDQN):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.target_network_update_freqency = cfg['target_network_update_freqency']
     self.k = cfg['agent']['target_networks_num'] # number of target networks
     # Create k different: Q value network, Target Q value network and Optimizer
     self.Q_net = [None] * self.k
@@ -36,7 +35,7 @@ class MaxminDQN(VanillaDQN):
     self.update_Q_net_index = np.random.choice(list(range(self.k)))
     super().learn()
     # Update target network
-    if (self.step_count // self.sgd_update_frequency) % self.target_network_update_freqency == 0:
+    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
       for i in range(self.k):
         self.Q_net_target[i].load_state_dict(self.Q_net[i].state_dict())
 

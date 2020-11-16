@@ -32,7 +32,7 @@
   "seed": [1],
   "show_tb": [true],
   "gradient_clip": [5],
-  "target_network_update_freqency": [1000, 10000],
+  "target_network_update_frequency": [1000, 10000],
   "sgd_update_frequency": [4],
   "generate_random_seed": [true]
 }

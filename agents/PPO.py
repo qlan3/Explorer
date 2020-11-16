@@ -11,13 +11,15 @@ class PPO(A2C):
     self.replay = FiniteReplay(self.steps_per_epoch+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
 
   def save_experience(self, prediction):
-    if self.reward is not None:
-      prediction['mask'] = to_tensor(1-self.done, self.device)
-      prediction['reward'] = to_tensor(self.reward, self.device)
-      prediction['state'] = to_tensor(self.state, self.device)
+    mode = 'Train'
+    if self.reward[mode] is not None:
+      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+      prediction['reward'] = to_tensor(self.reward[mode], self.device)
+      prediction['state'] = to_tensor(self.state[mode], self.device)
     self.replay.add(prediction)
 
   def learn(self):
+    mode = 'Train'
     # Compute return and advantage
     adv = torch.tensor(0.0)
     ret = self.replay.v[-1].detach()

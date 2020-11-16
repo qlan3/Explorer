@@ -20,7 +20,7 @@ class REINFORCEWithBaseline(REINFORCE):
     if input_type == 'pixel':
       layer_dims = [self.cfg['feature_dim']] + self.cfg['hidden_layers']
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.env.game.state_shape()[2], feature_dim=layer_dims[0])
+        feature_net = Conv2d_MinAtar(in_channels=self.env[mode].game.state_shape()[2], feature_dim=layer_dims[0])
       else:
         feature_net = Conv2d_Atari(in_channels=4, feature_dim=layer_dims[0])
     elif input_type == 'feature':
@@ -38,14 +38,15 @@ class REINFORCEWithBaseline(REINFORCE):
     return NN
 
   def learn(self):
+    mode = 'Train'
     # Compute advantage
-    self.replay.placeholder(self.episode_step_count)
+    self.replay.placeholder(self.episode_step_count[mode])
     ret = torch.tensor(0.0)
-    for i in reversed(range(self.episode_step_count)):
+    for i in reversed(range(self.episode_step_count[mode])):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       self.replay.adv[i] = ret.detach() - self.replay.v[i]
     # Get training data
-    entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count)
+    entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count[mode])
     # Compute loss
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
     critic_loss = 0.5 * entries.adv.pow(2).mean()

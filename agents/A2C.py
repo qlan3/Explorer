@@ -22,7 +22,8 @@ class A2C(REINFORCEWithBaseline):
     self.episode_return_list = {'Train': [], 'Test': []}
     mode = 'Train'
     self.start_time = time.time()
-    self.reset_game()
+    self.reset_game('Train')
+    self.reset_game('Test')
     while self.step_count < self.train_steps:
       if mode == 'Train' and self.epoch_count % self.test_per_epochs == 0:
         mode = 'Test'
@@ -41,24 +42,24 @@ class A2C(REINFORCEWithBaseline):
       # Run for one epoch
       for _ in range(self.steps_per_epoch):
         prediction = self.get_action(mode)
-        self.action = to_numpy(prediction['action'])
+        self.action[mode] = to_numpy(prediction['action'])
         if render:
-          self.env.render()
+          self.env[mode].render()
         # Take a step
-        self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-        self.next_state = self.state_normalizer(self.next_state)
-        self.reward = self.reward_normalizer(self.reward)
-        self.episode_return += self.reward  
+        self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+        self.next_state[mode] = self.state_normalizer(self.next_state[mode])
+        self.reward[mode] = self.reward_normalizer(self.reward[mode])
+        self.episode_return[mode] += self.reward[mode]  
         self.step_count += 1
         # Save experience
         self.save_experience(prediction)
         # Update state
-        self.state = self.next_state
+        self.state[mode] = self.next_state[mode]
         # End of one episode
-        if self.done:
+        if self.done[mode]:
           self.episode_count += 1
           self.save_episode_result(mode)
-          self.reset_game()
+          self.reset_game(mode)
       prediction = self.get_action(mode)
       self.save_experience(prediction)
       # Update policy
@@ -67,23 +68,24 @@ class A2C(REINFORCEWithBaseline):
       self.replay.empty()
     elif mode == 'Test':
       # Run for one episode
-      while not self.done:
+      while not self.done[mode]:
         prediction = self.get_action(mode)
-        self.action = to_numpy(prediction['action'])
+        self.action[mode] = to_numpy(prediction['action'])
         if render:
-          self.env.render()
+          self.env[mode].render()
         # Take a step
-        self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-        self.next_state = self.state_normalizer(self.next_state)
-        self.reward = self.reward_normalizer(self.reward)
-        self.episode_return += self.reward
+        self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+        self.next_state[mode] = self.state_normalizer(self.next_state[mode])
+        self.reward[mode] = self.reward_normalizer(self.reward[mode])
+        self.episode_return[mode] += self.reward[mode]
         # Update state
-        self.state = self.next_state
+        self.state[mode] = self.next_state[mode]
       # End of one episode
       self.save_episode_result(mode)
-      self.reset_game()
+      self.reset_game(mode)
 
   def learn(self):
+    mode = 'Train'
     # Compute return and advantage
     adv = torch.tensor(0.0)
     ret = self.replay.v[-1].detach()

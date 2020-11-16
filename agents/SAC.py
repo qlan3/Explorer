@@ -28,7 +28,7 @@ class SAC(REINFORCE):
     if input_type == 'pixel':
       input_size = self.cfg['feature_dim']
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.env.game.state_shape()[2], feature_dim=input_size)
+        feature_net = Conv2d_MinAtar(in_channels=self.env[mode].game.state_shape()[2], feature_dim=input_size)
       else:
         feature_net = Conv2d_Atari(in_channels=4, feature_dim=input_size)
     elif input_type == 'feature':
@@ -43,27 +43,28 @@ class SAC(REINFORCE):
     NN = SACNet(feature_net, actor_net, critic_net)
     return NN
   
-  def save_experience(self, prediction): 
+  def save_experience(self, prediction):
+    mode = 'Train'
     experience = {
-      'state': to_tensor(self.state, self.device),
+      'state': to_tensor(self.state[mode], self.device),
       'action': prediction['action'].detach(),
-      'next_state': to_tensor(self.next_state, self.device),
-      'reward': to_tensor(self.reward, self.device),
-      'mask': to_tensor(1-self.done, self.device)
+      'next_state': to_tensor(self.next_state[mode], self.device),
+      'reward': to_tensor(self.reward[mode], self.device),
+      'mask': to_tensor(1-self.done[mode], self.device)
     }
     self.replay.add(experience)
 
   def run_episode(self, mode, render):
-    while not self.done:
+    while not self.done[mode]:
       prediction = self.get_action(mode)
-      self.action = to_numpy(prediction['action'])
+      self.action[mode] = to_numpy(prediction['action'])
       if render:
-        self.env.render()
+        self.env[mode].render()
       # Take a step
-      self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-      self.next_state = self.state_normalizer(self.next_state)
-      self.reward = self.reward_normalizer(self.reward)
-      self.episode_return += self.reward
+      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+      self.next_state[mode] = self.state_normalizer(self.next_state[mode])
+      self.reward[mode] = self.reward_normalizer(self.reward[mode])
+      self.episode_return[mode] += self.reward[mode]
       if mode == 'Train':
         # Save experience
         self.save_experience(prediction)
@@ -72,11 +73,11 @@ class SAC(REINFORCE):
           self.learn()
         self.step_count += 1
       # Update state
-      self.state = self.next_state
+      self.state[mode] = self.next_state[mode]
     # End of one episode
     self.save_episode_result(mode)
     # Reset environment
-    self.reset_game()
+    self.reset_game(mode)
     if mode == 'Train':
       self.episode_count += 1
 
@@ -85,10 +86,10 @@ class SAC(REINFORCE):
     Pick an action from policy network
     '''
     if self.step_count <= self.cfg['exploration_steps']:
-      prediction = {'action': torch.as_tensor(self.env.action_space.sample())}
+      prediction = {'action': torch.as_tensor(self.env[mode].action_space.sample())}
     else:
       deterministic = True if mode=='Test' else False
-      state = to_tensor(self.state, self.device)
+      state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state, deterministic=deterministic)
     return prediction
 
@@ -104,6 +105,7 @@ class SAC(REINFORCE):
       return False
 
   def learn(self):
+    mode = 'Train'
     for i in range(self.cfg['network_update_frequency']):
       batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
       # Compute critic loss

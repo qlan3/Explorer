@@ -7,7 +7,6 @@ class AveragedDQN(VanillaDQN):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.target_network_update_freqency = cfg['target_network_update_freqency']
     self.k = cfg['agent']['target_networks_num'] # number of target networks
     # Create target Q value network
     self.Q_net_target = [None] * self.k
@@ -21,7 +20,7 @@ class AveragedDQN(VanillaDQN):
   def learn(self):
     super().learn()
     # Update target network
-    if (self.step_count // self.sgd_update_frequency) % self.target_network_update_freqency == 0:
+    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
       self.Q_net_target[self.update_target_net_index].load_state_dict(self.Q_net[self.update_Q_net_index].state_dict())
       self.update_target_net_index = (self.update_target_net_index + 1) % self.k
  

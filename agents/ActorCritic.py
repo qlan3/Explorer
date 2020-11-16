@@ -9,13 +9,14 @@ class ActorCritic(REINFORCEWithBaseline):
     super().__init__(cfg)
 
   def learn(self):
+    mode = 'Train'
     # Compute advantage
-    self.replay.placeholder(self.episode_step_count)
+    self.replay.placeholder(self.episode_step_count[mode])
     self.replay.add({'v': torch.tensor(0.0)})
-    for i in range(self.episode_step_count):
+    for i in range(self.episode_step_count[mode]):
       self.replay.adv[i] = self.replay.reward[i] + self.discount * self.replay.mask[i] * self.replay.v[i+1].detach() - self.replay.v[i]
     # Get training data
-    entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count)
+    entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count[mode])
     # Compute loss
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
     critic_loss = 0.5 * entries.adv.pow(2).mean()

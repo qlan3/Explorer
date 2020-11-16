@@ -15,7 +15,10 @@ class REINFORCE(BaseAgent):
     self.cfg = cfg
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
-    self.env = make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
+    self.env = {
+      'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
+      'Test': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
+    } 
     self.config_idx = cfg['config_idx']
     self.device = cfg['device']
     self.discount = cfg['discount']
@@ -52,13 +55,16 @@ class REINFORCE(BaseAgent):
     }
     # Set replay buffer
     self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret'])
+    # Set log dict
+    for key in ['state', 'next_state', 'action', 'log_prob', 'reward', 'done', 'episode_return', 'episode_step_count']:
+      setattr(self, key, {'Train': None, 'Test': None})
 
   def createNN(self, input_type):
     # Set feature network
     if input_type == 'pixel':
       layer_dims = [self.cfg['feature_dim']] + self.cfg['hidden_layers']
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.env.game.state_shape()[2], feature_dim=layer_dims[0])
+        feature_net = Conv2d_MinAtar(in_channels=self.env[mode].game.state_shape()[2], feature_dim=layer_dims[0])
       else:
         feature_net = Conv2d_Atari(in_channels=4, feature_dim=layer_dims[0])
     elif input_type == 'feature':
@@ -73,22 +79,16 @@ class REINFORCE(BaseAgent):
     NN = REINFORCENet(feature_net, actor_net)
     return NN
 
-  def reset_game(self):
+  def reset_game(self, mode):
     # Reset the game before a new episode
-    self.state = self.state_normalizer(self.env.reset())
-    self.next_state = None
-    self.action = None
-    self.log_prob = 0.0
-    self.reward = None
-    self.done = False
-    self.episode_return = 0
-    self.episode_step_count = 0    
-
-  def save_experience(self, prediction):
-    if self.reward is not None:
-      prediction['mask'] = to_tensor(1-self.done, self.device)
-      prediction['reward'] = to_tensor(self.reward, self.device)
-    self.replay.add(prediction)
+    self.state[mode] = self.state_normalizer(self.env[mode].reset())
+    self.next_state[mode] = None
+    self.action[mode] = None
+    self.log_prob[mode] = 0.0
+    self.reward[mode] = None
+    self.done[mode] = False
+    self.episode_return[mode] = 0
+    self.episode_step_count[mode] = 0
 
   def run_steps(self, render=False):
     # Run for multiple episodes
@@ -98,7 +98,8 @@ class REINFORCE(BaseAgent):
     self.episode_return_list = {'Train': [], 'Test': []}
     mode = 'Train'
     self.start_time = time.time()
-    self.reset_game()
+    self.reset_game('Train')
+    self.reset_game('Test')
     while self.step_count < self.train_steps:
       if mode == 'Train' and self.episode_count % self.test_per_episodes == 0:
         mode = 'Test'
@@ -112,23 +113,23 @@ class REINFORCE(BaseAgent):
     self.save_episode_result('Test')
 
   def run_episode(self, mode, render):
-    while not self.done:
+    while not self.done[mode]:
       prediction = self.get_action(mode)
-      self.action = to_numpy(prediction['action'])
+      self.action[mode] = to_numpy(prediction['action'])
       if render:
-        self.env.render()
+        self.env[mode].render()
       # Take a step
-      self.next_state, self.reward, self.done, _ = self.env.step(self.action)
-      self.next_state = self.state_normalizer(self.next_state)
-      self.reward = self.reward_normalizer(self.reward)
-      self.episode_return += self.reward
-      self.episode_step_count += 1
+      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+      self.next_state[mode] = self.state_normalizer(self.next_state[mode])
+      self.reward[mode] = self.reward_normalizer(self.reward[mode])
+      self.episode_return[mode] += self.reward[mode]
+      self.episode_step_count[mode] += 1
       if mode == 'Train':
         self.step_count += 1
         # Save experience
         self.save_experience(prediction)        
       # Update state
-      self.state = self.next_state
+      self.state[mode] = self.next_state[mode]
     # End of one episode
     self.save_episode_result(mode)
     if mode == 'Train':
@@ -138,20 +139,20 @@ class REINFORCE(BaseAgent):
       # Reset storage
       self.replay.empty()
     # Reset environment
-    self.reset_game()
+    self.reset_game(mode)
 
   def save_episode_result(self, mode):
-    self.episode_return_list[mode].append(self.episode_return)
+    self.episode_return_list[mode].append(self.episode_return[mode])
     rolling_score = np.mean(self.episode_return_list[mode][-1 * self.rolling_score_window[mode]:])
     result_dict = {'Env': self.env_name,
                    'Agent': self.agent_name,
                    'Episode': self.episode_count, 
                    'Step': self.step_count, 
-                   'Return': self.episode_return,
+                   'Return': self.episode_return[mode],
                    'Average Return': rolling_score}
     self.result[mode].append(result_dict)
     if self.show_tb:
-      self.logger.add_scalar(f'{mode}_Return', self.episode_return, self.step_count)
+      self.logger.add_scalar(f'{mode}_Return', self.episode_return[mode], self.step_count)
       self.logger.add_scalar(f'{mode}_Average_Return', rolling_score, self.step_count)
     if mode == 'Test' or self.episode_count % self.display_interval == 0 or self.step_count >= self.train_steps:
       # Save result to files
@@ -161,25 +162,26 @@ class REINFORCE(BaseAgent):
       result.to_feather(self.log_path[mode])
       # Show log
       speed = self.step_count / (time.time() - self.start_time)
-      self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.episode_return:.2f}, Speed={speed:.2f}(steps/s)')
+      self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.episode_return[mode]:.2f}, Speed={speed:.2f}(steps/s)')
 
-  def get_action(self, mode='Train'):
+  def get_action(self, mode):
     '''
     Pick an action from policy network
     '''
-    state = to_tensor(self.state, self.device)
+    state = to_tensor(self.state[mode], self.device)
     prediction = self.network(state)
     return prediction
 
   def learn(self):
+    mode = 'Train'
     # Compute return
-    self.replay.placeholder(self.episode_step_count)
+    self.replay.placeholder(self.episode_step_count[mode])
     ret = torch.tensor(0.0)
-    for i in reversed(range(self.episode_step_count)):
+    for i in reversed(range(self.episode_step_count[mode])):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.replay.get(['log_prob', 'ret'], self.episode_step_count)
+    entries = self.replay.get(['log_prob', 'ret'], self.episode_step_count[mode])
     # Compute loss
     actor_loss = -(entries.log_prob * entries.ret).mean()
     if self.show_tb:
@@ -192,20 +194,29 @@ class REINFORCE(BaseAgent):
       nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
     self.optimizer['actor'].step()
 
+  def save_experience(self, prediction):
+    mode = 'Train'
+    if self.reward[mode] is not None:
+      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+      prediction['reward'] = to_tensor(self.reward[mode], self.device)
+    self.replay.add(prediction)
+
   def get_action_size(self):
-    if isinstance(self.env.action_space, Discrete):
+    mode = 'Train'
+    if isinstance(self.env[mode].action_space, Discrete):
       self.action_type = 'DISCRETE'
-      return self.env.action_space.n
-    elif isinstance(self.env.action_space, Box):
+      return self.env[mode].action_space.n
+    elif isinstance(self.env[mode].action_space, Box):
       self.action_type = 'CONTINUOUS'
       # Set the maximum abs value of action space, used for SAC.
-      self.action_lim = max(max(abs(self.env.action_space.low)), max(self.env.action_space.high))  
-      return self.env.action_space.shape[0]
+      self.action_lim = max(max(abs(self.env[mode].action_space.low)), max(self.env[mode].action_space.high))  
+      return self.env[mode].action_space.shape[0]
     else:
       raise ValueError('Unknown action type.')
     
   def get_state_size(self):
-    return int(np.prod(self.env.observation_space.shape))
+    mode = 'Train'
+    return int(np.prod(self.env[mode].observation_space.shape))
 
   def set_net_mode(self, mode):
     if mode == 'Test':
