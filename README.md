@@ -109,7 +109,7 @@ Please use this bibtex to cite this repo
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub Repository},
-  howpublished = {\url{https://github.com/qlan3/Explorer}},
+  howpublished = {\url{https://github.com/qlan3/Explorer}}
 }
 ```
 
