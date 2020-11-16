@@ -45,7 +45,7 @@ cfg = {
   'runs': 5
 }
 
-def maxmin(exp):
+def analyze(exp):
   set_one_thread()
   cfg['exp'] = exp
   plotter = Plotter(cfg)
@@ -78,4 +78,4 @@ if __name__ == "__main__":
   unfinished_index('catcher', runs=5)
   memory_info('catcher', runs=5)
   time_info('catcher', runs=5)
-  maxmin('catcher')
+  analyze('catcher')

@@ -16,11 +16,11 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 - [Actor-Critic](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Syncrhonous Advantage Actor-Critic (A2C)](https://arxiv.org/pdf/1602.01783.pdf)
 - [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
+- [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 
 
 # To do list
 
-- [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
 
@@ -93,10 +93,25 @@ To analysis the experimental results, just run:
 
 `python analysis.py`
 
-Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/catcher/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/catcher/0`. Finally, `maxmin` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
+Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/catcher/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/catcher/0`. Finally, `analyze` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
 
 Enjoy!
 
+
+### Cite
+
+Please use this bibtex to cite this repo
+
+```
+@misc{Explorer,
+  author = {Lan, Qingfeng},
+  title = {A PyTorch Reinforcement Learning Frame for Exploring New Ideas},
+  year = {2019},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/qlan3/Explorer}},
+}
+```
 
 # Acknowledgements
 
