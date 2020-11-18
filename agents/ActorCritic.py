@@ -19,7 +19,7 @@ class ActorCritic(REINFORCEWithBaseline):
     entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count[mode])
     # Compute loss
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
-    critic_loss = 0.5 * entries.adv.pow(2).mean()
+    critic_loss = entries.adv.pow(2).mean()
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)

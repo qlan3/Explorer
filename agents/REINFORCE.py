@@ -208,8 +208,10 @@ class REINFORCE(BaseAgent):
       return self.env[mode].action_space.n
     elif isinstance(self.env[mode].action_space, Box):
       self.action_type = 'CONTINUOUS'
-      # Set the maximum abs value of action space, used for SAC.
-      self.action_lim = max(max(abs(self.env[mode].action_space.low)), max(self.env[mode].action_space.high))  
+      # Set the minimum/maximum/limit values of the action spaces
+      self.action_min = min(self.env[mode].action_space.low)
+      self.action_max = max(self.env[mode].action_space.high)
+      self.action_lim = max(abs(self.action_min), self.action_max)
       return self.env[mode].action_space.shape[0]
     else:
       raise ValueError('Unknown action type.')

@@ -221,12 +221,12 @@ class MLPSquashedGaussianActor(Actor):
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
     return log_prob
 
-  def forward(self, phi, action=None, deterministic=False):
+  def forward(self, phi, deterministic=False):
     # Compute action distribution and the log_prob of given actions
     action_mean, action_distribution = self.distribution(phi)
     if deterministic:
       action = action_mean
-    elif action is None:
+    else:
       action = action_distribution.rsample()
     # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
     log_prob = self.log_prob_from_distribution(action_distribution, action)
@@ -251,11 +251,11 @@ class REINFORCENet(nn.Module):
     self.actor_net = actor_net
     self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
 
-  def forward(self, obs, action=None):
+  def forward(self, obs):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    _, action, log_prob = self.actor_net(phi, action)
+    _, action, log_prob = self.actor_net(phi)
     return {'action': action, 'log_prob': log_prob}
 
 
@@ -282,26 +282,53 @@ class SACNet(ActorCriticNet):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__(feature_net, actor_net, critic_net)
 
-  def forward(self, obs, action=None, deterministic=False):
+  def forward(self, obs, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action_distribution, action, log_prob = self.actor_net(phi, action, deterministic)
+    action_distribution, action, log_prob = self.actor_net(phi, deterministic)
     # Compute state-action value
     q1, q2 = self.critic_net(phi, action)
     return {'action': action, 'log_prob': log_prob, 'q1': q1, 'q2': q2}
+  
+  def get_q(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute state-action value
+    q1, q2 = self.critic_net(phi, action)
+    return q1, q2
 
 
 class DeterministicActorCriticNet(ActorCriticNet):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__(feature_net, actor_net, critic_net)
 
-  def forward(self, obs, action=None):
+  def forward(self, obs):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    if action is None:
-      action = self.actor_net(phi)
+    action = self.actor_net(phi)
     # Compute state-action value
     q = self.critic_net(phi, action)
     return {'action': action, 'q': q}
+
+  def get_q(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute state-action value
+    q = self.critic_net(phi, action)
+    return q
+
+
+class TD3Net(SACNet):
+  def __init__(self, feature_net, actor_net, critic_net):
+    super().__init__(feature_net, actor_net, critic_net)
+
+  def forward(self, obs):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Sample an action
+    action = self.actor_net(phi)
+    # Compute state-action value
+    q1, q2 = self.critic_net(phi, action)
+    return {'action': action, 'q1': q1, 'q2': q2}

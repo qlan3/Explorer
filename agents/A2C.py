@@ -102,7 +102,7 @@ class A2C(REINFORCEWithBaseline):
     entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.steps_per_epoch)
     # Compute losses
     actor_loss = -(entries.log_prob * entries.adv).mean()
-    critic_loss = 0.5 * (entries.ret - entries.v).pow(2).mean()
+    critic_loss = (entries.ret - entries.v).pow(2).mean()
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)

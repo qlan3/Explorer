@@ -20,7 +20,7 @@ class DDPG(SAC):
       input_size = self.state_size
       feature_net = nn.Identity()
     # Set actor network
-    assert self.action_type == 'CONTINUOUS', "DDPG only supports continous action spaces."
+    assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
     actor_net = MLPDeterministicActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_activation=self.hidden_activation)
     # Set critic network
     critic_net = MLPQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
@@ -35,7 +35,7 @@ class DDPG(SAC):
       if mode == 'Train': # Add noise
         self.action[mode] += self.cfg['action_noise'] * np.random.randn(self.action_size)
       # Clip the action
-      self.action[mode] = np.clip(self.action[mode], -self.action_lim, self.action_lim)
+      self.action[mode] = np.clip(self.action[mode], self.action_min, self.action_max)
       if render:
         self.env[mode].render()
       # Take a step
@@ -78,7 +78,7 @@ class DDPG(SAC):
   def compute_critic_loss(self, batch):
     q = self.comput_q(batch) # Compute q
     q_target = self.compute_q_target(batch) # Compute q target
-    critic_loss = 0.5 * (q - q_target).pow(2).mean()
+    critic_loss = (q - q_target).pow(2).mean()
     return critic_loss
 
   def compute_q_target(self, batch):
@@ -88,5 +88,5 @@ class DDPG(SAC):
     return q_target
 
   def comput_q(self, batch):
-    prediction = self.network(batch.state, batch.action)
-    return prediction['q']
+    q = self.network.get_q(batch.state, batch.action)
+    return q

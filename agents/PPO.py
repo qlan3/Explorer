@@ -47,7 +47,7 @@ class PPO(A2C):
         obj = ratio * entries.adv[batch_idx]
         obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * entries.adv[batch_idx]
         actor_loss = -torch.min(obj, obj_clipped).mean()
-        critic_loss = 0.5 * (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
+        critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
         # Take an optimization step for actor
         approx_kl = (entries.log_prob[batch_idx] - prediction['log_prob']).mean().item()
         if approx_kl <= 1.5 * self.cfg['target_kl']:

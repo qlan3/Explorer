@@ -17,13 +17,13 @@ Explorer is a reinforcement learning frame based on Pytorch for **exploring** ne
 - [Syncrhonous Advantage Actor-Critic (A2C)](https://arxiv.org/pdf/1602.01783.pdf)
 - [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
 - [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
-
-
-# To do list
-
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
 
+## To do list
+- Add Mujuco
+- Add PyBullet
+- Add more pygames to gym-games
 
 ## Requirements
 

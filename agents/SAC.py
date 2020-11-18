@@ -7,6 +7,7 @@ class SAC(REINFORCE):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
+    self.cfg.setdefault('actor_update_frequency', 1)
     # Create target policy network
     self.network_target = self.createNN(cfg['env']['input_type']).to(self.device)
     self.network_target.load_state_dict(self.network.state_dict())
@@ -35,7 +36,7 @@ class SAC(REINFORCE):
       input_size = self.state_size
       feature_net = nn.Identity()
     # Set actor network
-    assert self.action_type == 'CONTINUOUS', "SAC only supports continous action spaces."
+    assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
     actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_activation=self.hidden_activation)
     # Set critic network
     critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
@@ -47,7 +48,7 @@ class SAC(REINFORCE):
     mode = 'Train'
     experience = {
       'state': to_tensor(self.state[mode], self.device),
-      'action': prediction['action'].detach(),
+      'action': to_tensor(self.action[mode], self.device), 
       'next_state': to_tensor(self.next_state[mode], self.device),
       'reward': to_tensor(self.reward[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device)
@@ -104,19 +105,18 @@ class SAC(REINFORCE):
     else:
       return False
 
-  def learn(self):
-    mode = 'Train'
-    for i in range(self.cfg['network_update_frequency']):
-      batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
-      # Compute critic loss
-      critic_loss = self.compute_critic_loss(batch)
-      # Take an optimization step for critic
-      self.optimizer['critic'].zero_grad()
-      critic_loss.backward()
-      if self.gradient_clip > 0:
-        nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
-      self.optimizer['critic'].step()
-      
+  def learn(self, mode='Train'):
+    batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
+    # Compute critic loss
+    critic_loss = self.compute_critic_loss(batch)
+    # Take an optimization step for critic
+    self.optimizer['critic'].zero_grad()
+    critic_loss.backward()
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
+    self.optimizer['critic'].step()
+
+    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['actor_update_frequency'] == 0:
       # Freeze Q-networks to avoid computing gradients for them
       for p in self.network.critic_net.parameters():
         p.requires_grad = False
@@ -131,16 +131,13 @@ class SAC(REINFORCE):
       # Unfreeze Q-networks
       for p in self.network.critic_net.parameters():
         p.requires_grad = True
-      
+
       # Update target networks by polyak averaging (soft update)
-      if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
-        with torch.no_grad():
-          for p, p_target in zip(self.network.parameters(), self.network_target.parameters()):
-            p_target.data.mul_(self.cfg['polyak'])
-            p_target.data.add_((1-self.cfg['polyak'])*p.data)
-    if self.show_tb:
-      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-      self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
+      self.soft_update(self.network, self.network_target)
+    
+      if self.show_tb:
+        self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
+        self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
 
   def compute_actor_loss(self, batch):
     prediction = self.network(batch.state)
@@ -158,11 +155,17 @@ class SAC(REINFORCE):
       # Sample action from *current* policy
       prediction = self.network(batch.next_state)
       action, log_prob = prediction['action'], prediction['log_prob']
-      prediction_target = self.network_target(batch.next_state, action)
-      q_next = torch.min(prediction_target['q1'], prediction_target['q2'])
+      q1, q2 = self.network_target.get_q(batch.next_state, action)
+      q_next = torch.min(q1, q2)
       q_target = batch.reward + self.discount * batch.mask * (q_next - self.cfg['alpha'] * log_prob)
     return q_target
 
   def comput_q(self, batch):
-    prediction = self.network(batch.state, batch.action)
-    return prediction['q1'], prediction['q2']
+    q1, q2 = self.network.get_q(batch.state, batch.action)
+    return q1, q2
+
+  def soft_update(self, network, network_target):
+    with torch.no_grad():
+      for p, p_target in zip(self.network.parameters(), self.network_target.parameters()):
+        p_target.data.mul_(self.cfg['polyak'])
+        p_target.data.add_((1-self.cfg['polyak'])*p.data)
