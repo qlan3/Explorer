@@ -16,7 +16,7 @@ class VanillaDQN(BaseAgent):
     self.env_name = cfg['env']['name']
     self.agent_name = cfg['agent']['name']
     self.env = {
-      'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
+      'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps'])),
       'Test': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
     } 
     self.config_idx = cfg['config_idx']

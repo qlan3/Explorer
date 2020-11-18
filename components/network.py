@@ -131,7 +131,18 @@ class MLPCritic(nn.Module):
     return self.value_net(phi).squeeze(-1)
 
 
-class DoubleQCritic(nn.Module):
+class MLPQCritic(nn.Module):
+  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+    super().__init__()
+    self.Q = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+
+  def forward(self, phi, action):
+    phi_action = torch.cat([phi, action], dim=-1)
+    q = self.Q(phi_action).squeeze(-1)
+    return q
+
+
+class MLPDoubleQCritic(nn.Module):
   def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
     super().__init__()
     self.Q1 = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
@@ -223,6 +234,16 @@ class MLPSquashedGaussianActor(Actor):
     return action_distribution, action, log_prob
 
 
+class MLPDeterministicActor(Actor):
+  def __init__(self, action_lim, layer_dims, hidden_activation='ReLU'):
+    super().__init__()
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation='Tanh')
+    self.action_lim = action_lim
+  
+  def forward(self, phi):
+    return self.action_lim * self.actor_net(phi)
+
+
 class REINFORCENet(nn.Module):
   def __init__(self, feature_net, actor_net):
     super().__init__()
@@ -266,6 +287,21 @@ class SACNet(ActorCriticNet):
     phi = self.feature_net(obs)
     # Sample an action
     action_distribution, action, log_prob = self.actor_net(phi, action, deterministic)
-    # Compute state value
+    # Compute state-action value
     q1, q2 = self.critic_net(phi, action)
     return {'action': action, 'log_prob': log_prob, 'q1': q1, 'q2': q2}
+
+
+class DeterministicActorCriticNet(ActorCriticNet):
+  def __init__(self, feature_net, actor_net, critic_net):
+    super().__init__(feature_net, actor_net, critic_net)
+
+  def forward(self, obs, action=None):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Sample an action
+    if action is None:
+      action = self.actor_net(phi)
+    # Compute state-action value
+    q = self.critic_net(phi, action)
+    return {'action': action, 'q': q}
