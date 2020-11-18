@@ -35,10 +35,10 @@ class SAC(REINFORCE):
       input_size = self.state_size
       feature_net = nn.Identity()
     # Set actor network
-    assert self.action_type == 'CONTINUOUS', "SAC only supports continous action space."
+    assert self.action_type == 'CONTINUOUS', "SAC only supports continous action spaces."
     actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_activation=self.hidden_activation)
     # Set critic network
-    critic_net = DoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+    critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
     # Set the model
     NN = SACNet(feature_net, actor_net, critic_net)
     return NN
@@ -111,7 +111,7 @@ class SAC(REINFORCE):
       # Compute critic loss
       q1, q2 = self.comput_q(batch) # Compute q
       q_target = self.compute_q_target(batch) # Compute q target
-      critic_loss = ((q1-q_target)**2 + (q2-q_target)**2).mean()
+      critic_loss = ((q1-q_target).pow(2) + (q2-q_target).pow(2)).mean()
       # Take an optimization step for critic
       self.optimizer['critic'].zero_grad()
       critic_loss.backward()
