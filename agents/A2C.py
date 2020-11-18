@@ -65,7 +65,7 @@ class A2C(REINFORCEWithBaseline):
       # Update policy
       self.learn()
       # Reset storage
-      self.replay.empty()
+      self.replay.clear()
     elif mode == 'Test':
       # Run for one episode
       while not self.done[mode]:

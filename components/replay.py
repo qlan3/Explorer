@@ -61,7 +61,7 @@ class InfiniteReplay(object):
     if keys is None:
       keys = []
     self.keys = keys + ['action', 'log_prob', 'reward', 'mask']
-    self.empty()
+    self.clear()
 
   def add(self, data):
     for k, v in data.items():
@@ -75,7 +75,7 @@ class InfiniteReplay(object):
       if len(v) == 0:
         setattr(self, k, [None] * data_size)
 
-  def empty(self):
+  def clear(self):
     for key in self.keys:
       setattr(self, key, [])
 
@@ -95,9 +95,9 @@ class FiniteReplay(object):
       keys = []
     self.keys = keys + ['action', 'log_prob', 'reward', 'mask']
     self.memory_size = int(memory_size)
-    self.empty()
+    self.clear()
 
-  def empty(self):
+  def clear(self):
     self.pos = 0
     self.full = False
     for key in self.keys:

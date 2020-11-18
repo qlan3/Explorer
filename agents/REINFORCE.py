@@ -137,7 +137,7 @@ class REINFORCE(BaseAgent):
       # Update policy
       self.learn()
       # Reset storage
-      self.replay.empty()
+      self.replay.clear()
     # Reset environment
     self.reset_game(mode)
 
