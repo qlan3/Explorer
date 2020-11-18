@@ -109,9 +109,7 @@ class SAC(REINFORCE):
     for i in range(self.cfg['network_update_frequency']):
       batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
       # Compute critic loss
-      q1, q2 = self.comput_q(batch) # Compute q
-      q_target = self.compute_q_target(batch) # Compute q target
-      critic_loss = ((q1-q_target).pow(2) + (q2-q_target).pow(2)).mean()
+      critic_loss = self.compute_critic_loss(batch)
       # Take an optimization step for critic
       self.optimizer['critic'].zero_grad()
       critic_loss.backward()
@@ -123,10 +121,7 @@ class SAC(REINFORCE):
       for p in self.network.critic_net.parameters():
         p.requires_grad = False
       # Compute actor loss
-      prediction = self.network(batch.state)
-      q1, q2, log_prob = prediction['q1'], prediction['q2'], prediction['log_prob']
-      q_min = torch.min(q1, q2)
-      actor_loss = (self.cfg['alpha'] * log_prob - q_min).mean()
+      actor_loss = self.compute_actor_loss(batch)
       # Take an optimization step for actor
       self.optimizer['actor'].zero_grad()
       actor_loss.backward()
@@ -146,6 +141,17 @@ class SAC(REINFORCE):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
+
+  def compute_actor_loss(self, batch):
+    prediction = self.network(batch.state)
+    q1, q2, log_prob = prediction['q1'], prediction['q2'], prediction['log_prob']
+    q_min = torch.min(q1, q2)
+    actor_loss = (self.cfg['alpha'] * log_prob - q_min).mean()
+
+  def compute_critic_loss(self, batch):
+    q1, q2 = self.comput_q(batch) # Compute q
+    q_target = self.compute_q_target(batch) # Compute q target
+    critic_loss = ((q1-q_target).pow(2) + (q2-q_target).pow(2)).mean()
 
   def compute_q_target(self, batch):
     with torch.no_grad():
