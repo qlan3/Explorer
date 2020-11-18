@@ -1,6 +1,6 @@
 # Explorer
 
-Explorer is a reinforcement learning frame based on Pytorch for **exploring** new ideas.
+Explorer is a PyTorch reinforcement learning framework for **exploring** new ideas.
 
 
 # Implemented algorithms
@@ -105,7 +105,7 @@ Please use this bibtex to cite this repo
 ```
 @misc{Explorer,
   author = {Lan, Qingfeng},
-  title = {A PyTorch Reinforcement Learning Frame for Exploring New Ideas},
+  title = {A PyTorch Reinforcement Learning Framework for Exploring New Ideas},
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub Repository},
