@@ -6,19 +6,19 @@
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [5e4], 
-  "test_per_episodes": [10],
-  "exploration_steps": [1e3],
-  "memory_size": [1e4],
+  "train_steps": [1e6], 
+  "test_per_episodes": [5],
+  "exploration_steps": [1e4],
+  "memory_size": [1e6],
   "agent": [{"name": ["TD3"]}],
   "optimizer": [
     {
       "name": ["Adam"],
-      "actor_kwargs": [{"lr": [3e-4]}],
+      "actor_kwargs": [{"lr": [1e-3]}],
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "batch_size": [32],
+  "batch_size": [100],
   "network_update_frequency": [1],
   "actor_update_frequency": [2],
   "discount": [0.99],
@@ -28,10 +28,10 @@
   "noise_clip": [0.5],
   "seed": [1],
   "gradient_clip": [-1],
-  "hidden_layers": [[64,64]],
-  "hidden_activation": ["Tanh"],
+  "hidden_layers": [[400,300]],
+  "hidden_act": ["ReLU"],
   "display_interval": [10],
-  "rolling_score_window": [{"Train": [50], "Test": [10]}],
+  "rolling_score_window": [{"Train": [20], "Test": [10]}],
   "device": ["cpu"],
   "show_tb": [true],
   "generate_random_seed": [true]

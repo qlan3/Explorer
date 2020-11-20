@@ -1,14 +1,14 @@
 {
   "env": [
     {
-      "name": ["LunarLanderContinuous-v2"],
+      "name": ["CartPole-v1"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [4e5],
-  "test_per_episodes": [10],
-  "agent": [{"name": ["REINFORCE", "REINFORCEWithBaseline"]}],
+  "train_steps": [1e6],
+  "test_per_episodes": [5],
+  "agent": [{"name": ["REINFORCE"]}],
   "optimizer": [
     {
       "name": ["Adam"],
@@ -17,9 +17,9 @@
   ],
   "gradient_clip": [-1],
   "hidden_layers": [[64,64]],
-  "hidden_activation": ["Tanh"],
-  "display_interval": [50],
-  "rolling_score_window": [{"Train": [100], "Test": [10]}],
+  "hidden_act": ["Tanh"],
+  "display_interval": [20],
+  "rolling_score_window": [{"Train": [20], "Test": [10]}],
   "discount": [0.99],
   "seed": [1],
   "device": ["cpu"],

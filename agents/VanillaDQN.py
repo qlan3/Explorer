@@ -47,7 +47,7 @@ class VanillaDQN(BaseAgent):
     else:
       raise ValueError(f"{cfg['env']['input_type']} is not supported.")
     # Create Q value network
-    self.hidden_activation, self.output_activation = cfg['hidden_activation'], 'None'
+    self.hidden_act, self.output_act = cfg['hidden_act'], 'Linear'
     self.Q_net = [None]
     self.Q_net[0] = self.createNN(cfg['env']['input_type']).to(self.device)
     # Set optimizer
@@ -84,7 +84,7 @@ class VanillaDQN(BaseAgent):
       layer_dims = [self.state_size] + cfg['hidden_layers'] + [self.action_size]
       feature_net = nn.Identity()
     
-    value_net = MLP(layer_dims=layer_dims, hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+    value_net = MLP(layer_dims=layer_dims, hidden_act=self.hidden_act, output_act=self.output_act)
     NN = DQNNet(feature_net, value_net)
     return NN
 

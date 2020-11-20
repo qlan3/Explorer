@@ -21,9 +21,9 @@ class TD3(DDPG):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    actor_net = MLPDeterministicActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_activation=self.hidden_activation)
+    actor_net = MLPDeterministicActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.hidden_act)
     # Set critic network
-    critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+    critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.hidden_act, output_act=self.output_act)
     # Set the model
     NN = TD3Net(feature_net, actor_net, critic_net)
     return NN

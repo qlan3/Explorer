@@ -23,8 +23,8 @@ def main(argv):
   cfg.setdefault('show_tb', False)
   cfg.setdefault('render', False)
   cfg.setdefault('gradient_clip', -1)
-  cfg.setdefault('hidden_activation', 'ReLU')
-  cfg.setdefault('output_activation', 'None')
+  cfg.setdefault('hidden_act', 'ReLU')
+  cfg.setdefault('output_act', 'Linear')
   
 
   # Set experiment name and log paths

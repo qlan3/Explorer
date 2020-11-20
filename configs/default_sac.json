@@ -1,34 +1,34 @@
 {
   "env": [
     {
-      "name": ["LunarLanderContinuous-v2"],
+      "name": ["Pendulum-v0"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [3e5], 
-  "test_per_episodes": [10],
-  "exploration_steps": [1e3],
-  "memory_size": [1e4],
+  "train_steps": [1e6], 
+  "test_per_episodes": [5],
+  "exploration_steps": [1e4],
+  "memory_size": [1e6],
   "agent": [{"name": ["SAC"]}],
   "optimizer": [
     {
       "name": ["Adam"],
       "actor_kwargs": [{"lr": [3e-4]}],
-      "critic_kwargs": [{"lr": [1e-3]}]
+      "critic_kwargs": [{"lr": [3e-4]}]
     }
   ],
-  "batch_size": [32],
+  "batch_size": [256],
   "network_update_frequency": [1],
   "discount": [0.99],
   "polyak": [0.995],
   "alpha": [0.2],
   "seed": [1],
   "gradient_clip": [-1],
-  "hidden_layers": [[64,64]],
-  "hidden_activation": ["Tanh"],
-  "display_interval": [50],
-  "rolling_score_window": [{"Train": [50], "Test": [10]}],
+  "hidden_layers": [[256,256]],
+  "hidden_act": ["ReLU"],
+  "display_interval": [20],
+  "rolling_score_window": [{"Train": [20], "Test": [10]}],
   "device": ["cpu"],
   "show_tb": [true],
   "generate_random_seed": [true]

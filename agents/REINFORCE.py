@@ -47,7 +47,7 @@ class REINFORCE(BaseAgent):
     else:
       raise ValueError(f"{cfg['env']['input_type']} is not supported.")
     # Create policy network
-    self.hidden_activation, self.output_activation = cfg['hidden_activation'], cfg['output_activation']
+    self.hidden_act, self.output_act = cfg['hidden_act'], cfg['output_act']
     self.network = self.createNN(cfg['env']['input_type']).to(self.device)
     # Set optimizer
     self.optimizer = {
@@ -72,9 +72,9 @@ class REINFORCE(BaseAgent):
       feature_net = nn.Identity()
     # Set actor network
     if self.action_type == 'DISCRETE':
-      actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+      actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.hidden_act, output_act=self.output_act)
     elif self.action_type == 'CONTINUOUS':
-      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_activation=self.hidden_activation, output_activation=self.output_activation)
+      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.hidden_act, output_act=self.output_act)
     # Set the model
     NN = REINFORCENet(feature_net, actor_net)
     return NN
