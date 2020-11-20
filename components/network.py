@@ -6,7 +6,7 @@ from torch.distributions import Categorical, Normal
 
 
 activations = {
-  'None': nn.Identity(),
+  'Linear': nn.Identity(),
   'ReLU': nn.ReLU(),
   'LeakyReLU': nn.LeakyReLU(),
   'Tanh': nn.Tanh(),
@@ -18,13 +18,21 @@ activations = {
 }
 
 
-def layer_init(layer, w_scale=1.0):
+def layer_init(layer, init_type='default', nonlinearity='relu', w_scale=1.0):
+  nonlinearity = nonlinearity.lower()
   # Initialize all weights and biases in layer and return it
-  # nn.init.orthogonal_(layer.weight.data)
-  # nn.init.xavier_normal_(layer.weight.data, gain=1)
-  nn.init.kaiming_normal_(layer.weight.data, mode='fan_in', nonlinearity='relu')
+  if init_type in ['uniform_', 'normal_']:
+    getattr(nn.init, init_type)(layer.weight.data)
+  elif init_type in ['xavier_uniform_', 'xavier_normal_', 'orthogonal_']:
+    # Compute the recommended gain value for the given nonlinearity
+    gain = nn.init.calculate_gain(nonlinearity)
+    getattr(nn.init, init_type)(layer.weight.data, gain=gain)
+  elif init_type in ['kaiming_uniform_', 'kaiming_normal_']:
+    getattr(nn.init, init_type)(layer.weight.data, mode='fan_in', nonlinearity=nonlinearity)
+  else: # init_type == 'default'
+    return layer
   layer.weight.data.mul_(w_scale)
-  nn.init.constant_(layer.bias.data, 0) # layer.bias.data.zero_()
+  nn.init.zeros_(layer.bias.data)
   return layer
 
 
@@ -32,18 +40,23 @@ class MLP(nn.Module):
   '''
   Multilayer Perceptron
   '''
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', init_type='orthogonal_', w_scale=1.0, last_w_scale=1.0):
     super().__init__()
     # Create layers
-    self.mlp = nn.ModuleList([])
-    for i in range(len(layer_dims[:-1])):
-      dim_in, dim_out = layer_dims[i], layer_dims[i+1]
-      self.mlp.append(layer_init(nn.Linear(dim_in, dim_out, bias=True)))
-      if i+2 != len(layer_dims):
-        if hidden_activation != 'None':
-          self.mlp.append(activations[hidden_activation])
-      elif output_activation != 'None':
-        self.mlp.append(activations[output_activation])  
+    layers = []
+    for i in range(len(layer_dims)-1):
+      act = hidden_act if i+2 != len(layer_dims) else output_act
+      w_s = w_scale if i+2 != len(layer_dims) else last_w_scale
+      layers.append(
+        layer_init(
+          nn.Linear(layer_dims[i], layer_dims[i+1], bias=True), 
+          init_type=init_type, 
+          nonlinearity=act, 
+          w_scale=w_s
+        )
+      )
+      layers.append(activations[act])
+    self.mlp = nn.Sequential(*layers) 
   
   def forward(self, x):
     for layer in self.mlp:
@@ -123,18 +136,18 @@ class DQNNet(nn.Module):
 
 
 class MLPCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
     super().__init__()
-    self.value_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+    self.value_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
 
   def forward(self, phi):
     return self.value_net(phi).squeeze(-1)
 
 
 class MLPQCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
     super().__init__()
-    self.Q = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+    self.Q = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
 
   def forward(self, phi, action):
     phi_action = torch.cat([phi, action], dim=-1)
@@ -143,10 +156,10 @@ class MLPQCritic(nn.Module):
 
 
 class MLPDoubleQCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
     super().__init__()
-    self.Q1 = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
-    self.Q2 = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+    self.Q1 = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
+    self.Q2 = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
 
   def forward(self, phi, action):
     phi_action = torch.cat([phi, action], dim=-1)
@@ -172,9 +185,9 @@ class Actor(nn.Module):
 
 
 class MLPCategoricalActor(Actor):
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
     super().__init__()
-    self.logits_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+    self.logits_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
 
   def distribution(self, phi):
     logits = self.logits_net(phi)
@@ -185,9 +198,9 @@ class MLPCategoricalActor(Actor):
 
 
 class MLPGaussianActor(Actor):
-  def __init__(self, layer_dims, hidden_activation='ReLU', output_activation='None'):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
     super().__init__()
-    self.actor_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation=output_activation)
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=1e-3)
     # The action std is independent of states
     action_size = layer_dims[-1]
     self.action_std = nn.Parameter(torch.zeros(action_size))    
@@ -203,9 +216,9 @@ class MLPGaussianActor(Actor):
 
 
 class MLPSquashedGaussianActor(Actor):
-  def __init__(self, action_lim, layer_dims, hidden_activation='ReLU', log_std_bounds=(-20, 2)):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2)):
     super().__init__()
-    self.actor_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation='None')
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=1e-3)
     self.log_std_min, self.log_std_max = log_std_bounds
     self.action_lim = action_lim
 
@@ -235,9 +248,9 @@ class MLPSquashedGaussianActor(Actor):
 
 
 class MLPDeterministicActor(Actor):
-  def __init__(self, action_lim, layer_dims, hidden_activation='ReLU'):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU'):
     super().__init__()
-    self.actor_net = MLP(layer_dims=layer_dims, hidden_activation=hidden_activation, output_activation='Tanh')
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=1e-3)
     self.action_lim = action_lim
   
   def forward(self, phi):
