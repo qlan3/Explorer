@@ -28,11 +28,11 @@ class REINFORCEWithBaseline(REINFORCE):
       feature_net = nn.Identity()
     # Set actor network
     if self.action_type == 'DISCRETE':
-      actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.hidden_act, output_act=self.output_act)
+      actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     elif self.action_type == 'CONTINUOUS':
-      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.hidden_act, output_act=self.output_act)
+      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set critic network
-    critic_net = MLPCritic(layer_dims=layer_dims+[1], hidden_act=self.hidden_act, output_act=self.output_act)
+    critic_net = MLPCritic(layer_dims=layer_dims+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
     NN = ActorCriticNet(feature_net, actor_net, critic_net)
     return NN

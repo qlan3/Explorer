@@ -21,9 +21,9 @@ class DDPG(SAC):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    actor_net = MLPDeterministicActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.hidden_act)
+    actor_net = MLPDeterministicActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set critic network
-    critic_net = MLPQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.hidden_act, output_act=self.output_act)
+    critic_net = MLPQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
     NN = DeterministicActorCriticNet(feature_net, actor_net, critic_net)
     return NN
@@ -32,8 +32,6 @@ class DDPG(SAC):
     while not self.done[mode]:
       prediction = self.get_action(mode)
       self.action[mode] = to_numpy(prediction['action'])
-      if mode == 'Train': # Add noise
-        self.action[mode] += self.cfg['action_noise'] * np.random.randn(self.action_size)
       # Clip the action
       self.action[mode] = np.clip(self.action[mode], self.action_min, self.action_max)
       if render:
@@ -68,6 +66,9 @@ class DDPG(SAC):
     else:
       state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state)
+    # Add noise
+    if mode == 'Train': 
+      prediction['action'] += self.cfg['action_noise'] * torch.randn(self.action_size)
     return prediction
 
   def compute_actor_loss(self, batch):
