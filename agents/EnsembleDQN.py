@@ -1,11 +1,4 @@
-import gym
-import time
-import torch
-import numpy as np
-import torch.optim as optim
-
-from utils.helper import *
-from agents.MaxminDQN import MaxminDQN
+from agents.MaxminDQN import *
 
 
 class EnsembleDQN(MaxminDQN):
@@ -18,13 +11,14 @@ class EnsembleDQN(MaxminDQN):
   def __init__(self, cfg):
     super().__init__(cfg)
 
-  def compute_q_target(self, next_states, rewards, dones):
-    q_ensemble = self.Q_net_target[0](next_states).clone().detach()
-    for i in range(1, self.k):
-      q = self.Q_net_target[i](next_states).detach()
-      q_ensemble = q_ensemble + q
-    q_next = q_ensemble.max(1)[0] / self.k
-    q_target = rewards + self.discount * q_next * (1 - dones)
+  def compute_q_target(self, batch):
+    with torch.no_grad():
+      q_ensemble = self.Q_net_target[0](batch.next_state).clone()
+      for i in range(1, self.k):
+        q = self.Q_net_target[i](batch.next_state)
+        q_ensemble = q_ensemble + q
+      q_next = q_ensemble.max(1)[0] / self.k
+      q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target
   
   def get_action_selection_q_values(self, state):

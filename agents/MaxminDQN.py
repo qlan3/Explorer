@@ -1,11 +1,4 @@
-import gym
-import time
-import torch
-import numpy as np
-import torch.optim as optim
-
-from utils.helper import *
-from agents.VanillaDQN import VanillaDQN
+from agents.VanillaDQN import *
 
 
 class MaxminDQN(VanillaDQN):
@@ -39,13 +32,13 @@ class MaxminDQN(VanillaDQN):
       for i in range(self.k):
         self.Q_net_target[i].load_state_dict(self.Q_net[i].state_dict())
 
-  def compute_q_target(self, next_states, rewards, dones):
-    q_min = self.Q_net_target[0](next_states).clone().detach()
+  def compute_q_target(self, batch):
+    q_min = self.Q_net_target[0](batch.next_state).clone()
     for i in range(1, self.k):
-      q = self.Q_net_target[i](next_states).detach()
+      q = self.Q_net_target[i](batch.next_state)
       q_min = torch.min(q_min, q)
     q_next = q_min.max(1)[0]
-    q_target = rewards + self.discount * q_next * (1 - dones)
+    q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target
   
   def get_action_selection_q_values(self, state):

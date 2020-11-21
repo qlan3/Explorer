@@ -1,4 +1,4 @@
-from agents.VanillaDQN import VanillaDQN
+from agents.VanillaDQN import *
 
 
 class DQN(VanillaDQN):
@@ -20,7 +20,8 @@ class DQN(VanillaDQN):
     if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
       self.Q_net_target[self.update_Q_net_index].load_state_dict(self.Q_net[self.update_Q_net_index].state_dict())
 
-  def compute_q_target(self, next_states, rewards, dones):
-    q_next = self.Q_net_target[0](next_states).detach().max(1)[0]
-    q_target = rewards + self.discount * q_next * (1 - dones)
+  def compute_q_target(self, batch):
+    with torch.no_grad():
+      q_next = self.Q_net_target[0](batch.next_state).max(1)[0]
+      q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target

@@ -1,4 +1,4 @@
-from agents.VanillaDQN import VanillaDQN
+from agents.VanillaDQN import *
 
 
 class AveragedDQN(VanillaDQN):
@@ -24,11 +24,12 @@ class AveragedDQN(VanillaDQN):
       self.Q_net_target[self.update_target_net_index].load_state_dict(self.Q_net[self.update_Q_net_index].state_dict())
       self.update_target_net_index = (self.update_target_net_index + 1) % self.k
  
-  def compute_q_target(self, next_states, rewards, dones):
-    q_sum = self.Q_net_target[0](next_states).clone().detach()
-    for i in range(1, self.k):
-      q = self.Q_net_target[i](next_states).detach()
-      q_sum = q_sum + q
-    q_next = q_sum.max(1)[0] / self.k
-    q_target = rewards + self.discount * q_next * (1 - dones)
+  def compute_q_target(self, batch):
+    with torch.no_grad():
+      q_sum = self.Q_net_target[0](batch.next_state).clone()
+      for i in range(1, self.k):
+        q = self.Q_net_target[i](batch.next_state)
+        q_sum = q_sum + q
+      q_next = q_sum.max(1)[0] / self.k
+      q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target
