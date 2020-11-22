@@ -25,7 +25,7 @@ class A2C(REINFORCEWithBaseline):
     self.reset_game('Train')
     self.reset_game('Test')
     while self.step_count < self.train_steps:
-      if mode == 'Train' and self.epoch_count % self.test_per_epochs == 0:
+      if mode == 'Train' and self.test_per_epochs > 0 and self.epoch_count % self.test_per_epochs == 0:
         mode = 'Test'
       else:
         mode = 'Train'
@@ -35,7 +35,8 @@ class A2C(REINFORCEWithBaseline):
       # Run for one epoch
       self.run_epoch(mode, render)
     self.save_episode_result('Train')
-    self.save_episode_result('Test')
+    if self.test_per_epochs > 0:
+      self.save_episode_result('Test')
 
   def run_epoch(self, mode, render):
     if mode == 'Train':

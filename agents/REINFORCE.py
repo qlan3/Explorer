@@ -100,7 +100,7 @@ class REINFORCE(BaseAgent):
     self.reset_game('Train')
     self.reset_game('Test')
     while self.step_count < self.train_steps:
-      if mode == 'Train' and self.episode_count % self.test_per_episodes == 0:
+      if mode == 'Train' and self.test_per_episodes > 0 and self.episode_count % self.test_per_episodes == 0:
         mode = 'Test'
       else:
         mode = 'Train'
@@ -109,7 +109,8 @@ class REINFORCE(BaseAgent):
       # Run for one episode
       self.run_episode(mode, render)
     self.save_episode_result('Train')
-    self.save_episode_result('Test')
+    if self.test_per_episodes > 0:
+      self.save_episode_result('Test')
 
   def run_episode(self, mode, render):
     while not self.done[mode]:

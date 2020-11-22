@@ -7,7 +7,7 @@
     }
   ],
   "train_steps": [1e6], 
-  "test_per_episodes": [5],
+  "test_per_episodes": [-1],
   "exploration_steps": [1e4],
   "memory_size": [1e6],
   "agent": [{"name": ["SAC"]}],

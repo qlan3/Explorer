@@ -21,7 +21,7 @@
     }
   ],
   "train_steps": [5e6],
-  "test_per_episodes": [100],
+  "test_per_episodes": [-1],
   "device": ["cpu"],
   "feature_dim": [128],
   "hidden_layers": [[]],

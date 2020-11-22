@@ -14,7 +14,7 @@
     }
   ],
   "train_steps": [5e5],
-  "test_per_episodes": [50],
+  "test_per_episodes": [-1],
   "device": ["cpu"],
   "hidden_layers": [[64,64]],
   "memory_size": [1e4],

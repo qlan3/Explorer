@@ -11,7 +11,7 @@
     }
   ],
   "train_steps": [5e7],
-  "test_per_episodes": [10],
+  "test_per_episodes": [-1],
   "device": ["cpu"],
   "hidden_layers": [[128,128,128,128]],
   "memory_type": ["Replay"],

@@ -8,7 +8,7 @@
   ],
   "train_steps": [1e6],
   "steps_per_epoch": [2048],
-  "test_per_episodes": [5],
+  "test_per_episodes": [-1],
   "agent": [{"name": ["REINFORCEWithBaseline"]}],
   "optimizer": [
     {
