@@ -37,7 +37,7 @@ class PPO(A2C):
     # Normalize advantages
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
-    for t in range(self.cfg['optimize_epochs']):
+    for _ in range(self.cfg['optimize_epochs']):
       batch_idxs = generate_batch_idxs(len(entries.log_prob), self.cfg['batch_size'])
       for batch_idx in batch_idxs:
         batch_idx = to_tensor(batch_idx, self.device).long()
@@ -59,3 +59,7 @@ class PPO(A2C):
         if self.gradient_clip > 0:
           nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
         self.optimizer['critic'].step()
+
+    if self.show_tb:
+      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
+      self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)

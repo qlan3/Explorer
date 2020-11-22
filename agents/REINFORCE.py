@@ -73,7 +73,7 @@ class REINFORCE(BaseAgent):
     if self.action_type == 'DISCRETE':
       actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     elif self.action_type == 'CONTINUOUS':
-      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
+      actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set the model
     NN = REINFORCENet(feature_net, actor_net)
     return NN
@@ -169,6 +169,9 @@ class REINFORCE(BaseAgent):
     '''
     state = to_tensor(self.state[mode], self.device)
     prediction = self.network(state)
+    # Clip the action
+    if self.action_type == 'CONTINUOUS':
+      prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
 
   def learn(self):
@@ -196,8 +199,8 @@ class REINFORCE(BaseAgent):
   def save_experience(self, prediction):
     mode = 'Train'
     if self.reward[mode] is not None:
-      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
       prediction['reward'] = to_tensor(self.reward[mode], self.device)
+      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
     self.replay.add(prediction)
 
   def get_action_size(self):

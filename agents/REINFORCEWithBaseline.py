@@ -30,7 +30,7 @@ class REINFORCEWithBaseline(REINFORCE):
     if self.action_type == 'DISCRETE':
       actor_net = MLPCategoricalActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     elif self.action_type == 'CONTINUOUS':
-      actor_net = MLPGaussianActor(layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
+      actor_net = MLPGaussianActor(action_lim=self.action_lim ,layer_dims=layer_dims+[self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set critic network
     critic_net = MLPCritic(layer_dims=layer_dims+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
@@ -47,6 +47,8 @@ class REINFORCEWithBaseline(REINFORCE):
       self.replay.adv[i] = ret.detach() - self.replay.v[i]
     # Get training data
     entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count[mode])
+    # # Normalize advantages
+    # entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Compute loss
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
     critic_loss = entries.adv.pow(2).mean()

@@ -14,4 +14,5 @@ from .PPO import PPO
 from .SAC import SAC
 from .DDPG import DDPG
 from .TD3 import TD3
-from .RepPG import RepPG
+from .RepOffPG import RepOffPG
+from .RepOnPG import RepOnPG

@@ -133,7 +133,7 @@ class DQNNet(nn.Module):
 
 
 class MLPCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1.0):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
     super().__init__()
     self.value_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
 
@@ -142,7 +142,7 @@ class MLPCritic(nn.Module):
 
 
 class MLPQCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1.0):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
     super().__init__()
     self.Q = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
 
@@ -153,7 +153,7 @@ class MLPQCritic(nn.Module):
 
 
 class MLPDoubleQCritic(nn.Module):
-  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1.0):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
     super().__init__()
     self.Q1 = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
     self.Q2 = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
@@ -195,17 +195,19 @@ class MLPCategoricalActor(Actor):
 
 
 class MLPGaussianActor(Actor):
-  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__()
-    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
+    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
     # The action std is independent of states
-    action_size = layer_dims[-1]
-    self.action_std = nn.Parameter(torch.zeros(action_size))    
+    self.action_log_std = nn.Parameter(last_w_scale*torch.zeros(layer_dims[-1]))
+    self.log_std_min, self.log_std_max = log_std_bounds
+    self.action_lim = action_lim
 
   def distribution(self, phi):
-    action_mean = self.actor_net(phi)
-    action_std = F.softplus(self.action_std)
-    return Normal(action_mean, action_std)
+    action_mean = self.action_lim * self.actor_net(phi)
+    # Constrain log_std inside [log_std_min, log_std_max]
+    action_log_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max)
+    return Normal(action_mean, action_log_std.exp())
     
   def log_prob_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution

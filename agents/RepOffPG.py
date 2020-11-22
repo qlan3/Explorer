@@ -1,9 +1,9 @@
 from agents.DDPG import *
 
 
-class RepPG(DDPG):
+class RepOffPG(DDPG):
   '''
-  Implementation of RepPG (Reparameterization Policy Gradient)
+  Implementation of RepOffPG (Reparameterization Off-Policy Gradient)
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
@@ -38,4 +38,6 @@ class RepPG(DDPG):
       deterministic = True if mode=='Test' else False
       state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state, deterministic=deterministic)
+    # Clip the action
+    prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction

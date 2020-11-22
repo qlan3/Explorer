@@ -1,0 +1,34 @@
+{
+  "env": [
+    {
+      "name": ["Pendulum-v0"],
+      "max_episode_steps": [-1],
+      "input_type": ["feature"]
+    }
+  ],
+  "train_steps": [1e6], 
+  "test_per_episodes": [5],
+  "exploration_steps": [1e4],
+  "memory_size": [1e6],
+  "agent": [{"name": ["RepOffPG"]}],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "actor_kwargs": [{"lr": [1e-3]}],
+      "critic_kwargs": [{"lr": [1e-3]}]
+    }
+  ],
+  "batch_size": [100],
+  "network_update_frequency": [1],
+  "discount": [0.99],
+  "polyak": [0.995],
+  "seed": [1],
+  "gradient_clip": [-1],
+  "hidden_layers": [[256,256]],
+  "hidden_act": ["ReLU"],
+  "display_interval": [20],
+  "rolling_score_window": [{"Train": [20], "Test": [10]}],
+  "device": ["cpu"],
+  "show_tb": [true],
+  "generate_random_seed": [true]
+}

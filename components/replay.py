@@ -43,8 +43,8 @@ class FiniteReplay(object):
   '''
   def __init__(self, memory_size, keys=None):
     if keys is None:
-      keys = ['action', 'reward', 'mask']
-    self.keys = keys
+      keys = []
+    self.keys = keys + ['action', 'reward', 'mask']
     self.memory_size = int(memory_size)
     self.clear()
 

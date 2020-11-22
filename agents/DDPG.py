@@ -28,35 +28,6 @@ class DDPG(SAC):
     NN = DeterministicActorCriticNet(feature_net, actor_net, critic_net)
     return NN
 
-  def run_episode(self, mode, render):
-    while not self.done[mode]:
-      prediction = self.get_action(mode)
-      self.action[mode] = to_numpy(prediction['action'])
-      # Clip the action
-      self.action[mode] = np.clip(self.action[mode], self.action_min, self.action_max)
-      if render:
-        self.env[mode].render()
-      # Take a step
-      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
-      self.next_state[mode] = self.state_normalizer(self.next_state[mode])
-      self.reward[mode] = self.reward_normalizer(self.reward[mode])
-      self.episode_return[mode] += self.reward[mode]
-      if mode == 'Train':
-        # Save experience
-        self.save_experience(prediction)
-        # Update policy
-        if self.time_to_learn():
-          self.learn()
-        self.step_count += 1
-      # Update state
-      self.state[mode] = self.next_state[mode]
-    # End of one episode
-    self.save_episode_result(mode)
-    # Reset environment
-    self.reset_game(mode)
-    if mode == 'Train':
-      self.episode_count += 1
-
   def get_action(self, mode='Train'):
     '''
     Pick an action from policy network
@@ -69,6 +40,8 @@ class DDPG(SAC):
     # Add noise
     if mode == 'Train': 
       prediction['action'] += self.cfg['action_noise'] * torch.randn(self.action_size)
+    # Clip the action
+    prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
 
   def compute_actor_loss(self, batch):

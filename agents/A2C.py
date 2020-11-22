@@ -100,13 +100,14 @@ class A2C(REINFORCEWithBaseline):
       self.replay.ret[i] = ret.detach()
     # Get training data
     entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.steps_per_epoch)
+    # # Normalize advantages
+    # entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Compute losses
     actor_loss = -(entries.log_prob * entries.adv).mean()
     critic_loss = (entries.ret - entries.v).pow(2).mean()
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-    self.logger.debug(f'Step {self.step_count}: actor_loss={actor_loss.item()}, critic_loss={critic_loss.item()}')
     # Take an optimization step
     self.optimizer['actor'].zero_grad()
     self.optimizer['critic'].zero_grad()

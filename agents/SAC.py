@@ -46,14 +46,14 @@ class SAC(REINFORCE):
   
   def save_experience(self, prediction):
     mode = 'Train'
-    experience = {
+    prediction = {
       'state': to_tensor(self.state[mode], self.device),
       'action': to_tensor(self.action[mode], self.device), 
       'next_state': to_tensor(self.next_state[mode], self.device),
       'reward': to_tensor(self.reward[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device)
     }
-    self.replay.add(experience)
+    self.replay.add(prediction)
 
   def run_episode(self, mode, render):
     while not self.done[mode]:
@@ -144,12 +144,14 @@ class SAC(REINFORCE):
     q1, q2, log_prob = prediction['q1'], prediction['q2'], prediction['log_prob']
     q_min = torch.min(q1, q2)
     actor_loss = (self.cfg['alpha'] * log_prob - q_min).mean()
+    return actor_loss
 
   def compute_critic_loss(self, batch):
     q1, q2 = self.comput_q(batch) # Compute q
     q_target = self.compute_q_target(batch) # Compute q target
     critic_loss = ((q1-q_target).pow(2) + (q2-q_target).pow(2)).mean()
-
+    return critic_loss
+    
   def compute_q_target(self, batch):
     with torch.no_grad():
       # Sample action from *current* policy

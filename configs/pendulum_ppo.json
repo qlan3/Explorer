@@ -1,13 +1,13 @@
 {
   "env": [
     {
-      "name": ["CartPole-v1"],
+      "name": ["Pendulum-v0"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [3e6],
-  "steps_per_epoch": [2048],
+  "train_steps": [1e6],
+  "steps_per_epoch": [2000],
   "test_per_epochs": [5],
   "agent": [{"name": ["PPO"]}],
   "optimizer": [
@@ -17,7 +17,7 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "batch_size": [64],
+  "batch_size": [50],
   "clip_ratio": [0.2],
   "optimize_epochs": [10],
   "gradient_clip": [-1],

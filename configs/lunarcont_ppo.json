@@ -1,12 +1,12 @@
 {
   "env": [
     {
-      "name": ["CartPole-v1"],
+      "name": ["LunarLanderContinuous-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [3e6],
+  "train_steps": [1e6],
   "steps_per_epoch": [2048],
   "test_per_epochs": [5],
   "agent": [{"name": ["PPO"]}],
