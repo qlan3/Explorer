@@ -1,14 +1,14 @@
 {
   "env": [
     {
-      "name": ["CartPole-v1"],
+      "name": ["LunarLanderContinuous-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
   "train_steps": [1e6],
   "steps_per_epoch": [2048],
-  "test_per_episodes": [5],
+  "test_per_episodes": [3],
   "agent": [{"name": ["ActorCritic"]}],
   "optimizer": [
     {

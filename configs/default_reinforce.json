@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["CartPole-v1"],
+      "name": ["LunarLanderContinuous-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
@@ -12,7 +12,7 @@
   "optimizer": [
     {
       "name": ["Adam"],
-      "actor_kwargs": [{"lr": [1e-3]}]
+      "actor_kwargs": [{"lr": [3e-4]}]
     }
   ],
   "gradient_clip": [-1],

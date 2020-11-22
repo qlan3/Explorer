@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["Pendulum-v0"],
+      "name": ["LunarLanderContinuous-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
@@ -18,14 +18,14 @@
       "critic_kwargs": [{"lr": [3e-4]}]
     }
   ],
-  "batch_size": [256],
+  "batch_size": [64],
   "network_update_frequency": [1],
   "discount": [0.99],
   "polyak": [0.995],
   "alpha": [0.2],
   "seed": [1],
   "gradient_clip": [-1],
-  "hidden_layers": [[256,256]],
+  "hidden_layers": [[64, 64]],
   "hidden_act": ["ReLU"],
   "display_interval": [20],
   "rolling_score_window": [{"Train": [20], "Test": [10]}],
