@@ -41,3 +41,9 @@ class RepOffPG(DDPG):
     # Clip the action
     prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
+
+  def compute_q_target(self, batch):
+    with torch.no_grad():
+      q_next = self.network_target(batch.next_state, deterministic=True)['q']
+      q_target = batch.reward + self.discount * batch.mask * q_next
+    return q_target

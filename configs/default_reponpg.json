@@ -7,7 +7,7 @@
     }
   ],
   "train_steps": [1e6],
-  "steps_per_epoch": [64],
+  "steps_per_epoch": [2048],
   "test_per_epochs": [-1],
   "agent": [{"name": ["RepOnPG"]}],
   "optimizer": [
