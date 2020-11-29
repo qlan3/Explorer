@@ -108,9 +108,6 @@ class REINFORCE(BaseAgent):
       self.set_net_mode(mode)
       # Run for one episode
       self.run_episode(mode, render)
-    self.save_episode_result('Train')
-    if self.test_per_episodes > 0:
-      self.save_episode_result('Test')
 
   def run_episode(self, mode, render):
     while not self.done[mode]:
