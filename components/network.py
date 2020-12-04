@@ -383,3 +383,45 @@ class RepActorCriticNet(DeterministicActorCriticNet):
     # Compute state-action value
     q = self.critic_net(phi, action)
     return {'action': action, 'q': q}
+
+
+class RPGNet(ActorCriticNet):
+  def __init__(self, feature_net, actor_net, critic_net):
+    super().__init__(feature_net, actor_net, critic_net)
+
+  def forward(self, obs, deterministic=False):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Sample an action
+    action = self.actor_net(phi, deterministic)
+    # Compute state-action value
+    reward = self.critic_net(phi, action)
+    return {'action': action, 'reward': reward}
+  
+  def get_reward(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute predicted reward
+    reward = self.critic_net(phi, action)
+    return reward
+
+
+class DRPGNet(ActorCriticNet):
+  def __init__(self, feature_net, actor_net, critic_net):
+    super().__init__(feature_net, actor_net, critic_net)
+
+  def forward(self, obs, deterministic=False):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Sample an action
+    action = self.actor_net(phi, deterministic)
+    # Compute state-action value
+    reward1, reward2 = self.critic_net(phi, action)
+    return {'action': action, 'reward1': reward1, 'reward2': reward2}
+  
+  def get_reward(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute predicted reward
+    reward1, reward2 = self.critic_net(phi, action)
+    return reward1, reward2

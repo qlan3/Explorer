@@ -1,0 +1,28 @@
+{
+  "env": [
+    {
+      "name": ["Pendulum-v0", "LunarLanderContinuous-v2"],
+      "max_episode_steps": [-1],
+      "input_type": ["feature"]
+    }
+  ],
+  "train_steps": [1e6],
+  "test_per_episodes": [-1],
+  "agent": [{"name": ["REINFORCE"]}],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "actor_kwargs": [{"lr": [3e-4]}]
+    }
+  ],
+  "gradient_clip": [-1],
+  "hidden_layers": [[64,64]],
+  "hidden_act": ["Tanh"],
+  "display_interval": [20],
+  "rolling_score_window": [{"Train": [20], "Test": [10]}],
+  "discount": [0.99],
+  "seed": [1],
+  "device": ["cpu"],
+  "show_tb": [true],
+  "generate_random_seed": [true]
+}

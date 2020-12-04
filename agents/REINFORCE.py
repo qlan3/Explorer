@@ -53,7 +53,7 @@ class REINFORCE(BaseAgent):
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs'])
     }
     # Set replay buffer
-    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret'])
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret', 'action'])
     # Set log dict
     for key in ['state', 'next_state', 'action', 'log_prob', 'reward', 'done', 'episode_return', 'episode_step_count']:
       setattr(self, key, {'Train': None, 'Test': None})

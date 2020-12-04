@@ -3,7 +3,7 @@ from agents.DDPG import *
 
 class RepOffPG(DDPG):
   '''
-  Implementation of RepOffPG (Reparameterization Off-Policy Gradient)
+  Implementation of RepOffPG (Reparameterization Off-Policy Gradient), almost the same as SVG(0).
   '''
   def __init__(self, cfg):
     super().__init__(cfg)

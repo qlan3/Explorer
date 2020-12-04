@@ -3,7 +3,7 @@
 Explorer is a PyTorch reinforcement learning framework for **exploring** new ideas.
 
 
-# Implemented algorithms
+## Implemented algorithms
 
 - Vanilla Deep Q-learning (VanillaDQN): No target network.
 - [Deep Q-Learning (DQN)](https://users.cs.duke.edu/~pdinesh/sources/MnihEtAlHassibis15NatureControlDeepRL.pdf)
@@ -37,10 +37,10 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
             |     ├── Actor-Critic
             |     └── A2C
             |          ├── PPO
-            |          └── RepOnPG
+            |          └── RepOnPG (experimental)
             └── SAC ── DDPG
                         ├── TD3
-                        └── RepOffPG
+                        └── RepOffPG (experimental)
 
 
 ## Requirements

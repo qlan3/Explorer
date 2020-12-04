@@ -48,7 +48,7 @@ class SAC(REINFORCE):
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
-      'action': to_tensor(self.action[mode], self.device), 
+      'action': to_tensor(self.action[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
       'reward': to_tensor(self.reward[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device)
@@ -66,6 +66,7 @@ class SAC(REINFORCE):
       self.next_state[mode] = self.state_normalizer(self.next_state[mode])
       self.reward[mode] = self.reward_normalizer(self.reward[mode])
       self.episode_return[mode] += self.reward[mode]
+      self.episode_step_count[mode] += 1
       if mode == 'Train':
         # Save experience
         self.save_experience(prediction)
@@ -105,7 +106,8 @@ class SAC(REINFORCE):
     else:
       return False
 
-  def learn(self, mode='Train'):
+  def learn(self):
+    mode = 'Train'
     batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
     # Compute critic loss
     critic_loss = self.compute_critic_loss(batch)
@@ -131,10 +133,9 @@ class SAC(REINFORCE):
       # Unfreeze Q-networks
       for p in self.network.critic_net.parameters():
         p.requires_grad = True
-
       # Update target networks by polyak averaging (soft update)
       self.soft_update(self.network, self.network_target)
-    
+      # Log
       if self.show_tb:
         self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
         self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
