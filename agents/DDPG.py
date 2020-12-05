@@ -40,8 +40,6 @@ class DDPG(SAC):
     # Add noise
     if mode == 'Train': 
       prediction['action'] += self.cfg['action_noise'] * torch.randn(self.action_size)
-    # Clip the action
-    prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
 
   def compute_actor_loss(self, batch):

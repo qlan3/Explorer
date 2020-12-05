@@ -46,8 +46,6 @@ class RepOnPG(A2C):
     state = to_tensor(self.state[mode], self.device)
     deterministic = True if mode == 'Test' else False
     prediction = self.network(state, deterministic=deterministic)
-    # Clip the action
-    prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
 
   def learn(self):

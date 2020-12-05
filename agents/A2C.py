@@ -41,10 +41,14 @@ class A2C(REINFORCEWithBaseline):
       for _ in range(self.steps_per_epoch):
         prediction = self.get_action(mode)
         self.action[mode] = to_numpy(prediction['action'])
+        if self.action_type == 'CONTINUOUS':
+          action = np.clip(self.action[mode], self.action_min, self.action_max)
+        else:
+          action = self.action[mode]
         if render:
           self.env[mode].render()
         # Take a step
-        self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+        self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(action)
         self.next_state[mode] = self.state_normalizer(self.next_state[mode])
         self.reward[mode] = self.reward_normalizer(self.reward[mode])
         self.episode_return[mode] += self.reward[mode]  

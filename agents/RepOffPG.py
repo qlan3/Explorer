@@ -38,8 +38,6 @@ class RepOffPG(DDPG):
       deterministic = True if mode=='Test' else False
       state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state, deterministic=deterministic)
-    # Clip the action
-    prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
 
   def compute_q_target(self, batch):

@@ -113,10 +113,15 @@ class REINFORCE(BaseAgent):
     while not self.done[mode]:
       prediction = self.get_action(mode)
       self.action[mode] = to_numpy(prediction['action'])
+      # Clip the action
+      if self.action_type == 'CONTINUOUS':
+        action = np.clip(self.action[mode], self.action_min, self.action_max)
+      else:
+        action = self.action[mode]
       if render:
         self.env[mode].render()
       # Take a step
-      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(action)
       self.next_state[mode] = self.state_normalizer(self.next_state[mode])
       self.reward[mode] = self.reward_normalizer(self.reward[mode])
       self.episode_return[mode] += self.reward[mode]
@@ -161,16 +166,20 @@ class REINFORCE(BaseAgent):
       speed = self.step_count / (time.time() - self.start_time)
       self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.episode_return[mode]:.2f}, Speed={speed:.2f}(steps/s)')
 
-  def get_action(self, mode):
+  def get_action(self, mode='Train'):
     '''
     Pick an action from policy network
     '''
     state = to_tensor(self.state[mode], self.device)
     prediction = self.network(state)
-    # Clip the action
-    if self.action_type == 'CONTINUOUS':
-      prediction['action'] = torch.clamp(prediction['action'], self.action_min, self.action_max)
     return prediction
+
+  def save_experience(self, prediction):
+    mode = 'Train'
+    if self.reward[mode] is not None:
+      prediction['reward'] = to_tensor(self.reward[mode], self.device)
+      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+    self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
@@ -193,13 +202,6 @@ class REINFORCE(BaseAgent):
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
     self.optimizer['actor'].step()
-
-  def save_experience(self, prediction):
-    mode = 'Train'
-    if self.reward[mode] is not None:
-      prediction['reward'] = to_tensor(self.reward[mode], self.device)
-      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
-    self.replay.add(prediction)
 
   def get_action_size(self):
     mode = 'Train'
