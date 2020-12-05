@@ -288,11 +288,11 @@ class REINFORCENet(nn.Module):
     self.actor_net = actor_net
     self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
 
-  def forward(self, obs):
+  def forward(self, obs, action=None):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    _, action, log_prob = self.actor_net(phi)
+    _, action, log_prob = self.actor_net(phi, action)
     return {'action': action, 'log_prob': log_prob}
 
 
