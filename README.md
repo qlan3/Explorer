@@ -21,8 +21,6 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
 
 ## To do list
-- Add Mujuco
-- Add PyBullet
 - Add more pygames to gym-games
 
 ## The dependency tree of agent classes
@@ -47,7 +45,9 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 
 - Python (>=3.6)
 - [PyTorch](https://pytorch.org/)
-- [Gym && Gym Games](https://github.com/qlan3/gym-games): You may only install part of Gym (`classic_control, box2d, atari`) by command `pip install 'gym[classic_control, box2d, atari]'`.
+- [Gym && Gym Games](https://github.com/qlan3/gym-games): You may only install part of Gym (`classic_control, box2d`) by command `pip install 'gym[classic_control, box2d]'`.
+- Optional: [Gym Atari](https://github.com/openai/gym/blob/master/docs/environments.md#atari), [Gym Mujoco](https://github.com/openai/gym/blob/master/docs/environments.md#mujoco)
+- [PyBullet](https://pybullet.org/): `pip install pybullet`
 - Others: Please check `requirements.txt`.
 
 
