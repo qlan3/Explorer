@@ -13,7 +13,7 @@ class REINFORCEWithBaseline(REINFORCE):
       'critic':  getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs'])
     }
     # Set replay buffer
-    self.replay = InfiniteReplay(keys=['reward', 'mask', 'v', 'log_prob', 'adv'])
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'v', 'log_prob', 'adv', 'action'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -36,6 +36,13 @@ class REINFORCEWithBaseline(REINFORCE):
     # Set the model
     NN = ActorCriticNet(feature_net, actor_net, critic_net)
     return NN
+  
+  def save_experience(self, prediction):
+    mode = 'Train'
+    if self.reward[mode] is not None:
+      prediction['reward'] = to_tensor(self.reward[mode], self.device)
+      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+    self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
