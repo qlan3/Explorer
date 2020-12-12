@@ -1,15 +1,16 @@
 {
   "env": [
     {
-      "name": ["LunarLanderContinuous-v2"],
+      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Humanoid-v2", "Ant-v2", "Reacher-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [1e6],
-  "steps_per_epoch": [2048],
-  "test_per_epochs": [-1],
-  "agent": [{"name": ["PPO"]}],
+  "train_steps": [3e6], 
+  "test_per_episodes": [50],
+  "exploration_steps": [1e4],
+  "memory_size": [1e6],
+  "agent": [{"name": ["DDPG"]}],
   "optimizer": [
     {
       "name": ["Adam"],
@@ -18,17 +19,17 @@
     }
   ],
   "batch_size": [64],
-  "clip_ratio": [0.2],
-  "optimize_epochs": [10],
+  "network_update_frequency": [1],
+  "discount": [0.99],
+  "polyak": [0.995],
+  "action_noise": [0.1],
   "gradient_clip": [-1],
   "hidden_layers": [[64,64]],
-  "hidden_act": ["Tanh"],
+  "hidden_act": ["ReLU"],
   "display_interval": [20],
   "rolling_score_window": [{"Train": [20], "Test": [10]}],
-  "discount": [0.99],
-  "gae": [0.95],
   "seed": [1],
   "device": ["cpu"],
-  "show_tb": [true],
+  "show_tb": [false],
   "generate_random_seed": [true]
 }
