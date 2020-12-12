@@ -63,7 +63,7 @@ class REINFORCE(BaseAgent):
     if input_type == 'pixel':
       layer_dims = [self.cfg['feature_dim']] + self.cfg['hidden_layers']
       if 'MinAtar' in self.env_name:
-        feature_net = Conv2d_MinAtar(in_channels=self.env[mode].game.state_shape()[2], feature_dim=layer_dims[0])
+        feature_net = Conv2d_MinAtar(in_channels=self.env['Train'].game.state_shape()[2], feature_dim=layer_dims[0])
       else:
         feature_net = Conv2d_Atari(in_channels=4, feature_dim=layer_dims[0])
     elif input_type == 'feature':
