@@ -7,9 +7,9 @@ output/
 *figure*
 sbatch*
 script.sh
-# run.py
 plot_paper.py
 *DS_Store*
+run*.sh
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

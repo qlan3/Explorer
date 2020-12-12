@@ -39,10 +39,10 @@ cfg = {
   'ylim': {'min': None, 'max': None},
   'EMA': True,
   'loc': 'lower right',
-  'sweep_keys': ['lr', 'target_networks_num'],
+  'sweep_keys': ['lr', 'name'],
   'sort_by': ['Return (mean)', 'Return (se)'],
   'ascending': [False, True],
-  'runs': 5
+  'runs': 1
 }
 
 def analyze(exp):
@@ -52,30 +52,28 @@ def analyze(exp):
 
 
   plotter.csv_results('Train', get_csv_result_dict, get_process_result_dict)
-  plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
+  # plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
   plotter.plot_results(mode='Train', indexes='all')
-
-  if 'copter' in exp:
-    title = 'Pixelcopter'
-    indexList = [55, 56, 70, 29]
-  elif 'catcher' in exp:
-    title = 'Catcher'
-    indexList = [37, 38, 42, 29]
-  elif 'lunar' in exp:
-    title = 'Lunarlander'
-    indexList = [73, 74, 46, 41]
-  elif 'minatar' in exp:
-    title = 'MinAtar'
-    indexList = []
-  else:
-    title = exp
-    indexList = []
-  
-  plotter.plot_indexList(indexList=indexList, mode='Train', image_name=f'Train_{exp}')
 
 
 if __name__ == "__main__":
-  unfinished_index('catcher', runs=5)
-  memory_info('catcher', runs=5)
-  time_info('catcher', runs=5)
-  analyze('catcher')
+  # unfinished_index('mujoco_a2c')
+  memory_info('mujoco_a2c')
+  time_info('mujoco_a2c')
+  analyze('mujoco_a2c')
+
+  memory_info('mujoco_ddpg')
+  time_info('mujoco_ddpg')
+  analyze('mujoco_ddpg')
+
+  memory_info('mujoco_ppo')
+  time_info('mujoco_ppo')
+  analyze('mujoco_ppo')
+
+  memory_info('mujoco_sac')
+  time_info('mujoco_sac')
+  analyze('mujoco_sac')
+
+  memory_info('mujoco_td3')
+  time_info('mujoco_td3')
+  analyze('mujoco_td3')
