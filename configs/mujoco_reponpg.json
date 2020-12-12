@@ -1,18 +1,20 @@
 {
   "env": [
     {
-      "name": ["Pendulum-v0", "LunarLanderContinuous-v2"],
+      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Humanoid-v2", "Ant-v2", "Reacher-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [1e6],
-  "test_per_episodes": [-1],
-  "agent": [{"name": ["REINFORCE"]}],
+  "train_steps": [3e6],
+  "steps_per_epoch": [2048],
+  "test_per_epochs": [50],
+  "agent": [{"name": ["RepOnPG"]}],
   "optimizer": [
     {
       "name": ["Adam"],
-      "actor_kwargs": [{"lr": [3e-4]}]
+      "actor_kwargs": [{"lr": [3e-4]}],
+      "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
   "gradient_clip": [-1],
@@ -23,6 +25,6 @@
   "discount": [0.99],
   "seed": [1],
   "device": ["cpu"],
-  "show_tb": [true],
+  "show_tb": [false],
   "generate_random_seed": [true]
 }
