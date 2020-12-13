@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Humanoid-v2", "Ant-v2", "Reacher-v2"],
+      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Swimmer-v2", "Ant-v2", "Reacher-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }

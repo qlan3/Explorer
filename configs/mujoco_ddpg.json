@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Humanoid-v2", "Ant-v2", "Reacher-v2"],
+      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Swimmer-v2", "Ant-v2", "Reacher-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
@@ -24,7 +24,7 @@
   "polyak": [0.995],
   "action_noise": [0.1],
   "gradient_clip": [-1],
-  "hidden_layers": [[64,64]],
+  "hidden_layers": [[256,256]],
   "hidden_act": ["ReLU"],
   "display_interval": [20],
   "rolling_score_window": [{"Train": [20], "Test": [10]}],
