@@ -87,9 +87,9 @@ class Sweeper(object):
     print(cfg_json, end='\n')
 
 
-def unfinished_index(exp, file_name='result_Test.feather', runs=1):
+def unfinished_index(exp, file_name='log.txt', runs=1, max_line_length=10000):
   '''
-  Find unfinished config indexes based on the existence of file `result_Test.feather`
+  Find unfinished config indexes based on the existence of time info in the log file
   '''
   # Read config files
   config_file = f'./configs/{exp}.json'
@@ -97,9 +97,25 @@ def unfinished_index(exp, file_name='result_Test.feather', runs=1):
   # Read a list of logs
   print(f'[{exp}]: ', end=' ')
   for i in range(runs * sweeper.config_dicts['num_combinations']):
-    result_file = f'./logs/{exp}/{i+1}/{file_name}'
-    if not os.path.isfile(result_file):
+    log_file = f'./logs/{exp}/{i+1}/{file_name}'
+    try:
+      with open(log_file, 'r') as f:
+        # Get last line
+        try:
+          f.seek(-max_line_length, os.SEEK_END)
+        except IOError:
+          # either file is too small, or too many lines requested
+          f.seek(0)
+        last_line = f.readlines()[-1]
+        # Get time info in last line
+        try:
+          t = float(last_line.split(' ')[-2])
+        except:
+          print(i+1, end=', ')
+          continue
+    except:
       print(i+1, end=', ')
+      continue
   print()
 
 
