@@ -217,7 +217,7 @@ class MLPGaussianActor(nn.Module):
     return action, action_mean, action_std, log_prob
 
 
-class MLPSquashedGaussianActor(nn.Module):
+class MLPSquashedGaussianResActor(nn.Module):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__()
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=last_w_scale)
@@ -250,6 +250,24 @@ class MLPSquashedGaussianActor(nn.Module):
     return action, action_mean, action_std, log_prob
 
 
+class MLPSquashedGaussianActor(MLPSquashedGaussianResActor):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
+    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
+
+  def forward(self, phi, action=None, deterministic=False):
+    # Compute action distribution and the log_prob of given actions
+    action_mean, action_std, action_distribution = self.distribution(phi)
+    if action is None:
+      if deterministic:
+        action = action_mean
+      else:
+        action = action_distribution.sample()
+    # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    action = self.action_lim * torch.tanh(action)
+    return action, action_mean, action_std, log_prob
+
+
 class MLPDeterministicActor(nn.Module):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', last_w_scale=1e-3):
     super().__init__()
@@ -260,7 +278,7 @@ class MLPDeterministicActor(nn.Module):
     return self.action_lim * self.actor_net(phi), None, None, None
 
 
-class MLPReStdGaussianActor(MLPSquashedGaussianActor):
+class MLPStdGaussianResActor(MLPSquashedGaussianResActor):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
 
@@ -288,7 +306,7 @@ class MLPReStdGaussianActor(MLPSquashedGaussianActor):
     return action, action_mean, action_std, log_prob
 
 
-class MLPStdGaussianActor(MLPReStdGaussianActor):
+class MLPStdGaussianActor(MLPStdGaussianResActor):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
 
@@ -363,7 +381,7 @@ class ActorDoubleQCriticNet(ActorQCriticNet):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__(feature_net, actor_net, critic_net)
 
-  def forward(self, obs, acttion=None, deterministic=False):
+  def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
@@ -406,7 +424,7 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Compute state value
     v = self.critic_net(phi)
     return v
-  
+  '''
   def get_repara_action(self, obs, action):
     # Generate the latent feature
     phi = self.feature_net(obs)
@@ -414,4 +432,14 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     action_mean, action_std, _ = self.actor_net.distribution(phi)
     eps = (action - action_mean) / action_std
     repara_action = action_mean + action_std * eps.detach()
-    return repara_action 
+    return repara_action
+  '''
+  def get_repara_action(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Reparameterize action with epsilon
+    u = torch.atanh(action / self.actor_net.action_lim)
+    action_mean, action_std, _ = self.actor_net.distribution(phi)
+    eps = (u - action_mean) / action_std
+    repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
+    return repara_action

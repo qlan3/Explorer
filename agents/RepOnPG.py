@@ -25,7 +25,6 @@ class RepOnPG(A2C):
     else:
       self.replay.add({'q': prediction['q']})
 
-
   def createNN(self, input_type):
     # Set feature network
     if input_type == 'pixel':
@@ -39,7 +38,7 @@ class RepOnPG(A2C):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    actor_net = MLPReStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
+    actor_net = MLPStdGaussianResActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set critic network
     critic_net = MLPQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model

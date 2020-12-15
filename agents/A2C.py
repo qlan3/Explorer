@@ -51,7 +51,8 @@ class A2C(REINFORCEWithBaseline):
         self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(action)
         self.next_state[mode] = self.state_normalizer(self.next_state[mode])
         self.reward[mode] = self.reward_normalizer(self.reward[mode])
-        self.episode_return[mode] += self.reward[mode]  
+        self.episode_return[mode] += self.reward[mode]
+        self.episode_step_count[mode] += 1
         self.step_count += 1
         # Save experience
         self.save_experience(prediction)

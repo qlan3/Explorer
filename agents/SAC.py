@@ -37,7 +37,7 @@ class SAC(REINFORCE):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f'{self.agent_name} only supports continous action spaces.'
-    actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
+    actor_net = MLPSquashedGaussianResActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set critic network
     critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
@@ -114,22 +114,20 @@ class SAC(REINFORCE):
   def learn(self):
     mode = 'Train'
     batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
-    # Compute critic loss
-    critic_loss = self.compute_critic_loss(batch)
     # Take an optimization step for critic
+    critic_loss = self.compute_critic_loss(batch)
     self.optimizer['critic'].zero_grad()
     critic_loss.backward()
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
     self.optimizer['critic'].step()
-
+    # Take an optimization step for actor
     if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['actor_update_frequency'] == 0:
       # Freeze Q-networks to avoid computing gradients for them
       for p in self.network.critic_net.parameters():
         p.requires_grad = False
       # Compute actor loss
       actor_loss = self.compute_actor_loss(batch)
-      # Take an optimization step for actor
       self.optimizer['actor'].zero_grad()
       actor_loss.backward()
       if self.gradient_clip > 0:

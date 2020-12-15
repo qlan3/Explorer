@@ -43,7 +43,7 @@ class REINFORCEWithBaseline(REINFORCE):
     prediction = {
       'reward': to_tensor(self.reward[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'v': prediction['prediction'],
+      'v': prediction['v'],
       'log_prob': prediction['log_prob']
     }
     self.replay.add(prediction)
