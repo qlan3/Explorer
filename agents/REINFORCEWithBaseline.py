@@ -13,7 +13,7 @@ class REINFORCEWithBaseline(REINFORCE):
       'critic':  getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs'])
     }
     # Set replay buffer
-    self.replay = InfiniteReplay(keys=['reward', 'mask', 'v', 'log_prob', 'adv', 'action'])
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'v', 'log_prob', 'adv'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -34,14 +34,18 @@ class REINFORCEWithBaseline(REINFORCE):
     # Set critic network
     critic_net = MLPCritic(layer_dims=layer_dims+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
-    NN = ActorCriticNet(feature_net, actor_net, critic_net)
+    NN = ActorVCriticNet(feature_net, actor_net, critic_net)
     return NN
   
   def save_experience(self, prediction):
+    # Save reward, mask, v, log_prob
     mode = 'Train'
-    if self.reward[mode] is not None:
-      prediction['reward'] = to_tensor(self.reward[mode], self.device)
-      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+    prediction = {
+      'reward': to_tensor(self.reward[mode], self.device),
+      'mask': to_tensor(1-self.done[mode], self.device),
+      'v': prediction['prediction'],
+      'log_prob': prediction['log_prob']
+    }
     self.replay.add(prediction)
 
   def learn(self):
@@ -56,20 +60,22 @@ class REINFORCEWithBaseline(REINFORCE):
     entries = self.replay.get(['log_prob', 'adv'], self.episode_step_count[mode])
     # # Normalize advantages
     # entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
-    # Compute loss
+    # Take an optimization step for actor
     actor_loss = -(entries.log_prob * entries.adv.detach()).mean()
+    self.optimizer['actor'].zero_grad()
+    actor_loss.backward()
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
+    self.optimizer['actor'].step()
+    # Take an optimization step for critic
     critic_loss = entries.adv.pow(2).mean()
+    self.optimizer['critic'].zero_grad()
+    critic_loss.backward()
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
+    self.optimizer['critic'].step()
+    # Log
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
     self.logger.debug(f'Step {self.step_count}: actor_loss={actor_loss.item()}, critic_loss={critic_loss.item()}')
-    # Take an optimization step
-    self.optimizer['actor'].zero_grad()
-    self.optimizer['critic'].zero_grad()
-    actor_loss.backward()
-    critic_loss.backward()
-    if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
-    self.optimizer['actor'].step()
-    self.optimizer['critic'].step()

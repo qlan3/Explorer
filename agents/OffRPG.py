@@ -29,11 +29,11 @@ class OffRPG(SAC):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    actor_net = MLPRepGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
+    actor_net = MLPReStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
     # Set critic network
     critic_net = MLPQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
-    NN = RPGNet(feature_net, actor_net, critic_net)
+    NN = ActorVCriticRewardNet(feature_net, actor_net, critic_net)
     return NN
 
   def save_experience(self, prediction):

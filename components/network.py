@@ -165,23 +165,7 @@ class MLPDoubleQCritic(nn.Module):
     return q1, q2
 
 
-class Actor(nn.Module):
-  def distribution(self, phi):
-    raise NotImplementedError
-
-  def log_prob_from_distribution(self, action_distribution, action):
-    raise NotImplementedError
-
-  def forward(self, phi, action=None):
-    # Compute action distribution and the log_prob of given actions
-    action_distribution = self.distribution(phi)
-    if action is None:
-      action = action_distribution.sample()
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    return action_distribution, action, log_prob
-
-
-class MLPCategoricalActor(Actor):
+class MLPCategoricalActor(nn.Module):
   def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
     super().__init__()
     self.logits_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act, last_w_scale=last_w_scale)
@@ -193,8 +177,16 @@ class MLPCategoricalActor(Actor):
   def log_prob_from_distribution(self, action_distribution, action):
     return action_distribution.log_prob(action)
 
+  def forward(self, phi, action=None, deterministic=False):
+    # Compute action distribution and the log_prob of given actions
+    action_distribution = self.distribution(phi)
+    if action is None:
+      action = action_distribution.sample()
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    return action, None, None, log_prob
 
-class MLPGaussianActor(Actor):
+
+class MLPGaussianActor(nn.Module):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__()
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
@@ -206,15 +198,26 @@ class MLPGaussianActor(Actor):
   def distribution(self, phi):
     action_mean = self.action_lim * self.actor_net(phi)
     # Constrain log_std inside [log_std_min, log_std_max]
-    action_log_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max)
-    return Normal(action_mean, action_log_std.exp())
+    action_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max).exp()
+    return action_mean, action_std, Normal(action_mean, action_std)
     
   def log_prob_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
     return action_distribution.log_prob(action).sum(axis=-1)
 
+  def forward(self, phi, action=None, deterministic=False):
+    # Compute action distribution and the log_prob of given actions
+    action_mean, action_std, action_distribution = self.distribution(phi)
+    if action is None:
+      if deterministic:
+        action = action_mean
+      else:
+        action = action_distribution.sample()
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    return action, action_mean, action_std, log_prob
 
-class MLPSquashedGaussianActor(Actor):
+
+class MLPSquashedGaussianActor(nn.Module):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
     super().__init__()
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=last_w_scale)
@@ -224,8 +227,8 @@ class MLPSquashedGaussianActor(Actor):
   def distribution(self, phi):
     action_mean, action_log_std = self.actor_net(phi).chunk(2, dim=-1)
     # Constrain log_std inside [log_std_min, log_std_max]
-    action_log_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max)
-    return action_mean, Normal(action_mean, action_log_std.exp())
+    action_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max).exp()
+    return action_mean, action_std, Normal(action_mean, action_std)
 
   def log_prob_from_distribution(self, action_distribution, action):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
@@ -233,52 +236,72 @@ class MLPSquashedGaussianActor(Actor):
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
     return log_prob
 
-  def forward(self, phi, deterministic=False):
+  def forward(self, phi, action=None, deterministic=False):
     # Compute action distribution and the log_prob of given actions
-    action_mean, action_distribution = self.distribution(phi)
-    if deterministic:
-      action = action_mean
-    else:
-      action = action_distribution.rsample()
+    action_mean, action_std, action_distribution = self.distribution(phi)
+    if action is None:
+      if deterministic:
+        action = action_mean
+      else:
+        action = action_distribution.rsample()
     # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
     log_prob = self.log_prob_from_distribution(action_distribution, action)
     action = self.action_lim * torch.tanh(action)
-    return action_distribution, action, log_prob
+    return action, action_mean, action_std, log_prob
 
 
-class MLPDeterministicActor(Actor):
+class MLPDeterministicActor(nn.Module):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', last_w_scale=1e-3):
     super().__init__()
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
     self.action_lim = action_lim
   
-  def forward(self, phi):
-    return self.action_lim * self.actor_net(phi)
+  def forward(self, phi, action=None, deterministic=False):
+    return self.action_lim * self.actor_net(phi), None, None, None
 
 
-class MLPRepGaussianActor(MLPDeterministicActor):
+class MLPReStdGaussianActor(MLPSquashedGaussianActor):
   def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
-    super().__init__(action_lim, layer_dims, hidden_act, last_w_scale)
-    self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=last_w_scale)
-    self.log_std_min, self.log_std_max = log_std_bounds
-    self.action_lim = action_lim
+    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
 
   def distribution(self, phi):
     action_mean, action_log_std = self.actor_net(phi).chunk(2, dim=-1)
     # 
     action_mean = self.action_lim * torch.tanh(action_mean)
     # Constrain log_std inside [log_std_min, log_std_max]
-    action_log_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max)
-    return action_mean, Normal(action_mean, action_log_std.exp())
+    action_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max).exp()
+    return action_mean, action_std, Normal(action_mean, action_std)
 
-  def forward(self, phi, deterministic=False):
+  def log_prob_from_distribution(self, action_distribution, action):
+    # Last axis sum needed for Torch Normal distribution
+    return action_distribution.log_prob(action).sum(axis=-1)
+
+  def forward(self, phi, action=None, deterministic=False):
     # Compute action distribution and the log_prob of given actions
-    action_mean, action_distribution = self.distribution(phi)
-    if deterministic:
-      action = action_mean
-    else:
-      action = action_distribution.rsample()
-    return action
+    action_mean, action_std, action_distribution = self.distribution(phi)
+    if action is None:
+      if deterministic:
+        action = action_mean
+      else:
+        action = action_distribution.rsample()
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    return action, action_mean, action_std, log_prob
+
+
+class MLPStdGaussianActor(MLPReStdGaussianActor):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
+    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
+
+  def forward(self, phi, action=None, deterministic=False):
+    # Compute action distribution and the log_prob of given actions
+    action_mean, action_std, action_distribution = self.distribution(phi)
+    if action is None:
+      if deterministic:
+        action = action_mean
+      else:
+        action = action_distribution.sample()
+    log_prob = self.log_prob_from_distribution(action_distribution, action)
+    return action, action_mean, action_std, log_prob
 
 
 class REINFORCENet(nn.Module):
@@ -288,15 +311,15 @@ class REINFORCENet(nn.Module):
     self.actor_net = actor_net
     self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
 
-  def forward(self, obs, action=None):
+  def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    _, action, log_prob = self.actor_net(phi, action)
+    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
     return {'action': action, 'log_prob': log_prob}
 
 
-class ActorCriticNet(nn.Module):
+class ActorVCriticNet(nn.Module):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__()
     self.feature_net = feature_net
@@ -305,46 +328,25 @@ class ActorCriticNet(nn.Module):
     self.actor_params = list(self.feature_net.parameters()) + list(self.actor_net.parameters())
     self.critic_params = list(self.feature_net.parameters()) + list(self.critic_net.parameters())
 
-  def forward(self, obs, action=None):
+  def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Compute state value
     v = self.critic_net(phi)
     # Sample an action
-    action_distribution, action, log_prob = self.actor_net(phi, action)
+    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
     return {'action': action, 'log_prob': log_prob, 'v': v}
 
 
-class SACNet(ActorCriticNet):
+class ActorQCriticNet(ActorVCriticNet):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__(feature_net, actor_net, critic_net)
 
-  def forward(self, obs, deterministic=False):
+  def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action_distribution, action, log_prob = self.actor_net(phi, deterministic)
-    # Compute state-action value
-    q1, q2 = self.critic_net(phi, action)
-    return {'action': action, 'log_prob': log_prob, 'q1': q1, 'q2': q2}
-  
-  def get_q(self, obs, action):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Compute state-action value
-    q1, q2 = self.critic_net(phi, action)
-    return q1, q2
-
-
-class DeterministicActorCriticNet(ActorCriticNet):
-  def __init__(self, feature_net, actor_net, critic_net):
-    super().__init__(feature_net, actor_net, critic_net)
-
-  def forward(self, obs):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Sample an action
-    action = self.actor_net(phi)
+    action, _, _, _ = self.actor_net(phi, action, deterministic)
     # Compute state-action value
     q = self.critic_net(phi, action)
     return {'action': action, 'q': q}
@@ -357,71 +359,59 @@ class DeterministicActorCriticNet(ActorCriticNet):
     return q
 
 
-class TD3Net(SACNet):
+class ActorDoubleQCriticNet(ActorQCriticNet):
   def __init__(self, feature_net, actor_net, critic_net):
     super().__init__(feature_net, actor_net, critic_net)
 
-  def forward(self, obs):
+  def forward(self, obs, acttion=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action = self.actor_net(phi)
+    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
     # Compute state-action value
     q1, q2 = self.critic_net(phi, action)
-    return {'action': action, 'q1': q1, 'q2': q2}
+    return {'action': action, 'log_prob': log_prob, 'q1': q1, 'q2': q2}
+  
+  def get_q(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute state-action value
+    q1, q2 = self.critic_net(phi, action)
+    return q1, q2
 
 
-class RepActorCriticNet(DeterministicActorCriticNet):
-  def __init__(self, feature_net, actor_net, critic_net):
+class ActorVCriticRewardNet(ActorVCriticNet):
+  def __init__(self, feature_net, actor_net, critic_net, reward_net):
     super().__init__(feature_net, actor_net, critic_net)
+    self.reward_net = reward_net
+    self.reward_params = list(self.feature_net.parameters()) + list(self.reward_net.parameters())
 
-  def forward(self, obs, deterministic=False):
+  def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action = self.actor_net(phi, deterministic)
-    # Compute state-action value
-    q = self.critic_net(phi, action)
-    return {'action': action, 'q': q}
-
-
-class RPGNet(ActorCriticNet):
-  def __init__(self, feature_net, actor_net, critic_net):
-    super().__init__(feature_net, actor_net, critic_net)
-
-  def forward(self, obs, deterministic=False):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Sample an action
-    action = self.actor_net(phi, deterministic)
-    # Compute state-action value
-    reward = self.critic_net(phi, action)
-    return {'action': action, 'reward': reward}
+    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
+    return {'action': action, 'log_prob': log_prob}
   
   def get_reward(self, obs, action):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Compute predicted reward
-    reward = self.critic_net(phi, action)
+    reward = self.reward_net(phi, action)
     return reward
-
-
-class DRPGNet(ActorCriticNet):
-  def __init__(self, feature_net, actor_net, critic_net):
-    super().__init__(feature_net, actor_net, critic_net)
-
-  def forward(self, obs, deterministic=False):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Sample an action
-    action = self.actor_net(phi, deterministic)
-    # Compute state-action value
-    reward1, reward2 = self.critic_net(phi, action)
-    return {'action': action, 'reward1': reward1, 'reward2': reward2}
   
-  def get_reward(self, obs, action):
+  def get_state_value(self, obs):
     # Generate the latent feature
     phi = self.feature_net(obs)
-    # Compute predicted reward
-    reward1, reward2 = self.critic_net(phi, action)
-    return reward1, reward2
+    # Compute state value
+    v = self.critic_net(phi)
+    return v
+  
+  def get_repara_action(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Reparameterize action with epsilon
+    action_mean, action_std, _ = self.actor_net.distribution(phi)
+    eps = (action - action_mean) / action_std
+    repara_action = action_mean + action_std * eps.detach()
+    return repara_action 

@@ -53,7 +53,7 @@ class REINFORCE(BaseAgent):
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs'])
     }
     # Set replay buffer
-    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret', 'action'])
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret'])
     # Set log dict
     for key in ['state', 'next_state', 'action', 'log_prob', 'reward', 'done', 'episode_return', 'episode_step_count']:
       setattr(self, key, {'Train': None, 'Test': None})
@@ -171,14 +171,18 @@ class REINFORCE(BaseAgent):
     Pick an action from policy network
     '''
     state = to_tensor(self.state[mode], self.device)
-    prediction = self.network(state)
+    deterministic = True if mode == 'Test' else False
+    prediction = self.network(state, deterministic=deterministic)
     return prediction
 
   def save_experience(self, prediction):
+    # Save reward, mask, log_prob
     mode = 'Train'
-    if self.reward[mode] is not None:
-      prediction['reward'] = to_tensor(self.reward[mode], self.device)
-      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
+    prediction = {
+      'reward': to_tensor(self.reward[mode], self.device),
+      'mask': to_tensor(1-self.done[mode], self.device),
+      'log_prob': prediction['log_prob']
+    }
     self.replay.add(prediction)
 
   def learn(self):
@@ -193,15 +197,16 @@ class REINFORCE(BaseAgent):
     entries = self.replay.get(['log_prob', 'ret'], self.episode_step_count[mode])
     # Compute loss
     actor_loss = -(entries.log_prob * entries.ret).mean()
-    if self.show_tb:
-      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-    self.logger.debug(f'Step {self.step_count}: actor_loss={actor_loss.item()}')
-    # Take an optimization step
+    # Take an optimization step for actor
     self.optimizer['actor'].zero_grad()
     actor_loss.backward()
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
     self.optimizer['actor'].step()
+    # Log
+    if self.show_tb:
+      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
+    self.logger.debug(f'Step {self.step_count}: actor_loss={actor_loss.item()}')
 
   def get_action_size(self):
     mode = 'Train'

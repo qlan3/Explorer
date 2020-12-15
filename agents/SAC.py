@@ -41,10 +41,11 @@ class SAC(REINFORCE):
     # Set critic network
     critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
-    NN = SACNet(feature_net, actor_net, critic_net)
+    NN = ActorDoubleQCriticNet(feature_net, actor_net, critic_net)
     return NN
   
   def save_experience(self, prediction):
+    # Save state, action, next_state, reward, mask
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -94,7 +95,7 @@ class SAC(REINFORCE):
     if self.step_count <= self.cfg['exploration_steps']:
       prediction = {'action': torch.as_tensor(self.env[mode].action_space.sample())}
     else:
-      deterministic = True if mode=='Test' else False
+      deterministic = True if mode == 'Test' else False
       state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state, deterministic=deterministic)
     return prediction

@@ -25,7 +25,7 @@ class TD3(DDPG):
     # Set critic network
     critic_net = MLPDoubleQCritic(layer_dims=[input_size+self.action_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set the model
-    NN = TD3Net(feature_net, actor_net, critic_net)
+    NN = ActorDoubleQCriticNet(feature_net, actor_net, critic_net)
     return NN
 
   def compute_actor_loss(self, batch):

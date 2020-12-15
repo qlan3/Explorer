@@ -62,8 +62,9 @@ class A2C(REINFORCEWithBaseline):
           self.episode_count += 1
           self.save_episode_result(mode)
           self.reset_game(mode)
-      prediction = self.get_action(mode)
-      self.save_experience(prediction)
+      if self.cfg['agent']['name'] in ['A2C', 'PPO']:
+        prediction = self.get_action(mode)
+        self.save_experience(prediction)
       # Update policy
       self.learn()
       # Reset storage
@@ -85,6 +86,20 @@ class A2C(REINFORCEWithBaseline):
       # End of one episode
       self.save_episode_result(mode)
       self.reset_game(mode)
+
+  def save_experience(self, prediction):
+    # Save reward, mask, v, log_prob
+    mode = 'Train'
+    if self.reward[mode] is not None:
+      prediction = {
+        'reward': to_tensor(self.reward[mode], self.device),
+        'mask': to_tensor(1-self.done[mode], self.device),
+        'v': prediction['prediction'],
+        'log_prob': prediction['log_prob']
+      }
+      self.replay.add(prediction)
+    else:
+      self.replay.add({'v':prediction['v']})
 
   def learn(self):
     mode = 'Train'
@@ -110,13 +125,15 @@ class A2C(REINFORCEWithBaseline):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-    # Take an optimization step
+    # Take an optimization step for actor
     self.optimizer['actor'].zero_grad()
-    self.optimizer['critic'].zero_grad()
     actor_loss.backward()
-    critic_loss.backward()
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
     self.optimizer['actor'].step()
+    # Take an optimization step for critic
+    self.optimizer['critic'].zero_grad()
+    critic_loss.backward()
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
     self.optimizer['critic'].step()

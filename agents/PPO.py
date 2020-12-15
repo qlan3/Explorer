@@ -11,12 +11,20 @@ class PPO(A2C):
     self.replay = FiniteReplay(self.steps_per_epoch+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
 
   def save_experience(self, prediction):
+    # Save state, action, reward, mask, v, log_prob
     mode = 'Train'
     if self.reward[mode] is not None:
-      prediction['mask'] = to_tensor(1-self.done[mode], self.device)
-      prediction['reward'] = to_tensor(self.reward[mode], self.device)
-      prediction['state'] = to_tensor(self.state[mode], self.device)
-    self.replay.add(prediction)
+      prediction = {
+        'state': to_tensor(self.state[mode], self.device),
+        'action': to_tensor(self.action[mode], self.device),
+        'reward': to_tensor(self.reward[mode], self.device),
+        'mask': to_tensor(1-self.done[mode], self.device),
+        'v': prediction['v'],
+        'log_prob': prediction['log_prob']
+      }
+      self.replay.add(prediction)
+    else:
+      self.replay.add({'v': prediction['v']})
 
   def learn(self):
     mode = 'Train'
@@ -61,7 +69,7 @@ class PPO(A2C):
         if self.gradient_clip > 0:
           nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
         self.optimizer['critic'].step()
-
+    # Log
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
