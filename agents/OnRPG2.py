@@ -1,9 +1,10 @@
-from agents.SAC import *
+from agents.A2C import *
 
 
-class OffRPG(SAC):
+class OnRPG2(A2C):
   '''
-  Implementation of OffRPG (Off-policy Reward Policy Gradient)
+  A2C style
+  Implementation of OnRPG (On-policy Reward Policy Gradient)
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
@@ -14,8 +15,8 @@ class OffRPG(SAC):
       'reward': getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     }
     # Set replay buffer
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'step'])
-  
+    self.replay = FiniteReplay(self.steps_per_epoch, keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step'])
+
   def createNN(self, input_type):
     # Set feature network
     if input_type == 'pixel':
@@ -40,7 +41,7 @@ class OffRPG(SAC):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, step
+    # Save state, action, reward, next_state, mask, log_prob, step
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -48,67 +49,51 @@ class OffRPG(SAC):
       'reward': to_tensor(self.reward[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'step': to_tensor(self.episode_step_count[mode]-1, self.device)
+      'step': to_tensor(self.episode_step_count[mode]-1, self.device),
+      'log_prob': prediction['log_prob']
     }
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
     # Get training data
-    batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask', 'step'], self.cfg['batch_size'])
+    entries = self.replay.get(['state', 'action', 'reward', 'mask', 'next_state', 'log_prob', 'step'], self.steps_per_epoch)
+    v = self.network.get_state_value(entries.state)
+    v_next = self.network.get_state_value(entries.next_state).detach()
+    # Take an optimization step for actor
+    repara_action = self.network.get_repara_action(entries.state, entries.action)
+    predicted_reward = self.network.get_reward(entries.state, repara_action)
+    # Freeze reward network to avoid computing gradients for it
+    for p in self.network.reward_net.parameters():
+      p.requires_grad = False
+    # discounts = to_tensor([self.discount**i for i in entries.step], self.device)
+    # actor_loss = -(discounts * (predicted_reward + self.discount*entries.mask*v_next*entries.log_prob)).mean()
+    actor_loss = -(predicted_reward + self.discount*entries.mask*v_next*entries.log_prob).mean()
+    self.optimizer['actor'].zero_grad()
+    actor_loss.backward()
+    if self.gradient_clip > 0:
+      nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
+    self.optimizer['actor'].step()
+    # Unfreeze reward network
+    for p in self.network.reward_net.parameters():
+      p.requires_grad = True
     # Take an optimization step for critic
-    critic_loss = self.compute_critic_loss(batch)
+    critic_loss = (entries.reward + self.discount*entries.mask*v_next - v).pow(2).mean()
     self.optimizer['critic'].zero_grad()
     critic_loss.backward()
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
     self.optimizer['critic'].step()
     # Take an optimization step for reward
-    reward_loss = self.compute_reward_loss(batch)
+    reward = self.network.get_reward(entries.state, entries.action)
+    reward_loss = (reward - entries.reward).pow(2).mean()
     self.optimizer['reward'].zero_grad()
     reward_loss.backward()
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.network.reward_params, self.gradient_clip)
     self.optimizer['reward'].step()
-    # Take an optimization step for actor
-    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['actor_update_frequency'] == 0:
-      # Freeze reward network to avoid computing gradients for it
-      for p in self.network.reward_net.parameters():
-        p.requires_grad = False
-      # Compute actor loss
-      actor_loss = self.compute_actor_loss(batch)
-      self.optimizer['actor'].zero_grad()
-      actor_loss.backward()
-      if self.gradient_clip > 0:
-        nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-      self.optimizer['actor'].step()
-      # Unfreeze reward network
-      for p in self.network.reward_net.parameters():
-        p.requires_grad = True
-      # Log
-      if self.show_tb:
-        self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-        self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-        self.logger.add_scalar(f'reward_loss', reward_loss.item(), self.step_count)
-
-  def compute_critic_loss(self, batch):
-    v = self.network.get_state_value(batch.state)
-    v_next = self.network.get_state_value(batch.next_state).detach()
-    critic_loss = (batch.reward + self.discount * batch.mask * v_next - v).pow(2).mean()
-    return critic_loss
-
-  def compute_reward_loss(self, batch):
-    true_reward = batch.reward
-    predicted_reward = self.network.get_reward(batch.state, batch.action)
-    critic_loss = (predicted_reward - true_reward).pow(2).mean()
-    return critic_loss
-
-  def compute_actor_loss(self, batch):
-    repara_action = self.network.get_repara_action(batch.state, batch.action)
-    predicted_reward = self.network.get_reward(batch.state, repara_action)
-    v_next = self.network.get_state_value(batch.next_state).detach()
-    log_prob = self.network.forward(batch.state, action=batch.action)['log_prob']
-    # discounts = to_tensor([self.discount**i for i in batch.step], self.device)
-    # actor_loss = -(discounts * (predicted_reward + self.discount * batch.mask * v_next * log_prob)).mean()
-    actor_loss = -(predicted_reward + self.discount * batch.mask * v_next * log_prob).mean()
-    return actor_loss
+    # Log
+    if self.show_tb:
+      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
+      self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
+      self.logger.add_scalar(f'reward_loss', reward_loss.item(), self.step_count)

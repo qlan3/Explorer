@@ -16,4 +16,7 @@ from .DDPG import DDPG
 from .TD3 import TD3
 from .RepOffPG import RepOffPG
 from .RepOnPG import RepOnPG
-from .OnRPG import OnRPG
+from .OnRPG1 import OnRPG1
+from .OnRPG2 import OnRPG2
+from .OnRPG3 import OnRPG3
+from .OffRPG import OffRPG
