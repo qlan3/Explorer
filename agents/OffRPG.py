@@ -100,8 +100,8 @@ class OffRPG(SAC):
   def compute_reward_loss(self, batch):
     true_reward = batch.reward
     predicted_reward = self.network.get_reward(batch.state, batch.action)
-    critic_loss = (predicted_reward - true_reward).pow(2).mean()
-    return critic_loss
+    reward_loss = (predicted_reward - true_reward).pow(2).mean()
+    return reward_loss
 
   def compute_actor_loss(self, batch):
     repara_action = self.network.get_repara_action(batch.state, batch.action)

@@ -438,8 +438,9 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Reparameterize action with epsilon
-    u = torch.atanh(action / self.actor_net.action_lim)
+    action = torch.clamp(action / self.actor_net.action_lim, -0.999, 0.999)
+    u = torch.atanh(action)
     action_mean, action_std, _ = self.actor_net.distribution(phi)
-    eps = (u - action_mean) / action_std
+    eps = (u - action_mean) / (action_std + 1e-8)
     repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
     return repara_action
