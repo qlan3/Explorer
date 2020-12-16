@@ -146,23 +146,25 @@ def time_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=10000)
     except:
       continue
   
-  time_list = np.array(time_list)
-  print(f'{exp} max time: {np.max(time_list):.2f} minutes')
-  print(f'{exp} mean time: {np.mean(time_list):.2f} minutes')
-  print(f'{exp} min time: {np.min(time_list):.2f} minutes')
-  
-  # Plot histogram of time distribution
-  from utils.helper import make_dir
-  make_dir(f'./logs/{exp}/0/')
-  num, bins, patches = plt.hist(time_list, nbins)
-  plt.xlabel('Time (min)')
-  plt.ylabel('Counts in the bin')
-  plt.savefig(f'./logs/{exp}/0/time_info.png')
-  # plt.show()
-  plt.clf()   # clear figure
-  plt.cla()   # clear axis
-  plt.close() # close window
-  
+  if len(time_list) > 0:
+    time_list = np.array(time_list)
+    print(f'{exp} max time: {np.max(time_list):.2f} minutes')
+    print(f'{exp} mean time: {np.mean(time_list):.2f} minutes')
+    print(f'{exp} min time: {np.min(time_list):.2f} minutes')
+    
+    # Plot histogram of time distribution
+    from utils.helper import make_dir
+    make_dir(f'./logs/{exp}/0/')
+    num, bins, patches = plt.hist(time_list, nbins)
+    plt.xlabel('Time (min)')
+    plt.ylabel('Counts in the bin')
+    plt.savefig(f'./logs/{exp}/0/time_info.png')
+    # plt.show()
+    plt.clf()   # clear figure
+    plt.cla()   # clear axis
+    plt.close() # close window
+  else:
+    print(f'{exp}: no time info!')
   
 def memory_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=10000):
   mem_list = []
@@ -191,22 +193,25 @@ def memory_info(exp, file_name='log.txt', runs=1, nbins=10, max_line_length=1000
     except:
       continue
   
-  mem_list = np.array(mem_list)
-  print(f'{exp} max memory: {np.max(mem_list):.2f} MB')
-  print(f'{exp} mean memory: {np.mean(mem_list):.2f} MB')
-  print(f'{exp} min memory: {np.min(mem_list):.2f} MB')
-  
-  # Plot histogram of time distribution
-  from utils.helper import make_dir
-  make_dir(f'./logs/{exp}/0/')
-  num, bins, patches = plt.hist(mem_list, nbins)
-  plt.xlabel('Memory (MB)')
-  plt.ylabel('Counts in the bin')
-  plt.savefig(f'./logs/{exp}/0/memory_info.png')
-  # plt.show()
-  plt.clf()   # clear figure
-  plt.cla()   # clear axis
-  plt.close() # close window
+  if len(mem_list) > 0:
+    mem_list = np.array(mem_list)
+    print(f'{exp} max memory: {np.max(mem_list):.2f} MB')
+    print(f'{exp} mean memory: {np.mean(mem_list):.2f} MB')
+    print(f'{exp} min memory: {np.min(mem_list):.2f} MB')
+    
+    # Plot histogram of time distribution
+    from utils.helper import make_dir
+    make_dir(f'./logs/{exp}/0/')
+    num, bins, patches = plt.hist(mem_list, nbins)
+    plt.xlabel('Memory (MB)')
+    plt.ylabel('Counts in the bin')
+    plt.savefig(f'./logs/{exp}/0/memory_info.png')
+    # plt.show()
+    plt.clf()   # clear figure
+    plt.cla()   # clear axis
+    plt.close() # close window
+  else:
+    print(f'{exp}: no memory info!')
 
 if __name__ == "__main__":
   for agent_config in os.listdir('./configs/'):
