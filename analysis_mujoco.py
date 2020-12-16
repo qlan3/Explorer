@@ -39,7 +39,7 @@ cfg = {
   'ylim': {'min': None, 'max': None},
   'EMA': True,
   'loc': 'lower right',
-  'sweep_keys': ['lr', 'name'],
+  'sweep_keys': ['lr'],
   'sort_by': ['Return (mean)', 'Return (se)'],
   'ascending': [False, True],
   'runs': 1
@@ -50,42 +50,29 @@ def analyze(exp):
   cfg['exp'] = exp
   plotter = Plotter(cfg)
 
-
   plotter.csv_results('Train', get_csv_result_dict, get_process_result_dict)
-  plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
+  # plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
   plotter.plot_results(mode='Train', indexes='all')
 
 
 if __name__ == "__main__":
-  # unfinished_index('mujoco_a2c')
-  memory_info('mujoco_a2c')
-  time_info('mujoco_a2c')
-  analyze('mujoco_a2c')
+  # unfinished_index('mujoco_offrpg')
+  # unfinished_index('mujoco_onrpg1')
+  # unfinished_index('mujoco_onrpg2')
+  # unfinished_index('mujoco_onrpg3')
 
-  memory_info('mujoco_actorcritic')
-  time_info('mujoco_actorcritic')
-  analyze('mujoco_actorcritic')
+  memory_info('mujoco_offrpg')
+  time_info('mujoco_offrpg')
+  analyze('mujoco_offrpg')
 
-  memory_info('mujoco_ddpg')
-  time_info('mujoco_ddpg')
-  analyze('mujoco_ddpg')
+  memory_info('mujoco_onrpg1')
+  time_info('mujoco_onrpg1')
+  analyze('mujoco_onrpg1')
 
-  memory_info('mujoco_ppo')
-  time_info('mujoco_ppo')
-  analyze('mujoco_ppo')
+  memory_info('mujoco_onrpg2')
+  time_info('mujoco_onrpg2')
+  analyze('mujoco_onrpg2')
 
-  memory_info('mujoco_reinforce_baseline')
-  time_info('mujoco_reinforce_baseline')
-  analyze('mujoco_reinforce_baseline')
-
-  memory_info('mujoco_reinforce')
-  time_info('mujoco_reinforce')
-  analyze('mujoco_reinforce')
-
-  memory_info('mujoco_sac')
-  time_info('mujoco_sac')
-  analyze('mujoco_sac')
-
-  memory_info('mujoco_td3')
-  time_info('mujoco_td3')
-  analyze('mujoco_td3')
+  memory_info('mujoco_onrpg3')
+  time_info('mujoco_onrpg3')
+  analyze('mujoco_onrpg3')

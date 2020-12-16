@@ -7,7 +7,7 @@
     }
   ],
   "train_steps": [3e6],
-  "steps_per_epoch": [64],
+  "steps_per_epoch": [512],
   "test_per_epochs": [-1],
   "agent": [{"name": ["OnRPG2"]}],
   "optimizer": [

@@ -6,7 +6,7 @@
       "input_type": ["feature"]
     }
   ],
-  "train_steps": [3e6],
+  "train_steps": [1e6],
   "test_per_episodes": [-1],
   "exploration_steps": [1e4],
   "memory_size": [1e6],
@@ -18,7 +18,7 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "batch_size": [64],
+  "batch_size": [512],
   "network_update_frequency": [1],
   "actor_update_frequency": [1],
   "discount": [0.99],

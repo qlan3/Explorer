@@ -234,8 +234,8 @@ class MLPSquashedGaussianResActor(nn.Module):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
     log_prob = action_distribution.log_prob(action).sum(axis=-1)
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
-    # Constrain log_prob inside [-1e10, 0]
-    log_prob = torch.clamp(log_prob, -1e10, 0)
+    # Constrain log_prob inside [-1e8, 0]
+    log_prob = torch.clamp(log_prob, -1e8, 0)
     return log_prob
 
   def forward(self, phi, action=None, deterministic=False):
