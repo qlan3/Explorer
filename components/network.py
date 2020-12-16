@@ -234,6 +234,8 @@ class MLPSquashedGaussianResActor(nn.Module):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
     log_prob = action_distribution.log_prob(action).sum(axis=-1)
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
+    # Constrain log_prob inside [-1e10, 0]
+    log_prob = torch.clamp(log_prob, -1e10, 0)
     return log_prob
 
   def forward(self, phi, action=None, deterministic=False):
@@ -241,12 +243,15 @@ class MLPSquashedGaussianResActor(nn.Module):
     action_mean, action_std, action_distribution = self.distribution(phi)
     if action is None:
       if deterministic:
-        action = action_mean
+        u = action_mean
       else:
-        action = action_distribution.rsample()
+        u = action_distribution.rsample()
+      action = self.action_lim * torch.tanh(u)
+    else:
+      u = torch.clamp(action / self.action_lim, -0.999, 0.999)
+      u = torch.atanh(u)
     # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    action = self.action_lim * torch.tanh(action)
+    log_prob = self.log_prob_from_distribution(action_distribution, u)
     return action, action_mean, action_std, log_prob
 
 
@@ -259,12 +264,15 @@ class MLPSquashedGaussianActor(MLPSquashedGaussianResActor):
     action_mean, action_std, action_distribution = self.distribution(phi)
     if action is None:
       if deterministic:
-        action = action_mean
+        u = action_mean
       else:
-        action = action_distribution.sample()
+        u = action_distribution.sample()
+      action = self.action_lim * torch.tanh(u)
+    else:
+      u = torch.clamp(action / self.action_lim, -0.999, 0.999)
+      u = torch.atanh(u)
     # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    action = self.action_lim * torch.tanh(action)
+    log_prob = self.log_prob_from_distribution(action_distribution, u)
     return action, action_mean, action_std, log_prob
 
 
