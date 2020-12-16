@@ -60,23 +60,24 @@ class OnRPG2(A2C):
     entries = self.replay.get(['state', 'action', 'reward', 'mask', 'next_state', 'log_prob', 'step'], self.steps_per_epoch)
     v = self.network.get_state_value(entries.state)
     v_next = self.network.get_state_value(entries.next_state).detach()
-    # Take an optimization step for actor
-    repara_action = self.network.get_repara_action(entries.state, entries.action)
-    predicted_reward = self.network.get_reward(entries.state, repara_action)
-    # Freeze reward network to avoid computing gradients for it
-    for p in self.network.reward_net.parameters():
-      p.requires_grad = False
-    # discounts = to_tensor([self.discount**i for i in entries.step], self.device)
-    # actor_loss = -(discounts * (predicted_reward + self.discount*entries.mask*v_next*entries.log_prob)).mean()
-    actor_loss = -(predicted_reward + self.discount*entries.mask*v_next*entries.log_prob).mean()
-    self.optimizer['actor'].zero_grad()
-    actor_loss.backward()
-    if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-    self.optimizer['actor'].step()
-    # Unfreeze reward network
-    for p in self.network.reward_net.parameters():
-      p.requires_grad = True
+    if self.epoch_count % self.cfg['actor_update_frequency'] == 0:
+      # Take an optimization step for actor
+      repara_action = self.network.get_repara_action(entries.state, entries.action)
+      predicted_reward = self.network.get_reward(entries.state, repara_action)
+      # Freeze reward network to avoid computing gradients for it
+      for p in self.network.reward_net.parameters():
+        p.requires_grad = False
+      discounts = to_tensor([self.discount**i for i in entries.step], self.device)
+      actor_loss = -(discounts * (predicted_reward + self.discount*entries.mask*v_next*entries.log_prob)).mean()
+      # actor_loss = -(predicted_reward + self.discount*entries.mask*v_next*entries.log_prob).mean()
+      self.optimizer['actor'].zero_grad()
+      actor_loss.backward()
+      if self.gradient_clip > 0:
+        nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
+      self.optimizer['actor'].step()
+      # Unfreeze reward network
+      for p in self.network.reward_net.parameters():
+        p.requires_grad = True
     # Take an optimization step for critic
     critic_loss = (entries.reward + self.discount*entries.mask*v_next - v).pow(2).mean()
     self.optimizer['critic'].zero_grad()

@@ -39,10 +39,21 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   offrpg   | mujoco_offrpg.json |  1   |  mujoco_offrpg  |  RPG   |  |
-|   onrpg1   | mujoco_onrpg1.json |  1   |  mujoco_onrpg1  |  RPG   |  |
-|   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   |  |
+|   offrpg   | mujoco_offrpg.json |  1   |  mujoco_offrpg  |  RPG   | 9f27c34 |
+|   onrpg1   | mujoco_onrpg1.json |  1   |  mujoco_onrpg1  |  RPG   | 9f27c34 |
+|   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   | 9f27c34 |
 
   - Goal: Test on-policy and off-policy RPG with a larger batch size
-  - Analysis:
+  - Analysis: A larger batch size didn't seem to help a lot.
+  - Next: use try gradient (i.e. include $\gamma^t$ term); delay actor update
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   onrpg1   | mujoco_onrpg1.json |  1   |  mujoco_onrpg1  |  RPG   |  |
+|   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   |  |
+|   onrpg3   | mujoco_onrpg3.json |  1   |  mujoco_onrpg3  |  RPG   |  |
+
+  - Goal: Test on-policy RPG with the true gradient and different actor update frequence
+  - Analysis: 
   - Next: 

@@ -73,9 +73,9 @@ class OnRPG1(PPO):
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           reward = self.network.get_reward(entries.state[batch_idx], repara_action)
           v_next = self.network.get_state_value(entries.next_state[batch_idx]).detach()
-          # discounts = to_tensor([self.discount**i for i in entries.step[batch_idx]], self.device)
-          # actor_loss = -(discounts * (reward + self.discount*entries.mask[batch_idx]*v_next*prediction['log_prob'])).mean()
-          actor_loss = -(reward + self.discount*entries.mask[batch_idx]*v_next*prediction['log_prob']).mean()
+          discounts = to_tensor([self.discount**i for i in entries.step[batch_idx]], self.device)
+          actor_loss = -(discounts * (reward + self.discount*entries.mask[batch_idx]*v_next*prediction['log_prob'])).mean()
+          # actor_loss = -(reward + self.discount*entries.mask[batch_idx]*v_next*prediction['log_prob']).mean()
           self.optimizer['actor'].zero_grad()
           actor_loss.backward()
           if self.gradient_clip > 0:
