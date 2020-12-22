@@ -54,17 +54,28 @@
 |   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   | cec1781 |
 |   onrpg3   | mujoco_onrpg3.json |  1   |  mujoco_onrpg3  |  RPG   | cec1781 |
 
-  - Goal: Test on-policy RPG with the true gradient and different actor update frequency
+  - Goal: Test on-policy RPG with the true gradient and different actor update frequencices
   - Analysis: doesn't seem to help
   - Next: try different actor update frequency, alone.
 
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg1   | mujoco_onrpg1.json |  1   |  mujoco_onrpg1  |  RPG   |  |
-|   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   |  |
-|   onrpg3   | mujoco_onrpg3.json |  1   |  mujoco_onrpg3  |  RPG   |  |
+|   onrpg1   | mujoco_onrpg1.json |  1   |  mujoco_onrpg1  |  RPG   | 0e0ca92 |
+|   onrpg2   | mujoco_onrpg2.json |  1   |  mujoco_onrpg2  |  RPG   | 0e0ca92 |
+|   onrpg3   | mujoco_onrpg3.json |  1   |  mujoco_onrpg3  |  RPG   | 0e0ca92 |
 
-  - Goal: Test on-policy RPG with different actor update frequency
+  - Goal: Test on-policy RPG with different actor update frequencies
+  - Analysis: doesn't seem to help
+  - Next: add entropy regularization? debug?
+
+
+## 2020-12-22
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   onrpg4   | onrpg4.json |   5  | mujoco_onrpg4 |  RPG  |  |
+
+  - Goal: Test another variant of onrpg: update critic and reward for mutliple batches but only update actor once per epoch.
   - Analysis:
-  - Next: add entropy regularization?
+  - Next:
