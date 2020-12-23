@@ -74,8 +74,8 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg4   | onrpg4.json |   5  | mujoco_onrpg4 |  RPG  |  |
+|   onrpg4   | onrpg4.json |   5  | mujoco_onrpg4 |  RPG  | 1241e9e |
 
   - Goal: Test another variant of onrpg: update critic and reward for mutliple batches but only update actor once per epoch.
-  - Analysis:
-  - Next:
+  - Analysis: no good
+  - Next: need more and detailed analysis

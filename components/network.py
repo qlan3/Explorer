@@ -187,8 +187,9 @@ class MLPCategoricalActor(nn.Module):
 
 
 class MLPGaussianActor(nn.Module):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
     super().__init__()
+    self.rsample = rsample
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
     # The action std is independent of states
     self.action_log_std = nn.Parameter(last_w_scale*torch.zeros(layer_dims[-1]))
@@ -212,14 +213,15 @@ class MLPGaussianActor(nn.Module):
       if deterministic:
         action = action_mean
       else:
-        action = action_distribution.sample()
+        action = action_distribution.rsample() if self.rsample else action_distribution.sample()
     log_prob = self.log_prob_from_distribution(action_distribution, action)
     return action, action_mean, action_std, log_prob
 
 
-class MLPSquashedGaussianResActor(nn.Module):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
+class MLPSquashedGaussianActor(nn.Module):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
     super().__init__()
+    self.rsample = rsample
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=last_w_scale)
     self.log_std_min, self.log_std_max = log_std_bounds
     self.action_lim = action_lim
@@ -235,7 +237,7 @@ class MLPSquashedGaussianResActor(nn.Module):
     log_prob = action_distribution.log_prob(action).sum(axis=-1)
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
     # Constrain log_prob inside [-1e8, 0]
-    log_prob = torch.clamp(log_prob, -1e8, 0)
+    # log_prob = torch.clamp(log_prob, -1e8, 0)
     return log_prob
 
   def forward(self, phi, action=None, deterministic=False):
@@ -245,28 +247,7 @@ class MLPSquashedGaussianResActor(nn.Module):
       if deterministic:
         u = action_mean
       else:
-        u = action_distribution.rsample()
-      action = self.action_lim * torch.tanh(u)
-    else:
-      u = torch.clamp(action / self.action_lim, -0.999, 0.999)
-      u = torch.atanh(u)
-    # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
-    log_prob = self.log_prob_from_distribution(action_distribution, u)
-    return action, action_mean, action_std, log_prob
-
-
-class MLPSquashedGaussianActor(MLPSquashedGaussianResActor):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
-    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
-
-  def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
-    action_mean, action_std, action_distribution = self.distribution(phi)
-    if action is None:
-      if deterministic:
-        u = action_mean
-      else:
-        u = action_distribution.sample()
+        u = action_distribution.rsample() if self.rsample else action_distribution.sample()
       action = self.action_lim * torch.tanh(u)
     else:
       u = torch.clamp(action / self.action_lim, -0.999, 0.999)
@@ -286,9 +267,9 @@ class MLPDeterministicActor(nn.Module):
     return self.action_lim * self.actor_net(phi), None, None, None
 
 
-class MLPStdGaussianResActor(MLPSquashedGaussianResActor):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
-    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
+class MLPStdGaussianActor(MLPSquashedGaussianActor):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
+    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale, rsample)
 
   def distribution(self, phi):
     action_mean, action_log_std = self.actor_net(phi).chunk(2, dim=-1)
@@ -309,23 +290,7 @@ class MLPStdGaussianResActor(MLPSquashedGaussianResActor):
       if deterministic:
         action = action_mean
       else:
-        action = action_distribution.rsample()
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    return action, action_mean, action_std, log_prob
-
-
-class MLPStdGaussianActor(MLPStdGaussianResActor):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3):
-    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale)
-
-  def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
-    action_mean, action_std, action_distribution = self.distribution(phi)
-    if action is None:
-      if deterministic:
-        action = action_mean
-      else:
-        action = action_distribution.sample()
+        action = action_distribution.rsample() if self.rsample else action_distribution.sample()
     log_prob = self.log_prob_from_distribution(action_distribution, action)
     return action, action_mean, action_std, log_prob
 
