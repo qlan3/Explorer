@@ -384,6 +384,12 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     action, _, _, log_prob = self.actor_net(phi, action, deterministic)
     return {'action': action, 'log_prob': log_prob}
   
+  def get_log_prob(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    _, _, _, log_prob = self.actor_net(phi, action=action)
+    return log_prob
+
   def get_reward(self, obs, action):
     # Generate the latent feature
     phi = self.feature_net(obs)
@@ -406,7 +412,7 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     eps = (action - action_mean) / action_std
     repara_action = action_mean + action_std * eps.detach()
     return repara_action
-  '''
+  
   def get_repara_action(self, obs, action):
     # Generate the latent feature
     phi = self.feature_net(obs)
@@ -417,3 +423,4 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     eps = (u - action_mean) / (action_std + 1e-8)
     repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
     return repara_action
+  '''

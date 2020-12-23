@@ -79,3 +79,14 @@
   - Goal: Test another variant of onrpg: update critic and reward for mutliple batches but only update actor once per epoch.
   - Analysis: no good
   - Next: need more and detailed analysis
+
+
+## 2020-12-23
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   onrpg32   | onrpg32.json |  5  | mujoco_onrpg32 |  RPG  |  |
+
+  - Goal: Test a variant of onrpg3: use rsample
+  - Analysis: no good
+  - Next: need more and detailed analysis

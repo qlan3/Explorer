@@ -19,5 +19,6 @@ from .RepOnPG import RepOnPG
 from .OnRPG1 import OnRPG1
 from .OnRPG2 import OnRPG2
 from .OnRPG3 import OnRPG3
+from .OnRPG32 import OnRPG32
 from .OnRPG4 import OnRPG4
 from .OffRPG import OffRPG
