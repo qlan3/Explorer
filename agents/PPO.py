@@ -1,7 +1,7 @@
-from agents.A2C import *
+from agents.ActorCritic import *
 
 
-class PPO(A2C):
+class PPO(ActorCritic):
   '''
   Implementation of PPO (Proximal Policy Optimization)
   '''
@@ -41,7 +41,7 @@ class PPO(A2C):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data and **detach** (IMPORTANT: we don't optimize old parameters)
-    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action'], self.steps_per_epoch, detach=True)
+    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action', 'v'], self.steps_per_epoch, detach=True)
     # Normalize advantages
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
@@ -73,3 +73,5 @@ class PPO(A2C):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
+      self.logger.add_scalar(f'v', entries.v.mean().item(), self.step_count)
+      self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)

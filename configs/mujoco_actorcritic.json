@@ -8,7 +8,7 @@
   ],
   "train_steps": [3e6],
   "steps_per_epoch": [64],
-  "test_per_episodes": [50],
+  "test_per_epochs": [300],
   "agent": [{"name": ["ActorCritic"]}],
   "optimizer": [
     {

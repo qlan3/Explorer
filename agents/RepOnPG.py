@@ -1,7 +1,7 @@
-from agents.A2C import *
+from agents.ActorCritic import *
 
 
-class RepOnPG(A2C):
+class RepOnPG(ActorCritic):
   '''
   Implementation of RepOnPG (Reparameterization On-Policy Gradient)
   '''

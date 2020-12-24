@@ -12,9 +12,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Averaged Deep Q-learning (AveragedDQN)](https://arxiv.org/pdf/1611.01929.pdf)
 - [Ensemble Deep Q-learning (EnsembleDQN)](https://arxiv.org/pdf/1611.01929.pdf)
 - [REINFORCE](http://incompleteideas.net/book/RLbook2020.pdf)
-- [REINFORCE with Baseline](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Actor-Critic](http://incompleteideas.net/book/RLbook2020.pdf)
-- [Syncrhonous Advantage Actor-Critic (A2C)](https://arxiv.org/pdf/1602.01783.pdf)
 - [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
 - [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
@@ -31,11 +29,9 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
       |     ├── Maxmin DQN ── Ensemble DQN
       |     └── Averaged DQN
       └── REINFORCE 
-            ├── REINFORCE with Baseline
-            |     ├── Actor-Critic
-            |     └── A2C
-            |          ├── PPO
-            |          └── RepOnPG (experimental)
+            ├── Actor-Critic
+            |     ├── PPO
+            |     └── RepOnPG (experimental)
             └── SAC ── DDPG
                         ├── TD3
                         └── RepOffPG (experimental)

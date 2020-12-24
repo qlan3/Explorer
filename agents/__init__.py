@@ -7,9 +7,7 @@ from .EnsembleDQN import EnsembleDQN
 from .AveragedDQN import AveragedDQN
 
 from .REINFORCE import REINFORCE
-from .REINFORCEWithBaseline import REINFORCEWithBaseline
 from .ActorCritic import ActorCritic
-from .A2C import A2C
 from .PPO import PPO
 from .SAC import SAC
 from .DDPG import DDPG
@@ -19,6 +17,5 @@ from .RepOnPG import RepOnPG
 from .OnRPG1 import OnRPG1
 from .OnRPG2 import OnRPG2
 from .OnRPG3 import OnRPG3
-from .OnRPG32 import OnRPG32
 from .OnRPG4 import OnRPG4
 from .OffRPG import OffRPG

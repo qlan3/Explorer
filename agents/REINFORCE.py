@@ -206,7 +206,7 @@ class REINFORCE(BaseAgent):
     # Log
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-    self.logger.debug(f'Step {self.step_count}: actor_loss={actor_loss.item()}')
+      self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)
 
   def get_action_size(self):
     mode = 'Train'
