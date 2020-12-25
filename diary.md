@@ -26,7 +26,7 @@
   - Goal: Test on-policy and off-policy RPG on Mujoco
     - offrpg: SAC style, off-policy
     - onrpg1: PPO style, on-policy
-    - onrpg2: A2C style, on-policy
+    - onrpg2: Actor-Critic style, on-policy
     - onrpg3: REINFORCE style, on-policy
   - Analysis:
     - Still, there is `nan` bug for offrpg sometimes.
@@ -85,8 +85,28 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg32   | onrpg32.json |  5  | mujoco_onrpg32 |  RPG  |  |
+|   onrpg32   | onrpg32.json |  5  | mujoco_onrpg32 |  RPG  | 64e3566 |
 
   - Goal: Test a variant of onrpg3: use rsample
   - Analysis: no good
   - Next: need more and detailed analysis
+
+
+## 2020-12-24
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|  test_actorcritic  | test_actorcritic.json |  1  | test_actorcritic |  RPG  |  |
+|  test_ppo  | test_ppo.json |  1  | test_ppo |  RPG  |  |
+|  test_onrpg  | test_onrpg.json |  1  | test_onrpg |  RPG  |  |
+
+  - Goal: 
+    - analysis: plot V, log_prob, actor loss, critic loss of Actor-Critic, PPO, and OnRPG2 during training, on HalfCheetah
+    - test the influence of the discount factor
+  - Analysis:
+    - For discount factor: 0.99 is much better than 1; in fact, when discount factor = 1, Actor-Critic cannot even learn!
+    - For Actor-Critic: V (down then up), log_prob (up to -8), actor loss (up then flat), critic loss (down to 100)
+    - For PPO: V (down then up), log_prob (up to -5/2), actor loss (flat), critic loss (down to >200)
+    - For OnRPG:  V (down), log_prob(flat -8), actor loss (down), critic loss (flat 2), reward loss (down to 0.04)
+    - In general, to get good performance, we need low critic loss, high log_prob (high PDF & low variance), high V
+  - Next: use normalized state values

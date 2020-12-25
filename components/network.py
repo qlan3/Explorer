@@ -236,8 +236,8 @@ class MLPSquashedGaussianActor(nn.Module):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
     log_prob = action_distribution.log_prob(action).sum(axis=-1)
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
-    # Constrain log_prob inside [-1e8, 0]
-    # log_prob = torch.clamp(log_prob, -1e8, 0)
+    # Constrain log_prob inside [-1e8, 1e8]
+    # log_prob = torch.clamp(log_prob, -1e8, 1e8)
     return log_prob
 
   def forward(self, phi, action=None, deterministic=False):
@@ -403,24 +403,3 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Compute state value
     v = self.critic_net(phi)
     return v
-  '''
-  def get_repara_action(self, obs, action):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Reparameterize action with epsilon
-    action_mean, action_std, _ = self.actor_net.distribution(phi)
-    eps = (action - action_mean) / action_std
-    repara_action = action_mean + action_std * eps.detach()
-    return repara_action
-  
-  def get_repara_action(self, obs, action):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Reparameterize action with epsilon
-    action = torch.clamp(action / self.actor_net.action_lim, -0.999, 0.999)
-    u = torch.atanh(action)
-    action_mean, action_std, _ = self.actor_net.distribution(phi)
-    eps = (u - action_mean) / (action_std + 1e-8)
-    repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
-    return repara_action
-  '''

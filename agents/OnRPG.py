@@ -1,7 +1,7 @@
 from agents.ActorCritic import *
 
 
-class OnRPG2(ActorCritic):
+class OnRPG(ActorCritic):
   '''
   Implementation of OnRPG (On-policy Reward Policy Gradient)
   '''
@@ -62,8 +62,6 @@ class OnRPG2(ActorCritic):
       p.requires_grad = False
     # discounts = to_tensor([self.discount**i for i in entries.step], self.device)
     # actor_loss = -(discounts * (predicted_reward + self.discount*entries.mask*v_next*entries.log_prob)).mean()
-    # Use normalized v_next
-    v_next = (v_next - v_next.mean()) / v_next.std()
     actor_loss = -(predicted_reward + self.discount*entries.mask*v_next*entries.log_prob).mean()
     self.optimizer['actor'].zero_grad()
     actor_loss.backward()

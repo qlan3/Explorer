@@ -7,7 +7,6 @@ class SAC(REINFORCE):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.cfg.setdefault('actor_update_frequency', 1)
     # Create target policy network
     self.network_target = self.createNN(cfg['env']['input_type']).to(self.device)
     self.network_target.load_state_dict(self.network.state_dict())

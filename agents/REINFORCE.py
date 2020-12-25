@@ -23,7 +23,6 @@ class REINFORCE(BaseAgent):
     self.device = cfg['device']
     self.discount = cfg['discount']
     self.train_steps = int(cfg['train_steps'])
-    self.test_per_episodes = int(cfg['test_per_episodes'])
     self.display_interval = cfg['display_interval']
     self.gradient_clip = cfg['gradient_clip']
     self.action_size = self.get_action_size()
@@ -100,7 +99,7 @@ class REINFORCE(BaseAgent):
     self.reset_game('Train')
     self.reset_game('Test')
     while self.step_count < self.train_steps:
-      if mode == 'Train' and self.test_per_episodes > 0 and self.episode_count % self.test_per_episodes == 0:
+      if mode == 'Train' and self.cfg['test_per_episodes'] > 0 and self.episode_count % self.cfg['test_per_episodes'] == 0:
         mode = 'Test'
       else:
         mode = 'Train'

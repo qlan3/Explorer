@@ -8,15 +8,13 @@ class ActorCritic(REINFORCE):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    self.test_per_epochs = cfg['test_per_epochs']
-    self.steps_per_epoch = cfg['steps_per_epoch']
     # Set optimizer
     self.optimizer = {
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs']),
       'critic':  getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs'])
     }
     # Set replay buffer
-    self.replay = FiniteReplay(self.steps_per_epoch+1, keys=['reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
 
   def createNN(self, input_type):
     # Set feature network
@@ -52,7 +50,7 @@ class ActorCritic(REINFORCE):
     self.reset_game('Train')
     self.reset_game('Test')
     while self.step_count < self.train_steps:
-      if mode == 'Train' and self.test_per_epochs > 0 and self.epoch_count % self.test_per_epochs == 0:
+      if mode == 'Train' and self.cfg['test_per_epochs'] > 0 and self.epoch_count % self.cfg['test_per_epochs'] == 0:
         mode = 'Test'
       else:
         mode = 'Train'
@@ -65,7 +63,7 @@ class ActorCritic(REINFORCE):
   def run_epoch(self, mode, render):
     if mode == 'Train':
       # Run for one epoch
-      for _ in range(self.steps_per_epoch):
+      for _ in range(self.cfg['steps_per_epoch']):
         prediction = self.get_action(mode)
         self.action[mode] = to_numpy(prediction['action'])
         if self.action_type == 'CONTINUOUS':
@@ -134,7 +132,7 @@ class ActorCritic(REINFORCE):
     # Compute return and advantage
     adv = torch.tensor(0.0)
     ret = self.replay.v[-1].detach()
-    for i in reversed(range(self.steps_per_epoch)):
+    for i in reversed(range(self.cfg['steps_per_epoch'])):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       if self.cfg['gae'] < 0:
         adv = ret - self.replay.v[i].detach()
@@ -144,7 +142,7 @@ class ActorCritic(REINFORCE):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.steps_per_epoch)
+    entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.cfg['steps_per_epoch'])
     # # Normalize advantages
     # entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Compute losses
