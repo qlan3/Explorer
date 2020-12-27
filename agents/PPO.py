@@ -8,7 +8,7 @@ class PPO(ActorCritic):
   def __init__(self, cfg):
     super().__init__(cfg)
     # Set replay buffer
-    self.replay = FiniteReplay(self.steps_per_epoch+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
 
   def save_experience(self, prediction):
     # Save state, action, reward, mask, v, log_prob
@@ -31,7 +31,7 @@ class PPO(ActorCritic):
     # Compute return and advantage
     adv = torch.tensor(0.0)
     ret = self.replay.v[-1].detach()
-    for i in reversed(range(self.steps_per_epoch)):
+    for i in reversed(range(self.cfg['steps_per_epoch'])):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       if self.cfg['gae'] < 0:
         adv = ret - self.replay.v[i].detach()
@@ -41,7 +41,7 @@ class PPO(ActorCritic):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data and **detach** (IMPORTANT: we don't optimize old parameters)
-    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action', 'v'], self.steps_per_epoch, detach=True)
+    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action'], self.cfg['steps_per_epoch'], detach=True)
     # Normalize advantages
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
@@ -73,5 +73,4 @@ class PPO(ActorCritic):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-      self.logger.add_scalar(f'v', entries.v.mean().item(), self.step_count)
       self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)

@@ -25,7 +25,7 @@ class OnRPG(ActorCritic):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    actor_net = MLPGaussianActor(action_lim=self.action_lim ,layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+    actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
     # actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
     # actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
     # Set critic network (state value)
@@ -54,15 +54,17 @@ class OnRPG(ActorCritic):
     mode = 'Train'
     # Get training data
     entries = self.replay.get(['state', 'action', 'reward', 'mask', 'next_state', 'log_prob', 'step'], self.cfg['steps_per_epoch'])
-    v_next = self.network.get_state_value(entries.next_state).detach()    
+    v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()    
     # Take an optimization step for actor
     predicted_reward = self.network.get_reward(entries.state, entries.action)
     # Freeze reward network to avoid computing gradients for it
     for p in self.network.reward_net.parameters():
       p.requires_grad = False
     # discounts = to_tensor([self.discount**i for i in entries.step], self.device)
-    # actor_loss = -(discounts * (predicted_reward + self.discount*entries.mask*v_next*entries.log_prob)).mean()
-    actor_loss = -(predicted_reward + self.discount*entries.mask*v_next*entries.log_prob).mean()
+    # actor_loss = -(discounts * (predicted_reward + self.discount*v_next*entries.log_prob)).mean()
+    # Use normalized v_next
+    adv = v_next - v_next.mean()
+    actor_loss = -(predicted_reward + self.discount * adv * entries.log_prob).mean()
     self.optimizer['actor'].zero_grad()
     actor_loss.backward()
     if self.gradient_clip > 0:

@@ -403,3 +403,18 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Compute state value
     v = self.critic_net(phi)
     return v
+  
+  def get_repara_action(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Reparameterize action with epsilon
+    action_mean, action_std, _ = self.actor_net.distribution(phi)
+    if isinstance(self.actor_net, MLPSquashedGaussianActor):
+      action = torch.clamp(action / self.actor_net.action_lim, -0.999, 0.999)
+      u = torch.atanh(action)
+      eps = (u - action_mean) / action_std
+      repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
+    else:
+      eps = (action - action_mean) / action_std
+      repara_action = action_mean + action_std * eps.detach()
+    return repara_action

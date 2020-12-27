@@ -17,3 +17,7 @@ from .RepOnPG import RepOnPG
 from .OffRPG import OffRPG
 from .OnRPG import OnRPG
 from .OnRPG2 import OnRPG2
+from .OnRPG3 import OnRPG3
+from .OnRPG4 import OnRPG4
+from .OnRPG5 import OnRPG5
+from .OnRPG6 import OnRPG6

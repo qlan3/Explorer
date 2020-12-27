@@ -7,14 +7,10 @@ class OffRPG(SAC):
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
-    # Set optimizer
-    self.optimizer = {
-      'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs']),
-      'critic': getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs']),
-      'reward': getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
-    }
+    # Set optimizer for reward function
+    self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'step'])
+    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -29,8 +25,9 @@ class OffRPG(SAC):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    # actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
-    actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'])
+    actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+    # actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+    # actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
     # Set critic network (state value)
     critic_net = MLPCritic(layer_dims=[input_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set reward network
@@ -40,7 +37,7 @@ class OffRPG(SAC):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, step
+    # Save state, action, reward, next_state, mask, log_prob, step
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -48,14 +45,15 @@ class OffRPG(SAC):
       'reward': to_tensor(self.reward[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'step': to_tensor(self.episode_step_count[mode]-1, self.device)
+      'step': to_tensor(self.episode_step_count[mode]-1, self.device),
+      'log_prob': prediction['log_prob']
     }
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
-    # Get training data
-    batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask', 'step'], self.cfg['batch_size'])
+    # Get training data and detach
+    batch = self.replay.sample(['state', 'action', 'reward', 'mask', 'next_state', 'log_prob', 'step'], self.cfg['batch_size'], detach=True)
     # Take an optimization step for critic
     critic_loss = self.compute_critic_loss(batch)
     self.optimizer['critic'].zero_grad()
@@ -107,8 +105,8 @@ class OffRPG(SAC):
     repara_action = self.network.get_repara_action(batch.state, batch.action)
     predicted_reward = self.network.get_reward(batch.state, repara_action)
     v_next = self.network.get_state_value(batch.next_state).detach()
-    log_prob = self.network.forward(batch.state, action=batch.action)['log_prob']
-    # discounts = to_tensor([self.discount**i for i in batch.step], self.device)
-    # actor_loss = -(discounts * (predicted_reward + self.discount * batch.mask * v_next * log_prob)).mean()
-    actor_loss = -(predicted_reward + self.discount * batch.mask * v_next * log_prob).mean()
+    adv = (v_next - v_next.mean()) / v_next.std()
+    # adv = v_next - v_next.mean()
+    new_log_prob = self.network.get_log_prob(batch.state, batch.action)
+    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * new_log_prob).mean()
     return actor_loss

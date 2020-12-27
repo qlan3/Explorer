@@ -91,11 +91,12 @@ class SAC(REINFORCE):
     '''
     Pick an action from policy network
     '''
+    state = to_tensor(self.state[mode], self.device)
     if self.step_count <= self.cfg['exploration_steps']:
-      prediction = {'action': torch.as_tensor(self.env[mode].action_space.sample())}
+      action = to_tensor(self.env[mode].action_space.sample(), self.device)
+      prediction = self.network(state, action=action)
     else:
       deterministic = True if mode == 'Test' else False
-      state = to_tensor(self.state[mode], self.device)
       prediction = self.network(state, deterministic=deterministic)
     return prediction
 

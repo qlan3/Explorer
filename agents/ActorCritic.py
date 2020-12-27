@@ -85,8 +85,8 @@ class ActorCritic(REINFORCE):
         self.state[mode] = self.next_state[mode]
         # End of one episode
         if self.done[mode]:
-          self.episode_count += 1
           self.save_episode_result(mode)
+          self.episode_count += 1
           self.reset_game(mode)
       if self.cfg['agent']['name'] in ['ActorCritic', 'PPO']:
         prediction = self.get_action(mode)
@@ -139,6 +139,7 @@ class ActorCritic(REINFORCE):
       else:
         td_error = self.replay.reward[i] + self.discount * self.replay.mask[i] * self.replay.v[i+1] - self.replay.v[i]
         adv = self.discount * self.cfg['gae'] * self.replay.mask[i] * adv + td_error
+      print('adv len: ', len(self.replay.adv))
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data
