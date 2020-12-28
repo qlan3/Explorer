@@ -1,7 +1,7 @@
-from agents.ActorCritic import *
+from agents.PPO import *
 
 
-class OnRPG(ActorCritic):
+class OnRPG(PPO):
   '''
   Implementation of OnRPG (On-policy Reward Policy Gradient)
   '''
@@ -10,7 +10,7 @@ class OnRPG(ActorCritic):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step', 'adv'])
 
   def createNN(self, input_type):
     # Set feature network
@@ -41,58 +41,82 @@ class OnRPG(ActorCritic):
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
-      'action': prediction['action'],
+      'action': to_tensor(self.action[mode], self.device),
       'reward': to_tensor(self.reward[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'step': to_tensor(self.episode_step_count[mode]-1, self.device)
+      'step': to_tensor(self.episode_step_count[mode]-1, self.device),
+      'log_prob': prediction['log_prob']
     }
-    prediction['log_prob'] = self.network.get_log_prob(prediction['state'], prediction['action'].detach())
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
-    # Get training data
-    entries = self.replay.get(['state', 'action', 'reward', 'mask', 'next_state', 'log_prob', 'step'], self.cfg['steps_per_epoch'])
-    v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()    
-    # Take an optimization step for actor
-    predicted_reward = self.network.get_reward(entries.state, entries.action)
-    # Freeze reward network to avoid computing gradients for it
-    for p in self.network.reward_net.parameters():
-      p.requires_grad = False
-    # discounts = to_tensor([self.discount**i for i in entries.step], self.device)
-    # actor_loss = -(discounts * (predicted_reward + self.discount*v_next*entries.log_prob)).mean()
-    # Use normalized v_next
-    adv = v_next - v_next.mean()
-    actor_loss = -(predicted_reward + self.discount * adv * entries.log_prob).mean()
-    self.optimizer['actor'].zero_grad()
-    actor_loss.backward()
-    if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-    self.optimizer['actor'].step()
-    # Unfreeze reward network
-    for p in self.network.reward_net.parameters():
-      p.requires_grad = True
-    # Take an optimization step for critic
-    v = self.network.get_state_value(entries.state)
-    critic_loss = (entries.reward + self.discount*entries.mask*v_next - v).pow(2).mean()
-    self.optimizer['critic'].zero_grad()
-    critic_loss.backward()
-    if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
-    self.optimizer['critic'].step()
-    # Take an optimization step for reward
-    predicted_reward = self.network.get_reward(entries.state, entries.action.detach())
-    reward_loss = (predicted_reward - entries.reward).pow(2).mean()
-    self.optimizer['reward'].zero_grad()
-    reward_loss.backward()
-    if self.gradient_clip > 0:
-      nn.utils.clip_grad_norm_(self.network.reward_params, self.gradient_clip)
-    self.optimizer['reward'].step()
+    # Get training data and detach
+    entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_prob', 'step'], self.cfg['steps_per_epoch'], detach=True)
+    # Compute advantage
+    v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
+    if self.cfg['adv_div_std']:
+      adv = (v_next - v_next.mean()) / v_next.std()
+    else:
+      adv = v_next - v_next.mean()
+    # Optimize for multiple epochs
+    for _ in range(self.cfg['optimize_epochs']):
+      batch_idxs = generate_batch_idxs(len(entries.log_prob), self.cfg['batch_size'])
+      for batch_idx in batch_idxs:
+        batch_idx = to_tensor(batch_idx, self.device).long()
+        new_log_prob = self.network.get_log_prob(entries.state[batch_idx], entries.action[batch_idx])
+        # Take an optimization step for actor
+        approx_kl = (entries.log_prob[batch_idx] - new_log_prob).mean()
+        if approx_kl <= 1.5 * self.cfg['target_kl']:
+          # Freeze reward network to avoid computing gradients for it
+          for p in self.network.reward_net.parameters():
+            p.requires_grad = False
+          # Get predicted reward
+          repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
+          predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
+          # Compute clipped objective
+          if self.cfg['clip_adv']:
+            ratio = torch.exp(new_log_prob - entries.log_prob[batch_idx])
+            obj = ratio * adv[batch_idx]
+            obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * adv[batch_idx]
+            actor_v_next = torch.min(obj, obj_clipped)
+          else:
+            actor_v_next = adv[batch_idx] * new_log_prob
+          if self.cfg['clip_reward']:
+            reward = ratio.detach() * predicted_reward
+            reward_clipped = torch.clamp(ratio.detach(), 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * predicted_reward
+            actor_reward = torch.min(reward, reward_clipped)
+          else:
+            actor_reward = predicted_reward
+          actor_loss = -(actor_reward + self.discount * actor_v_next).mean()
+          self.optimizer['actor'].zero_grad()
+          actor_loss.backward()
+          if self.gradient_clip > 0:
+            nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
+          self.optimizer['actor'].step()
+          # Unfreeze reward network
+          for p in self.network.reward_net.parameters():
+            p.requires_grad = True
+        # Take an optimization step for critic
+        v = self.network.get_state_value(entries.state[batch_idx])
+        critic_loss = (entries.reward[batch_idx] + self.discount * v_next[batch_idx] - v).pow(2).mean()
+        self.optimizer['critic'].zero_grad()
+        critic_loss.backward()
+        if self.gradient_clip > 0:
+          nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
+        self.optimizer['critic'].step()
+        # Take an optimization step for reward
+        predicted_reward = self.network.get_reward(entries.state[batch_idx], entries.action[batch_idx])
+        reward_loss = (predicted_reward - entries.reward[batch_idx]).pow(2).mean()
+        self.optimizer['reward'].zero_grad()
+        reward_loss.backward()
+        if self.gradient_clip > 0:
+          nn.utils.clip_grad_norm_(self.network.reward_params, self.gradient_clip)
+        self.optimizer['reward'].step()
     # Log
     if self.show_tb:
       self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
-      self.logger.add_scalar('v', v.mean().item(), self.step_count)
       self.logger.add_scalar('log_prob', entries.log_prob.mean().item(), self.step_count)

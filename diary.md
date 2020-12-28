@@ -8,7 +8,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg    |  onrpg.json |   1  |        |   RPG  |  |
+|   onrpg    |  onrpg.json |   1  | onrpg  |   RPG  |  |
 
   - Goal:
   - Analysis:
@@ -114,8 +114,8 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg    |  test_onrpg.json |   1  |  onrpg   |   RPG  |  |
-|   onrpg2   |  test_onrpg2.json |  1  |  onrpg2  |   RPG  |  |
+|   test_onrpg    |  test_onrpg.json |   1  |  onrpg   |   RPG  | 339187c |
+|   test_onrpg2   |  test_onrpg2.json |  1  |  onrpg2  |   RPG  | 339187c |
 
   - Goal: test two ways to normalize the state values V: OnRPG (subtract mean of V), OnRPG2 (subtract mean of V, then divided by standard deviation)
   - Analysis: OnRPG2 learns faster and achieves higher performance in some environments.
@@ -126,8 +126,8 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg3    |  test_onrpg3.json |   1  |   test_onrpg3   |   RPG  |  |
-|   onrpg4    |  test_onrpg4.json |   1  |   test_onrpg4   |   RPG  |  |
+|   test_onrpg3    |  test_onrpg3.json |   1  |   test_onrpg3   |   RPG  | 339187c |
+|   test_onrpg4    |  test_onrpg4.json |   1  |   test_onrpg4   |   RPG  | 339187c |
 
   - Goal: test PPO style OnRPG (OnRPG3: V divided by std; OnRPG4: V not divided by std)
   - Analysis: OnRPG4 is better than OnRPG3 for 4 games, worse than OnRPG3 for 2 games. Both are worse than PPO.
@@ -138,9 +138,29 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg5    |  test_onrpg5.json |   1  |   test_onrpg5   |   RPG  |  |
-|   onrpg6    |  test_onrpg6.json |   1  |   test_onrpg6   |   RPG  |  |
+|   test_onrpg5    |  test_onrpg5.json |   1  |   test_onrpg5   |   RPG  | 339187c |
+|   test_onrpg6    |  test_onrpg6.json |   1  |   test_onrpg6   |   RPG  | 339187c |
 
   - Goal: test PPO style OnRPG (OnRPG5: V divided by std; OnRPG6: V not divided by std), also use ratio clip for the reward part
   - Analysis: OnRPG6 is better than OnRPG5 for 3 games, worse than OnRPG5 for 3 games. Both are worse than PPO.
   - Next: search over different choices, search actor lr.
+
+
+## 2020-12-27
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   test_onrpg    |  test_onrpg.json |   1  | test_onrpg |   RPG  |  |
+
+  - Goal: test all combinations of choices: divide adv by std, clip reward, clip adv; search actor lr.
+  - Analysis: inconsistent results
+  - Next: run with less optimize epoch; add state normalizer.
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|  test_ppo  | test_ppo.json |  1  | test_ppo |   RPG  |  |
+
+  - Goal: test with less optimize epoch and different gae: [0.95, 0.97]
+  - Analysis: inconsistent results
+  - Next: add state normalizer.
