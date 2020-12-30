@@ -174,76 +174,71 @@ class MLPCategoricalActor(nn.Module):
     logits = self.logits_net(phi)
     return Categorical(logits=logits)
 
-  def log_prob_from_distribution(self, action_distribution, action):
+  def log_pi_from_distribution(self, action_distribution, action):
     return action_distribution.log_prob(action)
 
   def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
+    # Compute action distribution and the log_pi of given actions
     action_distribution = self.distribution(phi)
     if action is None:
       action = action_distribution.sample()
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    return action, None, None, log_prob
+    log_pi = self.log_pi_from_distribution(action_distribution, action)
+    return action, None, None, log_pi
 
 
 class MLPGaussianActor(nn.Module):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', last_w_scale=1e-3, rsample=False):
     super().__init__()
     self.rsample = rsample
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
     # The action std is independent of states
-    # self.action_log_std = nn.Parameter(last_w_scale*torch.zeros(layer_dims[-1]))
     self.action_std = nn.Parameter(torch.zeros(layer_dims[-1]))
-    self.log_std_min, self.log_std_max = log_std_bounds
     self.action_lim = action_lim
 
   def distribution(self, phi):
     action_mean = self.action_lim * self.actor_net(phi)
-    # Constrain log_std inside [log_std_min, log_std_max]
-    # action_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max).exp()
     action_std = F.softplus(self.action_std)
     return action_mean, action_std, Normal(action_mean, action_std)
     
-  def log_prob_from_distribution(self, action_distribution, action):
+  def log_pi_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
     return action_distribution.log_prob(action).sum(axis=-1)
 
   def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
+    # Compute action distribution and the log_pi of given actions
     action_mean, action_std, action_distribution = self.distribution(phi)
     if action is None:
       if deterministic:
         action = action_mean
       else:
         action = action_distribution.rsample() if self.rsample else action_distribution.sample()
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    return action, action_mean, action_std, log_prob
+    log_pi = self.log_pi_from_distribution(action_distribution, action)
+    return action, action_mean, action_std, log_pi
 
 
 class MLPSquashedGaussianActor(nn.Module):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', last_w_scale=1e-3, rsample=False):
     super().__init__()
     self.rsample = rsample
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Linear', last_w_scale=last_w_scale)
-    self.log_std_min, self.log_std_max = log_std_bounds
     self.action_lim = action_lim
 
   def distribution(self, phi):
-    action_mean, action_log_std = self.actor_net(phi).chunk(2, dim=-1)
+    action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
     # Constrain log_std inside [log_std_min, log_std_max]
-    action_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max).exp()
+    action_std = F.softplus(action_std)
     return action_mean, action_std, Normal(action_mean, action_std)
 
-  def log_prob_from_distribution(self, action_distribution, action):
+  def log_pi_from_distribution(self, action_distribution, action):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
-    log_prob = action_distribution.log_prob(action).sum(axis=-1)
-    log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
-    # Constrain log_prob
-    log_prob = torch.clamp(log_prob, -1e8, 1e8)
-    return log_prob
+    log_pi = action_distribution.log_prob(action).sum(axis=-1)
+    log_pi -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
+    # Constrain log_pi
+    # log_pi = torch.clamp(log_pi, -1e8, 1e8)
+    return log_pi
 
   def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
+    # Compute action distribution and the log_pi of given actions
     action_mean, action_std, action_distribution = self.distribution(phi)
     if action is None:
       if deterministic:
@@ -255,8 +250,8 @@ class MLPSquashedGaussianActor(nn.Module):
       u = torch.clamp(action / self.action_lim, -0.999, 0.999)
       u = torch.atanh(u)
     # Compute logprob from Gaussian, and then apply correction for Tanh squashing.
-    log_prob = self.log_prob_from_distribution(action_distribution, u)
-    return action, action_mean, action_std, log_prob
+    log_pi = self.log_pi_from_distribution(action_distribution, u)
+    return action, action_mean, action_std, log_pi
 
 
 class MLPDeterministicActor(nn.Module):
@@ -270,31 +265,29 @@ class MLPDeterministicActor(nn.Module):
 
 
 class MLPStdGaussianActor(MLPSquashedGaussianActor):
-  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', log_std_bounds=(-20, 2), last_w_scale=1e-3, rsample=False):
-    super().__init__(action_lim, layer_dims, hidden_act, log_std_bounds, last_w_scale, rsample)
+  def __init__(self, action_lim, layer_dims, hidden_act='ReLU', last_w_scale=1e-3, rsample=False):
+    super().__init__(action_lim, layer_dims, hidden_act, last_w_scale, rsample)
 
   def distribution(self, phi):
-    action_mean, action_log_std = self.actor_net(phi).chunk(2, dim=-1)
-    # 
+    action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
     action_mean = self.action_lim * torch.tanh(action_mean)
-    # Constrain log_std inside [log_std_min, log_std_max]
-    action_std = torch.clamp(action_log_std, self.log_std_min, self.log_std_max).exp()
+    action_std = F.softplus(action_std)
     return action_mean, action_std, Normal(action_mean, action_std)
 
-  def log_prob_from_distribution(self, action_distribution, action):
+  def log_pi_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
     return action_distribution.log_prob(action).sum(axis=-1)
 
   def forward(self, phi, action=None, deterministic=False):
-    # Compute action distribution and the log_prob of given actions
+    # Compute action distribution and the log_pi of given actions
     action_mean, action_std, action_distribution = self.distribution(phi)
     if action is None:
       if deterministic:
         action = action_mean
       else:
         action = action_distribution.rsample() if self.rsample else action_distribution.sample()
-    log_prob = self.log_prob_from_distribution(action_distribution, action)
-    return action, action_mean, action_std, log_prob
+    log_pi = self.log_pi_from_distribution(action_distribution, action)
+    return action, action_mean, action_std, log_pi
 
 
 class REINFORCENet(nn.Module):
@@ -308,8 +301,8 @@ class REINFORCENet(nn.Module):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
-    return {'action': action, 'log_prob': log_prob}
+    action, _, _, log_pi = self.actor_net(phi, action, deterministic)
+    return {'action': action, 'log_pi': log_pi}
 
 
 class ActorVCriticNet(nn.Module):
@@ -327,8 +320,8 @@ class ActorVCriticNet(nn.Module):
     # Compute state value
     v = self.critic_net(phi)
     # Sample an action
-    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
-    return {'action': action, 'log_prob': log_prob, 'v': v}
+    action, _, _, log_pi = self.actor_net(phi, action, deterministic)
+    return {'action': action, 'log_pi': log_pi, 'v': v}
 
 
 class ActorQCriticNet(ActorVCriticNet):
@@ -360,10 +353,10 @@ class ActorDoubleQCriticNet(ActorQCriticNet):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
+    action, _, _, log_pi = self.actor_net(phi, action, deterministic)
     # Compute state-action value
     q1, q2 = self.critic_net(phi, action)
-    return {'action': action, 'log_prob': log_prob, 'q1': q1, 'q2': q2}
+    return {'action': action, 'log_pi': log_pi, 'q1': q1, 'q2': q2}
   
   def get_q(self, obs, action):
     # Generate the latent feature
@@ -383,14 +376,14 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Generate the latent feature
     phi = self.feature_net(obs)
     # Sample an action
-    action, _, _, log_prob = self.actor_net(phi, action, deterministic)
-    return {'action': action, 'log_prob': log_prob}
+    action, _, _, log_pi = self.actor_net(phi, action, deterministic)
+    return {'action': action, 'log_pi': log_pi}
   
-  def get_log_prob(self, obs, action):
+  def get_log_pi(self, obs, action):
     # Generate the latent feature
     phi = self.feature_net(obs)
-    _, _, _, log_prob = self.actor_net(phi, action=action)
-    return log_prob
+    _, _, _, log_pi = self.actor_net(phi, action=action)
+    return log_pi
 
   def get_reward(self, obs, action):
     # Generate the latent feature
