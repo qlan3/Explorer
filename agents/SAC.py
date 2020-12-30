@@ -145,9 +145,9 @@ class SAC(REINFORCE):
 
   def compute_actor_loss(self, batch):
     prediction = self.network(batch.state)
-    q1, q2, log_prob = prediction['q1'], prediction['q2'], prediction['log_prob']
+    q1, q2, log_pi = prediction['q1'], prediction['q2'], prediction['log_pi']
     q_min = torch.min(q1, q2)
-    actor_loss = (self.cfg['alpha'] * log_prob - q_min).mean()
+    actor_loss = (self.cfg['alpha'] * log_pi - q_min).mean()
     return actor_loss
 
   def compute_critic_loss(self, batch):
@@ -160,10 +160,10 @@ class SAC(REINFORCE):
     with torch.no_grad():
       # Sample action from *current* policy
       prediction = self.network(batch.next_state)
-      action, log_prob = prediction['action'], prediction['log_prob']
+      action, log_pi = prediction['action'], prediction['log_pi']
       q1, q2 = self.network_target.get_q(batch.next_state, action)
       q_next = torch.min(q1, q2)
-      q_target = batch.reward + self.discount * batch.mask * (q_next - self.cfg['alpha'] * log_prob)
+      q_target = batch.reward + self.discount * batch.mask * (q_next - self.cfg['alpha'] * log_pi)
     return q_target
 
   def comput_q(self, batch):

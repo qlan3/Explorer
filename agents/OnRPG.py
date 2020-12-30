@@ -10,7 +10,7 @@ class OnRPG(PPO):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step', 'adv'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'step', 'adv'])
 
   def createNN(self, input_type):
     # Set feature network
@@ -37,7 +37,7 @@ class OnRPG(PPO):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, log_prob, step
+    # Save state, action, reward, next_state, mask, log_pi, step
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -46,14 +46,14 @@ class OnRPG(PPO):
       'next_state': to_tensor(self.next_state[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
       'step': to_tensor(self.episode_step_count[mode]-1, self.device),
-      'log_prob': prediction['log_prob']
+      'log_pi': prediction['log_pi']
     }
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
     # Get training data and detach
-    entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_prob', 'step'], self.cfg['steps_per_epoch'], detach=True)
+    entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_pi', 'step'], self.cfg['steps_per_epoch'], detach=True)
     # Compute advantage
     v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
     if self.cfg['adv_div_std']:
@@ -62,12 +62,12 @@ class OnRPG(PPO):
       adv = v_next - v_next.mean()
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
-      batch_idxs = generate_batch_idxs(len(entries.log_prob), self.cfg['batch_size'])
+      batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
       for batch_idx in batch_idxs:
         batch_idx = to_tensor(batch_idx, self.device).long()
-        new_log_prob = self.network.get_log_prob(entries.state[batch_idx], entries.action[batch_idx])
+        new_log_pi = self.network.get_log_pi(entries.state[batch_idx], entries.action[batch_idx])
         # Take an optimization step for actor
-        approx_kl = (entries.log_prob[batch_idx] - new_log_prob).mean()
+        approx_kl = (entries.log_pi[batch_idx] - new_log_pi).mean()
         if approx_kl <= 1.5 * self.cfg['target_kl']:
           # Freeze reward network to avoid computing gradients for it
           for p in self.network.reward_net.parameters():
@@ -77,12 +77,12 @@ class OnRPG(PPO):
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
           # Compute clipped objective
           if self.cfg['clip_adv']:
-            ratio = torch.exp(new_log_prob - entries.log_prob[batch_idx])
+            ratio = torch.exp(new_log_pi - entries.log_pi[batch_idx])
             obj = ratio * adv[batch_idx]
             obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * adv[batch_idx]
             actor_v_next = torch.min(obj, obj_clipped)
           else:
-            actor_v_next = adv[batch_idx] * new_log_prob
+            actor_v_next = adv[batch_idx] * new_log_pi
           if self.cfg['clip_reward']:
             reward = ratio.detach() * predicted_reward
             reward_clipped = torch.clamp(ratio.detach(), 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * predicted_reward
@@ -119,4 +119,4 @@ class OnRPG(PPO):
       self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
-      self.logger.add_scalar('log_prob', entries.log_prob.mean().item(), self.step_count)
+      self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)

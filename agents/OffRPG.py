@@ -10,7 +10,7 @@ class OffRPG(SAC):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step'])
+    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'step'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -40,7 +40,7 @@ class OffRPG(SAC):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, log_prob, step
+    # Save state, action, reward, next_state, mask, log_pi, step
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -114,6 +114,6 @@ class OffRPG(SAC):
       adv = (v_next - v_next.mean()) / v_next.std()
     else:
       adv = v_next - v_next.mean()
-    new_log_prob = self.network.get_log_prob(batch.state, batch.action)
-    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * new_log_prob).mean()
+    new_log_pi = self.network.get_log_pi(batch.state, batch.action)
+    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * new_log_pi).mean()
     return actor_loss

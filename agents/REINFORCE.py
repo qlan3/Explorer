@@ -52,9 +52,9 @@ class REINFORCE(BaseAgent):
       'actor': getattr(torch.optim, cfg['optimizer']['name'])(self.network.actor_params, **cfg['optimizer']['actor_kwargs'])
     }
     # Set replay buffer
-    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_prob', 'ret'])
+    self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_pi', 'ret'])
     # Set log dict
-    for key in ['state', 'next_state', 'action', 'log_prob', 'reward', 'done', 'episode_return', 'episode_step_count']:
+    for key in ['state', 'next_state', 'action', 'log_pi', 'reward', 'done', 'episode_return', 'episode_step_count']:
       setattr(self, key, {'Train': None, 'Test': None})
 
   def createNN(self, input_type):
@@ -82,7 +82,7 @@ class REINFORCE(BaseAgent):
     self.state[mode] = self.state_normalizer(self.env[mode].reset())
     self.next_state[mode] = None
     self.action[mode] = None
-    self.log_prob[mode] = 0.0
+    self.log_pi[mode] = 0.0
     self.reward[mode] = None
     self.done[mode] = False
     self.episode_return[mode] = 0
@@ -175,12 +175,12 @@ class REINFORCE(BaseAgent):
     return prediction
 
   def save_experience(self, prediction):
-    # Save reward, mask, log_prob
+    # Save reward, mask, log_pi
     mode = 'Train'
     prediction = {
       'reward': to_tensor(self.reward[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'log_prob': prediction['log_prob']
+      'log_pi': prediction['log_pi']
     }
     self.replay.add(prediction)
 
@@ -193,9 +193,9 @@ class REINFORCE(BaseAgent):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.replay.get(['log_prob', 'ret'], self.episode_step_count[mode])
+    entries = self.replay.get(['log_pi', 'ret'], self.episode_step_count[mode])
     # Compute loss
-    actor_loss = -(entries.log_prob * entries.ret).mean()
+    actor_loss = -(entries.log_pi * entries.ret).mean()
     # Take an optimization step for actor
     self.optimizer['actor'].zero_grad()
     actor_loss.backward()
@@ -205,7 +205,7 @@ class REINFORCE(BaseAgent):
     # Log
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-      self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)
+      self.logger.add_scalar(f'log_pi', entries.log_pi.mean().item(), self.step_count)
 
   def get_action_size(self):
     mode = 'Train'

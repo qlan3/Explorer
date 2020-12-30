@@ -14,7 +14,7 @@ class ActorCritic(REINFORCE):
       'critic':  getattr(torch.optim, cfg['optimizer']['name'])(self.network.critic_params, **cfg['optimizer']['critic_kwargs'])
     }
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
 
   def createNN(self, input_type):
     # Set feature network
@@ -114,14 +114,14 @@ class ActorCritic(REINFORCE):
       self.reset_game(mode)
 
   def save_experience(self, prediction):
-    # Save reward, mask, v, log_prob
+    # Save reward, mask, v, log_pi
     mode = 'Train'
     if self.reward[mode] is not None:
       prediction = {
         'reward': to_tensor(self.reward[mode], self.device),
         'mask': to_tensor(1-self.done[mode], self.device),
         'v': prediction['v'],
-        'log_prob': prediction['log_prob']
+        'log_pi': prediction['log_pi']
       }
       self.replay.add(prediction)
     else:
@@ -143,11 +143,11 @@ class ActorCritic(REINFORCE):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data
-    entries = self.replay.get(['log_prob', 'v', 'ret', 'adv'], self.cfg['steps_per_epoch'])
+    entries = self.replay.get(['log_pi', 'v', 'ret', 'adv'], self.cfg['steps_per_epoch'])
     # # Normalize advantages
     # entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Compute losses
-    actor_loss = -(entries.log_prob * entries.adv).mean()
+    actor_loss = -(entries.log_pi * entries.adv).mean()
     critic_loss = (entries.ret - entries.v).pow(2).mean()
     # Take an optimization step for actor
     self.optimizer['actor'].zero_grad()
@@ -166,4 +166,4 @@ class ActorCritic(REINFORCE):
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar(f'v', entries.v.mean().item(), self.step_count)
-      self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)
+      self.logger.add_scalar(f'log_pi', entries.log_pi.mean().item(), self.step_count)

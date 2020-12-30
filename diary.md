@@ -101,15 +101,15 @@
 |  test_onrpg  | test_onrpg.json |  1  | test_onrpg |  RPG  | d3fa59c |
 
   - Goal: 
-    - analysis: plot V, log_prob, actor loss, critic loss of Actor-Critic, PPO, and OnRPG2 during training, on HalfCheetah
+    - analysis: plot V, log_pi, actor loss, critic loss of Actor-Critic, PPO, and OnRPG2 during training, on HalfCheetah
     - test the influence of the discount factor
   - Analysis:
     - For discount factor: 0.99 is much better than 1; in fact, when discount factor = 1, Actor-Critic cannot even learn!
-    - For Actor-Critic: V (down then up), log_prob (up to -8), actor loss (up then flat), critic loss (down to 100)
-    - For PPO: V (down then up), log_prob (up to -5/2), actor loss (flat), critic loss (down to >200)
-    - For OnRPG: V (keep going straight down), log_prob(flat -8), actor loss (down), critic loss (flat 2), reward loss (down to 0.04)
-    - In general, to get good performance, we need low critic loss, high log_prob (high PDF & low variance), high V
-  - Next: use normalized state values (we want to increase the log_prob of an action that has **adavantage**)
+    - For Actor-Critic: V (down then up), log_pi (up to -8), actor loss (up then flat), critic loss (down to 100)
+    - For PPO: V (down then up), log_pi (up to -5/2), actor loss (flat), critic loss (down to >200)
+    - For OnRPG: V (keep going straight down), log_pi(flat -8), actor loss (down), critic loss (flat 2), reward loss (down to 0.04)
+    - In general, to get good performance, we need low critic loss, high log_pi (high PDF & low variance), high V
+  - Next: use normalized state values (we want to increase the log_pi of an action that has **adavantage**)
 
 
 | experiment | config file | runs |  log   | branch | commit  |
@@ -170,7 +170,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   test_offrpg   |  test_offrpg.json |   1  | test_offrpg  |   RPG  |  |
+|   test_offrpg   |  test_offrpg.json |   1  | test_offrpg  |   RPG  | d102899 |
 
   - Goal: test DDPG style off-policy RPG, select different actors
   - Analysis: too bad
@@ -181,7 +181,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   test_offrpg2    |  test_offrpg2.json |   1  | test_offrpg2  |   RPG  |  |
+|   test_offrpg2    |  test_offrpg2.json |   1  | test_offrpg2  |   RPG  | d102899 |
 
   - Goal: test SAC style off-policy RPG, select different actors
   - Analysis: even worse than DDPG style of RPG.
@@ -190,7 +190,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|  test_ppo  | test_ppo.json |  1  | test_ppo |  RPG  |  |
+|  test_ppo  | test_ppo.json |  1  | test_ppo |  RPG  | d102899 |
 
   - Goal: test ppo with a MeanStdNormalizer state normalizer, a different way (use `softplus` rather than `exp`) to set action_std.
   - Analysis: `softplus` is better than `exp`; state normalizer can be dropped.
@@ -199,7 +199,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|  test_ppo2  | test_ppo2.json |  1  | test_ppo2 |  RPG  |  |
+|  test_ppo2  | test_ppo2.json |  1  | test_ppo2 |  RPG  | d102899 |
 
   - Goal: test spinning up version of PPO using `softplus`
   - Analysis: some are better than original PPO, some are worse

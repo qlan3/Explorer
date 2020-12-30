@@ -10,7 +10,7 @@ class OffRPG2(SAC):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_prob', 'step'])
+    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'step'])
   
   def createNN(self, input_type):
     # Set feature network
@@ -40,7 +40,7 @@ class OffRPG2(SAC):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, log_prob, step
+    # Save state, action, reward, next_state, mask, log_pi, step
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -96,8 +96,8 @@ class OffRPG2(SAC):
     v = self.network.get_state_value(batch.state)
     with torch.no_grad():
       v_next = self.network_target.get_state_value(batch.next_state)
-      log_prob = self.network_target.get_log_prob(batch.state, batch.action)
-      v_next = (v_next - self.cfg['alpha'] * log_prob).detach()
+      log_pi = self.network_target.get_log_pi(batch.state, batch.action)
+      v_next = (v_next - self.cfg['alpha'] * log_pi).detach()
     critic_loss = (batch.reward + self.discount * batch.mask * v_next - v).pow(2).mean()
     return critic_loss
 
@@ -116,7 +116,7 @@ class OffRPG2(SAC):
       adv = (v_next - v_next.mean()) / v_next.std()
     else:
       adv = v_next - v_next.mean()
-    log_prob = self.network.get_log_prob(batch.state, batch.action)
-    repara_log_prob = self.network.get_log_prob(batch.state, repara_action)
-    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * log_prob - self.cfg['alpha'] * repara_log_prob).mean()
+    log_pi = self.network.get_log_pi(batch.state, batch.action)
+    repara_log_pi = self.network.get_log_pi(batch.state, repara_action)
+    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * log_pi - self.cfg['alpha'] * repara_log_pi).mean()
     return actor_loss

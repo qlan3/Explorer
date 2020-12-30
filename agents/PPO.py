@@ -8,13 +8,10 @@ class PPO(ActorCritic):
   def __init__(self, cfg):
     super().__init__(cfg)
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_prob', 'ret', 'adv'])
-    # Set state normalizer
-    if cfg['state_normalizer']:
-      self.state_normalizer = MeanStdNormalizer()
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
 
   def save_experience(self, prediction):
-    # Save state, action, reward, mask, v, log_prob
+    # Save state, action, reward, mask, v, log_pi
     mode = 'Train'
     if self.reward[mode] is not None:
       prediction = {
@@ -23,7 +20,7 @@ class PPO(ActorCritic):
         'reward': to_tensor(self.reward[mode], self.device),
         'mask': to_tensor(1-self.done[mode], self.device),
         'v': prediction['v'],
-        'log_prob': prediction['log_prob']
+        'log_pi': prediction['log_pi']
       }
       self.replay.add(prediction)
     else:
@@ -44,19 +41,19 @@ class PPO(ActorCritic):
       self.replay.adv[i] = adv.detach()
       self.replay.ret[i] = ret.detach()
     # Get training data and **detach** (IMPORTANT: we don't optimize old parameters)
-    entries = self.replay.get(['log_prob', 'ret', 'adv', 'state', 'action'], self.cfg['steps_per_epoch'], detach=True)
+    entries = self.replay.get(['log_pi', 'ret', 'adv', 'state', 'action'], self.cfg['steps_per_epoch'], detach=True)
     # Normalize advantages
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
-      batch_idxs = generate_batch_idxs(len(entries.log_prob), self.cfg['batch_size'])
+      batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
       for batch_idx in batch_idxs:
         batch_idx = to_tensor(batch_idx, self.device).long()
         prediction = self.network(entries.state[batch_idx], entries.action[batch_idx])
         # Take an optimization step for actor
-        approx_kl = (entries.log_prob[batch_idx] - prediction['log_prob']).mean()
+        approx_kl = (entries.log_pi[batch_idx] - prediction['log_pi']).mean()
         if approx_kl <= 1.5 * self.cfg['target_kl']:
-          ratio = torch.exp(prediction['log_prob'] - entries.log_prob[batch_idx])
+          ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx])
           obj = ratio * entries.adv[batch_idx]
           obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * entries.adv[batch_idx]
           actor_loss = -torch.min(obj, obj_clipped).mean()
@@ -76,4 +73,4 @@ class PPO(ActorCritic):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-      self.logger.add_scalar(f'log_prob', entries.log_prob.mean().item(), self.step_count)
+      self.logger.add_scalar(f'log_pi', entries.log_pi.mean().item(), self.step_count)
