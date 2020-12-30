@@ -150,7 +150,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   test_onrpg    |  test_onrpg.json |   1  | test_onrpg |   RPG  |  |
+|   test_onrpg    |  test_onrpg.json |   1  | test_onrpg |  RPG  | d5a56c7 |
 
   - Goal: test all combinations of choices: divide adv by std, clip reward, clip adv; search actor lr.
   - Analysis: inconsistent results
@@ -159,8 +159,48 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|  test_ppo  | test_ppo.json |  1  | test_ppo |   RPG  |  |
+|  test_ppo  | test_ppo.json |  1  | test_ppo |  RPG  | d5a56c7 |
 
   - Goal: test with less optimize epoch and different gae: [0.95, 0.97]
   - Analysis: inconsistent results
   - Next: add state normalizer.
+
+
+## 2020-12-28
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   test_offrpg   |  test_offrpg.json |   1  | test_offrpg  |   RPG  |  |
+
+  - Goal: test DDPG style off-policy RPG, select different actors
+  - Analysis: too bad
+  - Next: try SAC style
+
+
+## 2020-12-29
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|   test_offrpg2    |  test_offrpg2.json |   1  | test_offrpg2  |   RPG  |  |
+
+  - Goal: test SAC style off-policy RPG, select different actors
+  - Analysis: even worse than DDPG style of RPG.
+  - Next: off-policy without importance sampling may not be a good option
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|  test_ppo  | test_ppo.json |  1  | test_ppo |  RPG  |  |
+
+  - Goal: test ppo with a MeanStdNormalizer state normalizer, a different way (use `softplus` rather than `exp`) to set action_std.
+  - Analysis: `softplus` is better than `exp`; state normalizer can be dropped.
+  - Next: test spinning up version of PPO using `softplus`; drop state normalizer
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|  test_ppo2  | test_ppo2.json |  1  | test_ppo2 |  RPG  |  |
+
+  - Goal: test spinning up version of PPO using `softplus`
+  - Analysis: some are better than original PPO, some are worse
+  - Next: abandon this version.

@@ -1,9 +1,9 @@
 from agents.ActorCritic import *
 
 
-class PPO(ActorCritic):
+class PPO2(ActorCritic):
   '''
-  Implementation of PPO (Proximal Policy Optimization)
+  Implementation of PPO (Proximal Policy Optimization): spinning up version
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
@@ -49,29 +49,26 @@ class PPO(ActorCritic):
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
-      batch_idxs = generate_batch_idxs(len(entries.log_prob), self.cfg['batch_size'])
-      for batch_idx in batch_idxs:
-        batch_idx = to_tensor(batch_idx, self.device).long()
-        prediction = self.network(entries.state[batch_idx], entries.action[batch_idx])
-        # Take an optimization step for actor
-        approx_kl = (entries.log_prob[batch_idx] - prediction['log_prob']).mean()
-        if approx_kl <= 1.5 * self.cfg['target_kl']:
-          ratio = torch.exp(prediction['log_prob'] - entries.log_prob[batch_idx])
-          obj = ratio * entries.adv[batch_idx]
-          obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * entries.adv[batch_idx]
-          actor_loss = -torch.min(obj, obj_clipped).mean()
-          self.optimizer['actor'].zero_grad()
-          actor_loss.backward()
-          if self.gradient_clip > 0:
-            nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
-          self.optimizer['actor'].step()
-        # Take an optimization step for critic
-        critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
-        self.optimizer['critic'].zero_grad()
-        critic_loss.backward()
+      prediction = self.network(entries.state, entries.action)
+      # Take an optimization step for actor
+      approx_kl = (entries.log_prob - prediction['log_prob']).mean()
+      if approx_kl <= 1.5 * self.cfg['target_kl']:
+        ratio = torch.exp(prediction['log_prob'] - entries.log_prob)
+        obj = ratio * entries.adv
+        obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * entries.adv
+        actor_loss = -torch.min(obj, obj_clipped).mean()
+        self.optimizer['actor'].zero_grad()
+        actor_loss.backward()
         if self.gradient_clip > 0:
-          nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
-        self.optimizer['critic'].step()
+          nn.utils.clip_grad_norm_(self.network.actor_params, self.gradient_clip)
+        self.optimizer['actor'].step()
+      # Take an optimization step for critic
+      critic_loss = (entries.ret - prediction['v']).pow(2).mean()
+      self.optimizer['critic'].zero_grad()
+      critic_loss.backward()
+      if self.gradient_clip > 0:
+        nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
+      self.optimizer['critic'].step()
     # Log
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)

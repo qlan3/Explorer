@@ -1,9 +1,9 @@
 from agents.SAC import *
 
 
-class OffRPG(SAC):
+class OffRPG2(SAC):
   '''
-  Implementation of OffRPG (Off-policy Reward Policy Gradient): DDPG style
+  Implementation of OffRPG (Off-policy Reward Policy Gradient): SAC style
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
@@ -95,7 +95,9 @@ class OffRPG(SAC):
   def compute_critic_loss(self, batch):
     v = self.network.get_state_value(batch.state)
     with torch.no_grad():
-      v_next = self.network_target.get_state_value(batch.next_state).detach()
+      v_next = self.network_target.get_state_value(batch.next_state)
+      log_prob = self.network_target.get_log_prob(batch.state, batch.action)
+      v_next = (v_next - self.cfg['alpha'] * log_prob).detach()
     critic_loss = (batch.reward + self.discount * batch.mask * v_next - v).pow(2).mean()
     return critic_loss
 
@@ -114,6 +116,7 @@ class OffRPG(SAC):
       adv = (v_next - v_next.mean()) / v_next.std()
     else:
       adv = v_next - v_next.mean()
-    new_log_prob = self.network.get_log_prob(batch.state, batch.action)
-    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * new_log_prob).mean()
+    log_prob = self.network.get_log_prob(batch.state, batch.action)
+    repara_log_prob = self.network.get_log_prob(batch.state, repara_action)
+    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * log_prob - self.cfg['alpha'] * repara_log_prob).mean()
     return actor_loss

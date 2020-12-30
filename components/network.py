@@ -192,14 +192,16 @@ class MLPGaussianActor(nn.Module):
     self.rsample = rsample
     self.actor_net = MLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act='Tanh', last_w_scale=last_w_scale)
     # The action std is independent of states
-    self.action_log_std = nn.Parameter(last_w_scale*torch.zeros(layer_dims[-1]))
+    # self.action_log_std = nn.Parameter(last_w_scale*torch.zeros(layer_dims[-1]))
+    self.action_std = nn.Parameter(torch.zeros(layer_dims[-1]))
     self.log_std_min, self.log_std_max = log_std_bounds
     self.action_lim = action_lim
 
   def distribution(self, phi):
     action_mean = self.action_lim * self.actor_net(phi)
     # Constrain log_std inside [log_std_min, log_std_max]
-    action_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max).exp()
+    # action_std = torch.clamp(self.action_log_std, self.log_std_min, self.log_std_max).exp()
+    action_std = F.softplus(self.action_std)
     return action_mean, action_std, Normal(action_mean, action_std)
     
   def log_prob_from_distribution(self, action_distribution, action):
@@ -236,8 +238,8 @@ class MLPSquashedGaussianActor(nn.Module):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
     log_prob = action_distribution.log_prob(action).sum(axis=-1)
     log_prob -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
-    # Constrain log_prob inside [-1e8, 1e8]
-    # log_prob = torch.clamp(log_prob, -1e8, 1e8)
+    # Constrain log_prob
+    log_prob = torch.clamp(log_prob, -1e8, 1e8)
     return log_prob
 
   def forward(self, phi, action=None, deterministic=False):
@@ -412,7 +414,7 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     if isinstance(self.actor_net, MLPSquashedGaussianActor):
       action = torch.clamp(action / self.actor_net.action_lim, -0.999, 0.999)
       u = torch.atanh(action)
-      eps = (u - action_mean) / action_std
+      eps = (u - action_mean) / (action_std + 1e-8)
       repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
     else:
       eps = (action - action_mean) / action_std

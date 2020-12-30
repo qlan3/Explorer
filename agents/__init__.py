@@ -9,10 +9,12 @@ from .AveragedDQN import AveragedDQN
 from .REINFORCE import REINFORCE
 from .ActorCritic import ActorCritic
 from .PPO import PPO
+from .PPO2 import PPO2
 from .SAC import SAC
 from .DDPG import DDPG
 from .TD3 import TD3
 from .RepOffPG import RepOffPG
 from .RepOnPG import RepOnPG
 from .OffRPG import OffRPG
+from .OffRPG2 import OffRPG2
 from .OnRPG import OnRPG
