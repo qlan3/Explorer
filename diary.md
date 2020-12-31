@@ -32,7 +32,7 @@
     - Still, there is `nan` bug for offrpg sometimes.
     - RPG is highly unstable.
     - onrpg3 is better than onrpg1 & onrpg2, probably due to longer episode length (batch size). onrpg 1 & onrpg2 have 64 as the batch size while the average episode length is larger than 64.
-  - Next: try larger batch sizes; use try gradient (i.e. include $\gamma^t$ term)
+  - Next: try larger batch sizes; use true gradient (i.e. include $\gamma^t$ term)
 
 
 ## 2020-12-16
@@ -204,3 +204,20 @@
   - Goal: test spinning up version of PPO using `softplus`
   - Analysis: some are better than original PPO, some are worse
   - Next: abandon this version.
+
+
+## 2020-12-30
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
+
+  - Goal: test new OnRPG: search actor lr, divide advantage by std or not, clip objective or not, use a state normalizer or not, select actor type
+  - Analysis:
+    - actor select: MLPGaussianActor is good enough
+    - actor lr: 1e-4 or 3e-4
+    - clip objective: seems to be neutral? (not clear)
+    - divide advantage by std: not clear
+    - state normalizer: doesn't hurt, sometimes is helpful, better to include
+    - Hopper is too noise as a test environment, use Walker2d instead
+  - Next: try different optimization epochs; use Walker2d; try off-policy RPG

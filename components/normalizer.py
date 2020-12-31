@@ -99,3 +99,36 @@ def update_mean_var_count_from_moments(mean, var, count, batch_mean, batch_var, 
   new_count = tot_count
 
   return new_mean, new_var, new_count
+
+
+class MeanNormalizer(BaseNormalizer):
+  def __init__(self, read_only=False, epsilon=1e-8):
+    BaseNormalizer.__init__(self, read_only)
+    self.read_only = read_only
+    self.rms = None
+
+  def __call__(self, x):
+    x = np.asarray(x)
+    if self.rms is None:
+      self.rms = RunningMean(shape=(1,) + x.shape[1:])
+    if not self.read_only:
+      self.rms.update(x)
+    return x - self.rms.mean
+
+  def state_dict(self):
+    return {'mean': self.rms.mean}
+
+  def load_state_dict(self, saved):
+    self.rms.mean = saved['mean']
+
+
+class RunningMean(object):
+  def __init__(self, epsilon=1e-4, shape=()):
+    self.mean = np.zeros(shape, 'float64')
+    self.count = epsilon
+
+  def update(self, x):
+    batch_mean = np.mean(x, axis=0)
+    batch_count = x.shape[0]
+    self.mean = (self.mean * self.count + batch_mean * batch_count) / (self.count + batch_count)
+    self.count += batch_count

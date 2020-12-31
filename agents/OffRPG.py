@@ -10,7 +10,9 @@ class OffRPG(SAC):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'step'])
+    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi'])
+    if cfg['state_normalizer']:
+      self.state_normalizer = MeanStdNormalizer()
   
   def createNN(self, input_type):
     # Set feature network
@@ -47,14 +49,13 @@ class OffRPG(SAC):
       'action': to_tensor(self.action[mode], self.device),
       'reward': to_tensor(self.reward[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
-      'mask': to_tensor(1-self.done[mode], self.device),
-      'step': to_tensor(self.episode_step_count[mode]-1, self.device)
+      'mask': to_tensor(1-self.done[mode], self.device)
     }
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
-    batch = self.replay.sample(['state', 'action', 'reward', 'mask', 'next_state', 'step'], self.cfg['batch_size'])
+    batch = self.replay.sample(['state', 'action', 'reward', 'mask', 'next_state'], self.cfg['batch_size'])
     # Take an optimization step for critic
     critic_loss = self.compute_critic_loss(batch)
     self.optimizer['critic'].zero_grad()
@@ -106,14 +107,15 @@ class OffRPG(SAC):
     return reward_loss
 
   def compute_actor_loss(self, batch):
-    repara_action = self.network.get_repara_action(batch.state, batch.action)
+    repara_action, _ = self.network.get_repara_action(batch.state, batch.action)
     predicted_reward = self.network.get_reward(batch.state, repara_action)
     with torch.no_grad():
-      v_next = self.network_target.get_state_value(batch.next_state).detach()
+      v_next = batch.mask * self.network_target.get_state_value(batch.next_state).detach()
     if self.cfg['adv_div_std']:
       adv = (v_next - v_next.mean()) / v_next.std()
     else:
       adv = v_next - v_next.mean()
+    adv = v_next
     new_log_pi = self.network.get_log_pi(batch.state, batch.action)
-    actor_loss = -(predicted_reward + self.discount * batch.mask * adv * new_log_pi).mean()
+    actor_loss = -(predicted_reward + self.discount * adv * new_log_pi).mean()
     return actor_loss

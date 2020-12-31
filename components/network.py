@@ -410,6 +410,6 @@ class ActorVCriticRewardNet(ActorVCriticNet):
       eps = (u - action_mean) / (action_std + 1e-8)
       repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
     else:
-      eps = (action - action_mean) / action_std
+      eps = (action - action_mean) / (action_std + 1e-8)
       repara_action = action_mean + action_std * eps.detach()
-    return repara_action
+    return repara_action, eps
