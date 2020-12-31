@@ -40,7 +40,9 @@ class Experiment(object):
     set_random_seed(self.cfg['seed'])
     self.agent = getattr(agents, self.agent_name)(self.cfg)
     self.agent.env['Train'].seed(self.cfg['seed'])
+    self.agent.env['Train'].action_space.np_random.seed(self.cfg['seed'])
     self.agent.env['Test'].seed(self.cfg['seed'])
+    self.agent.env['Test'].action_space.np_random.seed(self.cfg['seed'])
     # Train && Test
     self.agent.run_steps(render=self.cfg['render'])
     # Save model
