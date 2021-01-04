@@ -225,9 +225,9 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-|  test_onrpg  | test_onrpg.json |  1  | test_onrpg  |  RPG  |  |
-|  test_onrpg2  | test_onrpg2.json |  1  | test_onrpg2  |  RPG  |  |
-|  test_offrpg | test_offrpg.json |  1 | test_offrpg |  RPG  |  |
+|  test_onrpg  | test_onrpg.json |  1  | test_onrpg  |  RPG  | 6799aff |
+|  test_onrpg2  | test_onrpg2.json |  1  | test_onrpg2  |  RPG  | 6799aff |
+|  test_offrpg | test_offrpg.json |  1 | test_offrpg |  RPG  | 6799aff |
 
   - Goal: for OnRPG, test different advantages and objectives, use state normalizer or not; for OffRPG, test different advantages, actors and v_next, use state normalizer or not.
   - Analysis:
@@ -238,3 +238,17 @@
       - use state normalizer is good.
       - still not clear about different advantages and objectives.
   - Next: more detailed analysis.
+
+
+## 2021-01-04
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
+| test_ppo   | test_ppo.json   |  1  | test_ppo    |   RPG  |  |
+
+  - Goal: plot log_pi, entropy, action_std, KL, IS, state value, advantage (original advantage)
+  - Analysis: I just notice that PPO doesn't use TD error to optimize the critic (i.e. state value function), but use the true return!
+    - PPO:
+    - OnRPG: KL and IS are larger; actor loss, (original) advantage, and state value function are much unstable; critic loss is much smaller than PPO, i.e. 10 vs 1000. log_pi, entropy, and action_std seem to be good.
+  - Next: use the true return to compute critic loss; try different clip_ratio and target_kl

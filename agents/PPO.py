@@ -9,6 +9,8 @@ class PPO(ActorCritic):
     super().__init__(cfg)
     # Set replay buffer
     self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
+    if cfg['state_normalizer']:
+      self.state_normalizer = MeanStdNormalizer()
 
   def save_experience(self, prediction):
     # Save state, action, reward, mask, v, log_pi
@@ -43,6 +45,8 @@ class PPO(ActorCritic):
     # Get training data and **detach** (IMPORTANT: we don't optimize old parameters)
     entries = self.replay.get(['log_pi', 'ret', 'adv', 'state', 'action'], self.cfg['steps_per_epoch'], detach=True)
     # Normalize advantages
+    if self.show_tb:
+      self.logger.add_scalar('original_adv', entries.adv.mean().item(), self.step_count)
     entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
@@ -71,6 +75,13 @@ class PPO(ActorCritic):
         self.optimizer['critic'].step()
     # Log
     if self.show_tb:
-      self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
-      self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-      self.logger.add_scalar(f'log_pi', entries.log_pi.mean().item(), self.step_count)
+      self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
+      self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
+      self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
+      action_std, entropy = self.network.get_entropy_pi(entries.state)
+      self.logger.add_scalar('entropy', entropy.mean().item(), self.step_count)
+      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
+      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
+      self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
+      self.logger.add_scalar('v', prediction['v'].mean().item(), self.step_count)
+      self.logger.add_scalar('adv', entries.adv.mean().item(), self.step_count)

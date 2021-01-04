@@ -60,6 +60,8 @@ class OnRPG(PPO):
     entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_pi'], self.cfg['steps_per_epoch'])
     # Compute advantage
     v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
+    if self.show_tb:
+      self.logger.add_scalar('original_adv', v_next.mean().item(), self.step_count)
     if self.cfg['adv'] == 'divide_std':
       adv = (v_next - v_next.mean()) / v_next.std()
     elif self.cfg['adv'] == 'subtract_baseline':
@@ -125,3 +127,10 @@ class OnRPG(PPO):
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
       self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
+      action_std, entropy = self.network.get_entropy_pi(entries.state)
+      self.logger.add_scalar('entropy', entropy.mean().item(), self.step_count)
+      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
+      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
+      self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
+      self.logger.add_scalar('v', v.mean().item(), self.step_count)
+      self.logger.add_scalar('adv', adv.mean().item(), self.step_count)

@@ -322,6 +322,26 @@ class ActorVCriticNet(nn.Module):
     # Sample an action
     action, _, _, log_pi = self.actor_net(phi, action, deterministic)
     return {'action': action, 'log_pi': log_pi, 'v': v}
+  
+  def get_log_pi(self, obs, action):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    _, _, _, log_pi = self.actor_net(phi, action=action)
+    return log_pi
+  
+  def get_state_value(self, obs):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute state value
+    v = self.critic_net(phi)
+    return v
+  
+  def get_entropy_pi(self, obs):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Get the distribution of pi
+    _, action_std, dist = self.actor_net.distribution(phi)
+    return action_std, dist.entropy().sum(-1)
 
 
 class ActorQCriticNet(ActorVCriticNet):
@@ -378,12 +398,6 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Sample an action
     action, _, _, log_pi = self.actor_net(phi, action, deterministic)
     return {'action': action, 'log_pi': log_pi}
-  
-  def get_log_pi(self, obs, action):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    _, _, _, log_pi = self.actor_net(phi, action=action)
-    return log_pi
 
   def get_reward(self, obs, action):
     # Generate the latent feature
@@ -391,13 +405,6 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     # Compute predicted reward
     reward = self.reward_net(phi, action)
     return reward
-  
-  def get_state_value(self, obs):
-    # Generate the latent feature
-    phi = self.feature_net(obs)
-    # Compute state value
-    v = self.critic_net(phi)
-    return v
   
   def get_repara_action(self, obs, action):
     # Generate the latent feature
