@@ -42,7 +42,7 @@ class OffRPG(SAC):
     return NN
 
   def save_experience(self, prediction):
-    # Save state, action, reward, next_state, mask, log_pi, step
+    # Save state, action, reward, next_state, mask, log_pi
     mode = 'Train'
     prediction = {
       'state': to_tensor(self.state[mode], self.device),
@@ -96,8 +96,8 @@ class OffRPG(SAC):
   def compute_critic_loss(self, batch):
     v = self.network.get_state_value(batch.state)
     with torch.no_grad():
-      v_next = self.network_target.get_state_value(batch.next_state).detach()
-    critic_loss = (batch.reward + self.discount * batch.mask * v_next - v).pow(2).mean()
+      v_next = batch.mask * self.network_target.get_state_value(batch.next_state).detach()
+    critic_loss = (batch.reward + self.discount * v_next - v).pow(2).mean()
     return critic_loss
 
   def compute_reward_loss(self, batch):
@@ -110,12 +110,16 @@ class OffRPG(SAC):
     repara_action, _ = self.network.get_repara_action(batch.state, batch.action)
     predicted_reward = self.network.get_reward(batch.state, repara_action)
     with torch.no_grad():
-      v_next = batch.mask * self.network_target.get_state_value(batch.next_state).detach()
-    if self.cfg['adv_div_std']:
+      if self.cfg['v_next'] == 'network_target':
+        v_next = batch.mask * self.network_target.get_state_value(batch.next_state).detach()
+      elif self.cfg['v_next'] == 'network':
+        v_next = batch.mask * self.network.get_state_value(batch.next_state).detach()
+    if self.cfg['adv'] == 'divide_std':
       adv = (v_next - v_next.mean()) / v_next.std()
-    else:
+    elif self.cfg['adv'] == 'subtract_baseline':
       adv = v_next - v_next.mean()
-    adv = v_next
+    elif self.cfg['adv'] == 'vanilla':
+      adv = v_next
     new_log_pi = self.network.get_log_pi(batch.state, batch.action)
     actor_loss = -(predicted_reward + self.discount * adv * new_log_pi).mean()
     return actor_loss

@@ -60,10 +60,12 @@ class OnRPG(PPO):
     entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_pi'], self.cfg['steps_per_epoch'])
     # Compute advantage
     v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
-    if self.cfg['adv_div_std']:
+    if self.cfg['adv'] == 'divide_std':
       adv = (v_next - v_next.mean()) / v_next.std()
-    else:
+    elif self.cfg['adv'] == 'subtract_baseline':
       adv = v_next - v_next.mean()
+    elif self.cfg['adv'] == 'vanilla':
+      adv = v_next
     # Compute eps
     _, eps = self.network.get_repara_action(entries.state, entries.action)
     # Optimize for multiple epochs
@@ -82,15 +84,17 @@ class OnRPG(PPO):
           repara_action, new_eps = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
           # Compute clipped objective
-          if self.cfg['clip_obj']:
+          obj = predicted_reward + self.discount * adv[batch_idx] * new_log_pi
+          ratio = torch.exp(-0.5*(new_eps**2 - eps[batch_idx]**2).sum(axis=-1)).detach()
+          if self.cfg['clip_obj'] == 'true':
             # ratio = torch.exp(new_log_pi - entries.log_pi[batch_idx]).detach()
             # We use rsample, so we compute importance sampling ration with p(\eps)
-            ratio = torch.exp(-0.5*(new_eps**2 - eps[batch_idx]**2).sum(axis=-1)).detach()
-            obj = predicted_reward + self.discount * adv[batch_idx] * new_log_pi
             obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * obj
             actor_loss = -torch.min(ratio*obj, obj_clipped).mean()
-          else:
-            actor_loss = -(predicted_reward + self.discount * adv[batch_idx] * new_log_pi).mean()
+          elif self.cfg['clip_obj'] == 'false':
+            actor_loss = -(ratio*obj).mean()          
+          elif self.cfg['clip_obj'] == 'vanilla':
+            actor_loss = -obj.mean()
           self.optimizer['actor'].zero_grad()
           actor_loss.backward()
           if self.gradient_clip > 0:

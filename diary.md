@@ -210,7 +210,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  | 7946077 |
 
   - Goal: test new OnRPG: search actor lr, divide advantage by std or not, clip objective or not, use a state normalizer or not, select actor type
   - Analysis:
@@ -221,3 +221,20 @@
     - state normalizer: doesn't hurt, sometimes is helpful, better to include
     - Hopper is too noise as a test environment, use Walker2d instead
   - Next: try different optimization epochs; use Walker2d; try off-policy RPG
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+|  test_onrpg  | test_onrpg.json |  1  | test_onrpg  |  RPG  |  |
+|  test_onrpg2  | test_onrpg2.json |  1  | test_onrpg2  |  RPG  |  |
+|  test_offrpg | test_offrpg.json |  1 | test_offrpg |  RPG  |  |
+
+  - Goal: for OnRPG, test different advantages and objectives, use state normalizer or not; for OffRPG, test different advantages, actors and v_next, use state normalizer or not.
+  - Analysis:
+    - OffRPG:
+      - MLPSquashedGaussianActor still has NaN problem, why? Look into this.
+      - The learning process is stuck at a low performance. We may need IS and better exploration.
+    - OnRPG:
+      - use state normalizer is good.
+      - still not clear about different advantages and objectives.
+  - Next: more detailed analysis.

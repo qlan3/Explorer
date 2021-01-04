@@ -54,7 +54,7 @@ class REINFORCE(BaseAgent):
     # Set replay buffer
     self.replay = InfiniteReplay(keys=['reward', 'mask', 'log_pi', 'ret'])
     # Set log dict
-    for key in ['state', 'next_state', 'action', 'log_pi', 'reward', 'done', 'episode_return', 'episode_step_count']:
+    for key in ['state', 'next_state', 'action', 'reward', 'done', 'episode_return', 'episode_step_count']:
       setattr(self, key, {'Train': None, 'Test': None})
 
   def createNN(self, input_type):
@@ -82,7 +82,6 @@ class REINFORCE(BaseAgent):
     self.state[mode] = self.state_normalizer(self.env[mode].reset())
     self.next_state[mode] = None
     self.action[mode] = None
-    self.log_pi[mode] = 0.0
     self.reward[mode] = None
     self.done[mode] = False
     self.episode_return[mode] = 0

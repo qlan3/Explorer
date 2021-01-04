@@ -19,7 +19,7 @@
   ],
   "adv": ["vanilla", "subtract_baseline", "divide_std"],
   "clip_obj": ["vanilla", "true", "false"],
-  "state_normalizer": [false],
+  "state_normalizer": [true],
   "actor_select": ["MLPGaussianActor"],
   "batch_size": [64],
   "clip_ratio": [0.2],
