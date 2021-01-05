@@ -122,4 +122,7 @@ class OffRPG(SAC):
       adv = v_next
     new_log_pi = self.network.get_log_pi(batch.state, batch.action)
     actor_loss = -(predicted_reward + self.discount * adv * new_log_pi).mean()
+    if self.show_tb:
+      self.logger.add_scalar(f'log_pi', new_log_pi.mean().item(), self.step_count)
+      self.logger.add_scalar(f'adv', abs(adv).mean().item(), self.step_count)
     return actor_loss

@@ -197,12 +197,16 @@ class MLPGaussianActor(nn.Module):
 
   def distribution(self, phi):
     action_mean = self.action_lim * self.actor_net(phi)
-    action_std = F.softplus(self.action_std)
+    # Constrain action_std inside [1e-8, 10]
+    action_std = torch.clamp(F.softplus(self.action_std), 1e-8, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
     
   def log_pi_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
-    return action_distribution.log_prob(action).sum(axis=-1)
+    log_pi = action_distribution.log_prob(action).sum(axis=-1)
+    # Constrain log_pi inside [-20, 20]
+    log_pi = torch.clamp(log_pi, -20, 20)
+    return log_pi
 
   def forward(self, phi, action=None, deterministic=False):
     # Compute action distribution and the log_pi of given actions
@@ -225,16 +229,16 @@ class MLPSquashedGaussianActor(nn.Module):
 
   def distribution(self, phi):
     action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
-    # Constrain log_std inside [log_std_min, log_std_max]
-    action_std = F.softplus(action_std)
+    # Constrain action_std inside [1e-8, 10]
+    action_std = torch.clamp(F.softplus(action_std), 1e-8, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
 
   def log_pi_from_distribution(self, action_distribution, action):
     # NOTE: Check out the original SAC paper and https://github.com/openai/spinningup/issues/279 for details
     log_pi = action_distribution.log_prob(action).sum(axis=-1)
     log_pi -= (2*(math.log(2) - action - F.softplus(-2*action))).sum(axis=-1)
-    # Constrain log_pi
-    # log_pi = torch.clamp(log_pi, -1e8, 1e8)
+    # Constrain log_pi inside [-20, 20]
+    log_pi = torch.clamp(log_pi, -20, 20)
     return log_pi
 
   def forward(self, phi, action=None, deterministic=False):
@@ -271,12 +275,16 @@ class MLPStdGaussianActor(MLPSquashedGaussianActor):
   def distribution(self, phi):
     action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
     action_mean = self.action_lim * torch.tanh(action_mean)
-    action_std = F.softplus(action_std)
+    # Constrain action_std inside [1e-8, 10]
+    action_std = torch.clamp(F.softplus(action_std), 1e-8, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
 
   def log_pi_from_distribution(self, action_distribution, action):
     # Last axis sum needed for Torch Normal distribution
-    return action_distribution.log_prob(action).sum(axis=-1)
+    log_pi = action_distribution.log_prob(action).sum(axis=-1)
+    # Constrain log_pi inside [-20, 20]
+    log_pi = torch.clamp(log_pi, -20, 20)
+    return log_pi
 
   def forward(self, phi, action=None, deterministic=False):
     # Compute action distribution and the log_pi of given actions
@@ -414,9 +422,9 @@ class ActorVCriticRewardNet(ActorVCriticNet):
     if isinstance(self.actor_net, MLPSquashedGaussianActor):
       action = torch.clamp(action / self.actor_net.action_lim, -0.999, 0.999)
       u = torch.atanh(action)
-      eps = (u - action_mean) / (action_std + 1e-8)
+      eps = (u - action_mean) / action_std
       repara_action = self.actor_net.action_lim * torch.tanh(action_mean + action_std * eps.detach())
     else:
-      eps = (action - action_mean) / (action_std + 1e-8)
+      eps = (action - action_mean) / action_std
       repara_action = action_mean + action_std * eps.detach()
-    return repara_action, eps
+    return repara_action

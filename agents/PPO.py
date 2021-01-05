@@ -84,4 +84,4 @@ class PPO(ActorCritic):
       self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
       self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
       self.logger.add_scalar('v', prediction['v'].mean().item(), self.step_count)
-      self.logger.add_scalar('adv', entries.adv.mean().item(), self.step_count)
+      self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)
