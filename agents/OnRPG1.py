@@ -1,7 +1,8 @@
 from agents.PPO import *
 from torch.distributions import Normal
 
-class OnRPG(PPO):
+
+class OnRPG1(PPO):
   '''
   Implementation of OnRPG (On-policy Reward Policy Gradient)
   '''
@@ -10,7 +11,7 @@ class OnRPG(PPO):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'ret'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch'], keys=['state', 'action', 'reward', 'next_state', 'mask', 'log_pi', 'ret', 'adv', 'v'])
     if cfg['state_normalizer']:
       self.state_normalizer = MeanStdNormalizer()
 
@@ -50,31 +51,43 @@ class OnRPG(PPO):
       'reward': to_tensor(self.reward[mode], self.device),
       'next_state': to_tensor(self.next_state[mode], self.device),
       'mask': to_tensor(1-self.done[mode], self.device),
-      'log_pi': prediction['log_pi'].detach()
+      'log_pi': prediction['log_pi'].detach(),
+      'v': prediction['v'].detach()
     }
     self.replay.add(prediction)
 
   def learn(self):
     mode = 'Train'
-    # Compute return
+    # Compute return and advantage
+    adv = torch.tensor(0.0)
     ret = self.network.get_state_value(self.replay.next_state[-1]).detach()
+    self.replay.v.append(ret)
+    self.replay.adv[-1] = ret.detach()
     for i in reversed(range(self.cfg['steps_per_epoch'])):
       ret = self.replay.reward[i] + self.discount * self.replay.mask[i] * ret
       self.replay.ret[i] = ret.detach()
+      if self.cfg['gae'] < 0:
+        adv = ret - self.replay.v[i].detach()
+      else:
+        td_error = self.replay.reward[i] + self.discount * self.replay.mask[i] * self.replay.v[i+1] - self.replay.v[i]
+        adv = self.discount * self.cfg['gae'] * self.replay.mask[i] * adv + td_error
+      if i >= 1: # use lambda return as the advantage
+        self.replay.adv[i-1] = (adv + self.replay.v[i]).detach()
     # Get training data
-    entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_pi', 'ret'], self.cfg['steps_per_epoch'])
+    entries = self.replay.get(['state', 'action', 'next_state', 'reward', 'mask', 'log_pi', 'ret', 'adv'], self.cfg['steps_per_epoch'])
     # Compute advantage
-    v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
+    # v_next = entries.mask * self.network.get_state_value(entries.next_state).detach()
     if self.show_tb:
-      self.logger.add_scalar('original_adv', v_next.mean().item(), self.step_count)
-    if self.cfg['adv'] == 'divide_std':
-      adv = (v_next - v_next.mean()) / v_next.std()
+      # self.logger.add_scalar('original_adv', v_next.mean().item(), self.step_count)
+      self.logger.add_scalar('original_adv', entries.adv.mean().item(), self.step_count)
+    if self.cfg['adv'] == 'std':
+      entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     elif self.cfg['adv'] == 'baseline1':
-      adv = v_next - v_next.mean()
+      entries.adv.copy_(entries.adv - entries.adv.mean())
     elif self.cfg['adv'] == 'baseline2':
-      adv = v_next - self.network.get_state_value(entries.state).detach()
+      entries.adv.copy_(entries.adv - self.network.get_state_value(entries.state).detach())
     elif self.cfg['adv'] == 'vanilla':
-      adv = v_next
+      pass
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
       batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
@@ -91,7 +104,7 @@ class OnRPG(PPO):
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
           # Compute clipped objective
-          obj = predicted_reward + self.discount * adv[batch_idx] * new_log_pi
+          obj = predicted_reward + self.discount * entries.adv[batch_idx] * new_log_pi
           ratio = torch.exp(new_log_pi - entries.log_pi[batch_idx]).detach()
           obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * obj
           actor_loss = -torch.min(ratio*obj, obj_clipped).mean()
@@ -136,4 +149,4 @@ class OnRPG(PPO):
       action_std, _ = self.network.get_entropy_pi(entries.state)
       self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
       self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
-      self.logger.add_scalar('adv', abs(adv).mean().item(), self.step_count)
+      self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)

@@ -244,11 +244,42 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
-| test_ppo   | test_ppo.json   |  1  | test_ppo    |   RPG  |  |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  | 54e4a4e |
+| test_ppo   | test_ppo.json   |  1  | test_ppo    |   RPG  | 54e4a4e |
 
   - Goal: plot log_pi, entropy, action_std, KL, IS, state value, advantage (original advantage)
-  - Analysis: I just notice that PPO doesn't use TD error to optimize the critic (i.e. state value function), but use the true return!
+  - Analysis: PPO doesn't use TD error to optimize the critic (i.e. state value function), but use the true return!
     - PPO:
     - OnRPG: KL and IS are larger; actor loss, (original) advantage, and state value function are much unstable; critic loss is much smaller than PPO, i.e. 10 vs 1000. log_pi, entropy, and action_std seem to be good.
   - Next: use the true return to compute critic loss; try different clip_ratio and target_kl
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
+  
+  - Goal: use the true return to compute critic loss; try gradient_clip
+  - Analysis: slightly better.
+  - Next: use lambda return.
+
+
+## 2021-01-05
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg1 | test_onrpg1.json |  1  | test_onrpg1  |   RPG  |  |
+  
+  - Goal: test OnRPG1 with lambda return, gradient_clip, two baselines (mean lambda return v.s. V)
+  - Analysis: gradient clip, lambda return helps; baseline V is better than the mean lambda return.
+  - Next: try baseline V for previous OnRPG
+
+
+## 2021-01-06
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg2 | test_onrpg2.json |  1  | test_onrpg2  |   RPG  |  |
+  
+  - Goal: test OnRPG with gradient_clip and baseline V
+  - Analysis: baseline V is much better
+  - Next: try normalize adv after subtrace the baseline; test with more games and without state normalizer

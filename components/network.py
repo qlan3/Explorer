@@ -197,8 +197,8 @@ class MLPGaussianActor(nn.Module):
 
   def distribution(self, phi):
     action_mean = self.action_lim * self.actor_net(phi)
-    # Constrain action_std inside [1e-8, 10]
-    action_std = torch.clamp(F.softplus(self.action_std), 1e-8, 10)
+    # Constrain action_std inside [1e-6, 10]
+    action_std = torch.clamp(F.softplus(self.action_std), 1e-6, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
     
   def log_pi_from_distribution(self, action_distribution, action):
@@ -229,8 +229,8 @@ class MLPSquashedGaussianActor(nn.Module):
 
   def distribution(self, phi):
     action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
-    # Constrain action_std inside [1e-8, 10]
-    action_std = torch.clamp(F.softplus(action_std), 1e-8, 10)
+    # Constrain action_std inside [1e-6, 10]
+    action_std = torch.clamp(F.softplus(action_std), 1e-6, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
 
   def log_pi_from_distribution(self, action_distribution, action):
@@ -275,8 +275,8 @@ class MLPStdGaussianActor(MLPSquashedGaussianActor):
   def distribution(self, phi):
     action_mean, action_std = self.actor_net(phi).chunk(2, dim=-1)
     action_mean = self.action_lim * torch.tanh(action_mean)
-    # Constrain action_std inside [1e-8, 10]
-    action_std = torch.clamp(F.softplus(action_std), 1e-8, 10)
+    # Constrain action_std inside [1e-6, 10]
+    action_std = torch.clamp(F.softplus(action_std), 1e-6, 10)
     return action_mean, action_std, Normal(action_mean, action_std)
 
   def log_pi_from_distribution(self, action_distribution, action):
@@ -403,9 +403,11 @@ class ActorVCriticRewardNet(ActorVCriticNet):
   def forward(self, obs, action=None, deterministic=False):
     # Generate the latent feature
     phi = self.feature_net(obs)
+    # Compute state value
+    v = self.critic_net(phi)
     # Sample an action
     action, _, _, log_pi = self.actor_net(phi, action, deterministic)
-    return {'action': action, 'log_pi': log_pi}
+    return {'action': action, 'log_pi': log_pi, 'v': v}
 
   def get_reward(self, obs, action):
     # Generate the latent feature

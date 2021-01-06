@@ -17,7 +17,7 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "adv": ["vanilla", "baseline1"],
+  "adv": ["baseline2"],
   "state_normalizer": [true],
   "actor_select": ["MLPGaussianActor", "MLPSquashedGaussianActor"],
   "critic_loss": ["ret"],
