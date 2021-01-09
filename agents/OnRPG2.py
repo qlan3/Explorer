@@ -2,7 +2,7 @@ from agents.PPO import *
 from torch.distributions import Normal
 
 
-class OnRPG(PPO):
+class OnRPG2(PPO):
   '''
   Implementation of OnRPG (On-policy Reward Policy Gradient)
   '''
@@ -66,6 +66,7 @@ class OnRPG(PPO):
       v_next = entries.mask * self.replay.get(['v'], self.cfg['steps_per_epoch']+1, detach=True).v[1:]
       entries.adv.copy_(v_next)
     entries.adv.copy_(entries.adv - entries.v)
+    v_next_std = entries.adv.std()
     if self.cfg['adv_normalize']:
       entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     # Optimize for multiple epochs
@@ -83,8 +84,12 @@ class OnRPG(PPO):
           # Get predicted reward
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
-          if self.cfg['reward_normalize']:
+          if self.cfg['reward_normalize'] == 'true_reward_std':
+            predicted_reward = predicted_reward / entries.reward.std().detach()
+          elif self.cfg['reward_normalize'] == 'reward_std':
             predicted_reward = predicted_reward / predicted_reward.std().detach()
+          if self.cfg['reward_normalize'] == 'v_next_std':
+            predicted_reward = predicted_reward / v_next_std.detach()
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
           obj = predicted_reward + self.discount * entries.adv[batch_idx] * prediction['log_pi']

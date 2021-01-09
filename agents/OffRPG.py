@@ -28,11 +28,11 @@ class OffRPG(SAC):
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
     if self.cfg['actor_select'] == 'MLPGaussianActor':
-      actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+      actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=self.cfg['rsample'])
     elif self.cfg['actor_select'] == 'MLPStdGaussianActor':
-      actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+      actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=self.cfg['rsample'])
     elif self.cfg['actor_select'] == 'MLPSquashedGaussianActor':
-      actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=True)
+      actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=self.cfg['rsample'])
     # Set critic network (state value)
     critic_net = MLPCritic(layer_dims=[input_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set reward network
@@ -107,21 +107,24 @@ class OffRPG(SAC):
     return reward_loss
 
   def compute_actor_loss(self, batch):
-    repara_action, _ = self.network.get_repara_action(batch.state, batch.action)
-    predicted_reward = self.network.get_reward(batch.state, repara_action)
+    # Compute v_next
     with torch.no_grad():
       if self.cfg['v_next'] == 'network_target':
-        v_next = batch.mask * self.network_target.get_state_value(batch.next_state).detach()
+        v_next = (batch.mask * self.network_target.get_state_value(batch.next_state) - self.network_target.get_state_value(batch.state)).detach()
       elif self.cfg['v_next'] == 'network':
-        v_next = batch.mask * self.network.get_state_value(batch.next_state).detach()
-    if self.cfg['adv'] == 'divide_std':
-      adv = (v_next - v_next.mean()) / v_next.std()
-    elif self.cfg['adv'] == 'subtract_baseline':
-      adv = v_next - v_next.mean()
-    elif self.cfg['adv'] == 'vanilla':
-      adv = v_next
+        v_next = (batch.mask * self.network.get_state_value(batch.next_state) - self.network.get_state_value(batch.state)).detach()
+    # Compute predicted reward
+    repara_action = self.network.get_repara_action(batch.state, batch.action)
+    predicted_reward = self.network.get_reward(batch.state, repara_action)
+    if self.cfg['reward_normalize'] == 'reward_std':
+      predicted_reward = predicted_reward / predicted_reward.std().detach()
+    elif self.cfg['reward_normalize'] == 'v_next_std':
+      predicted_reward = predicted_reward / v_next.std().detach()
+    # Normalize v_next
+    if self.cfg['adv_normalize']:
+      v_next = (v_next - v_next.mean()) / v_next.std()
     new_log_pi = self.network.get_log_pi(batch.state, batch.action)
-    actor_loss = -(predicted_reward + self.discount * adv * new_log_pi).mean()
+    actor_loss = -(predicted_reward + self.discount * v_next * new_log_pi).mean()
     if self.show_tb:
       self.logger.add_scalar(f'log_pi', new_log_pi.mean().item(), self.step_count)
       self.logger.add_scalar(f'adv', abs(adv).mean().item(), self.step_count)

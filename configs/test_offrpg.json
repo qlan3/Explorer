@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["HalfCheetah-v2", "Walker2d-v2", "Ant-v2"],
+      "name": ["HalfCheetah-v2", "Ant-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
@@ -18,16 +18,18 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "adv": ["vanilla", "subtract_baseline", "divide_std"],
+  "adv_normalize": [true, false],
+  "reward_normalize": ["reward_std", "v_next_std", "vanilla"],
+  "rsample": [true],
   "v_next": ["network_target", "network"],
-  "state_normalizer": [true, false],
+  "state_normalizer": [false],
   "actor_select": ["MLPGaussianActor", "MLPSquashedGaussianActor"],
   "batch_size": [64],
   "network_update_frequency": [1],
   "actor_update_frequency": [1],
   "discount": [0.99],
   "polyak": [0.995],
-  "gradient_clip": [-1],
+  "gradient_clip": [-1, 1],
   "hidden_layers": [[256,256]],
   "hidden_act": ["ReLU"],
   "display_interval": [20],

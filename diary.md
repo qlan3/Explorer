@@ -256,7 +256,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  |  |
+| test_onrpg | test_onrpg.json |  1  | test_onrpg  |   RPG  | 29e3a0e |
   
   - Goal: use the true return to compute critic loss; try gradient_clip
   - Analysis: slightly better.
@@ -267,7 +267,7 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg1 | test_onrpg1.json |  1  | test_onrpg1  |   RPG  |  |
+| test_onrpg1 | test_onrpg1.json |  1  | test_onrpg1  |   RPG  | 29e3a0e |
   
   - Goal: test OnRPG1 with lambda return, gradient_clip, two baselines (mean lambda return v.s. V)
   - Analysis: gradient clip, lambda return helps; baseline V is better than the mean lambda return.
@@ -278,8 +278,52 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg2 | test_onrpg2.json |  1  | test_onrpg2  |   RPG  |  |
+| test_onrpg2 | test_onrpg2.json |  1  | test_onrpg2  |   RPG  | 29e3a0e |
   
   - Goal: test OnRPG with gradient_clip and baseline V
   - Analysis: baseline V is much better
   - Next: try normalize adv after subtrace the baseline; test with more games and without state normalizer
+
+
+## 2021-01-07
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg | test_onrpg.json |  3  | test_onrpg  |   RPG  |  |
+| test_ppo | test_ppo.json |  3  | test_ppo  |   RPG  |  |
+
+  - Goal: 
+    - test PPO with: state_normalizer, clip_ratio, gradient_clip
+    - test OnRPG with: adv, adv_normalize, state_normalizer, actor_select, clip_ratio, gradient_clip
+  - Analysis:
+    - PPO: clip_ratio helps a lot; state_normalizer and gradient_clip also help a little bit;
+    - OnRPG: gradient_clip helps a lot; clip_ratio is not that helpful; adv, adv_normalize, state_normalizer, and actor_select are still not clear.
+  - Next: test OffRPG with new baseline; test OnRPG with different ways of clipping ratio; normalize predicted reward
+
+
+| experiment | config file | runs |  log   | branch | commit  |
+| ---------- | ----------- | ---- | ------ | ------ | ------- |
+| test_onrpg1 | test_onrpg1.json |  3  | test_onrpg1  |   RPG  |  |
+| test_onrpg2 | test_onrpg2.json |  3  | test_onrpg2  |   RPG  |  |
+| test_onrpg3 | test_onrpg3.json |  3  | test_onrpg3  |   RPG  |  |
+| test_offrpg | test_offrpg.json |  1  | test_offrpg  |   RPG  |  |
+
+- Goal: 
+  - test OnRPG with a new way of ratio clipping, different ways to normalize reward
+  - test OffRPG with the new baseline V, different ways to normalize reward
+- Analysis:
+  - test_onrpg1: 
+    - the new way of ratio clipping helps a little bit; 
+    - gradient clipping helps
+  - test_onrpg2:
+    - use lambda_return helps; 
+    - not clear for normalizing reward;
+    - OnRPG1 is slightly better than OnRPG
+  - test_onrpg3: 
+    - normalize reward doesn't help
+  - test_offrpg: 
+    - still, MLPSquashedGaussianActor leads to NaN error; 
+    - normalize reward doesn't help a lot
+- Next: benchmark PPO and OnRPG on 6 env, 10 runs.
+  - OnRPG: test on more environments with lambda_return
+  - OffRPG: try MLPStdGaussianActor, test on more envs.
