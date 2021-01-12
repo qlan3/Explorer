@@ -107,7 +107,7 @@ class Plotter(object):
       if processed:
         print(f'[{exp}]: Process {mode} results: {config_idx}/{get_total_combination(exp)}')
         for i in range(len(result_list)):
-          new_result = get_process_result_dict(result_list[i], config_idx)
+          new_result = get_process_result_dict(result_list[i], config_idx, mode)
           result_list[i] = new_result
       return result_list
     else:
@@ -238,7 +238,7 @@ class Plotter(object):
         continue
       result = pd.DataFrame(result_list)
       # Get test results dict
-      result_dict = get_csv_result_dict(result, config_idx)
+      result_dict = get_csv_result_dict(result, config_idx, mode)
       # Expand test result dict from config dict
       config_file = f'./logs/{self.exp}/{config_idx}/config.json'
       with open(config_file, 'r') as f:
