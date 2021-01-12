@@ -9,6 +9,7 @@ from .AveragedDQN import AveragedDQN
 from .REINFORCE import REINFORCE
 from .ActorCritic import ActorCritic
 from .PPO import PPO
+from .PPO2 import PPO2
 from .SAC import SAC
 from .DDPG import DDPG
 from .TD3 import TD3

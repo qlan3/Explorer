@@ -4,11 +4,11 @@
 - Log: https://drive.google.com/drive/folders/1cyR19_dlgWkw7d9tNjAdQBgR21lOqrMt
 - Experiment record template:
 
-## 2020-12-xx
+## 2021-01-xx
 
-| experiment | config file | runs |  log   | branch | commit  |
-| ---------- | ----------- | ---- | ------ | ------ | ------- |
-|   onrpg    |  onrpg.json |   1  | onrpg  |   RPG  |  |
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|   onrpg    |   1  |   RPG  |  |
 
   - Goal:
   - Analysis:
@@ -289,8 +289,8 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg | test_onrpg.json |  3  | test_onrpg  |   RPG  |  |
-| test_ppo | test_ppo.json |  3  | test_ppo  |   RPG  |  |
+| test_onrpg | test_onrpg.json |  3  | test_onrpg  |   RPG  | fe8b103 |
+| test_ppo | test_ppo.json |  3  | test_ppo  |   RPG  | fe8b103 |
 
   - Goal: 
     - test PPO with: state_normalizer, clip_ratio, gradient_clip
@@ -303,10 +303,10 @@
 
 | experiment | config file | runs |  log   | branch | commit  |
 | ---------- | ----------- | ---- | ------ | ------ | ------- |
-| test_onrpg1 | test_onrpg1.json |  3  | test_onrpg1  |   RPG  |  |
-| test_onrpg2 | test_onrpg2.json |  3  | test_onrpg2  |   RPG  |  |
-| test_onrpg3 | test_onrpg3.json |  3  | test_onrpg3  |   RPG  |  |
-| test_offrpg | test_offrpg.json |  1  | test_offrpg  |   RPG  |  |
+| test_onrpg1 | test_onrpg1.json |  3  | test_onrpg1  |   RPG  | fe8b103 |
+| test_onrpg2 | test_onrpg2.json |  3  | test_onrpg2  |   RPG  | fe8b103 |
+| test_onrpg3 | test_onrpg3.json |  3  | test_onrpg3  |   RPG  | fe8b103 |
+| test_offrpg | test_offrpg.json |  1  | test_offrpg  |   RPG  | fe8b103 |
 
 - Goal: 
   - test OnRPG with a new way of ratio clipping, different ways to normalize reward
@@ -327,3 +327,33 @@
 - Next: benchmark PPO and OnRPG on 6 env, 10 runs.
   - OnRPG: test on more environments with lambda_return
   - OffRPG: try MLPStdGaussianActor, test on more envs.
+
+
+## 2021-01-09
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|   rpg_ppo  |  10  |   RPG  |  |
+| rpg_onrpg  |  10  |   RPG  |  |
+| rpg_offrpg |   5  |   RPG  |  |
+
+  - Goal: benchmark PPO, OnRPG, and OffRPG
+  - Analysis: PPO is still better than OnRPG1 generally
+    - OnRPG: OnRPG1 is better than OnRPG; lambda_return is better than v_next; gradient clipping helps.
+    - PPO: gradient clipping helps.
+    - OffRPG: bad; much worse than DDPG
+  - Next: try new ways to normalize advantage
+
+
+## 2021-01-10
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+| rpg_onrpg1 |  10  |   RPG  |  |
+|    ppo2    |  10  |   RPG  |  |
+  
+  - Goal: try a new way to normalize reward; try the spinning up version of PPO
+  - Analysis:
+    - ppo2: PPO2 is better than PPO in most envs, but takes twice the training time of PPO.
+    - rpg_onrpg1: the new way to normalize reward doesn't help in most envs; however, the new baseline V / gamma does help
+  - Next: consider using state normalizer, gradient clipping, and the new baseline V / gamma.

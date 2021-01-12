@@ -11,10 +11,9 @@ class OnRPG2(PPO):
     # Set optimizer for reward function
     self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
     # Set replay buffer
-    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
+    self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv', 'adv_true'])
     if cfg['state_normalizer']:
       self.state_normalizer = MeanStdNormalizer()
-    self.cfg.setdefault('reward_normalize', False)
 
   def createNN(self, input_type):
     # Set feature network
@@ -57,18 +56,25 @@ class OnRPG2(PPO):
       else:
         td_error = self.replay.reward[i] + self.discount * self.replay.mask[i] * self.replay.v[i+1] - self.replay.v[i]
         adv = self.discount * self.cfg['gae'] * self.replay.mask[i] * adv + td_error
+      self.replay.adv_true[i] = adv.detach()
       if i >= 1: # use lambda return as the advantage
         self.replay.adv[i-1] = (adv + self.replay.v[i]).detach()
     # Get training data and detach
-    entries = self.replay.get(['log_pi', 'ret', 'adv', 'state', 'action', 'reward', 'v', 'mask'], self.cfg['steps_per_epoch'], detach=True)
+    entries = self.replay.get(['log_pi', 'ret', 'adv', 'state', 'action', 'reward', 'v', 'mask', 'adv_true'], self.cfg['steps_per_epoch'], detach=True)
     # Compute advantage and normalize (or not)
     if self.cfg['adv'] == 'v_next':
       v_next = entries.mask * self.replay.get(['v'], self.cfg['steps_per_epoch']+1, detach=True).v[1:]
       entries.adv.copy_(v_next)
-    entries.adv.copy_(entries.adv - entries.v)
-    v_next_std = entries.adv.std()
+    entries.adv.copy_(entries.adv - entries.v / self.discount)
+    # Log
+    if self.show_tb:
+      self.logger.add_scalar('adv_std', entries.adv.std().item(), self.step_count)
+      self.logger.add_scalar('reward_std', entries.reward.std().item(), self.step_count)
+      self.logger.add_scalar('sum_std', (entries.reward+self.discount*entries.adv).std().item(), self.step_count)
     if self.cfg['adv_normalize']:
-      entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
+      adv_std = entries.adv.std()
+      entries.adv.copy_(entries.adv - entries.adv.mean() / entries.adv.std())
+    entries.adv_true.copy_((entries.adv_true - entries.adv_true.mean()) / entries.adv_true.std())
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
       batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
@@ -84,17 +90,15 @@ class OnRPG2(PPO):
           # Get predicted reward
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
-          if self.cfg['reward_normalize'] == 'true_reward_std':
-            predicted_reward = predicted_reward / entries.reward.std().detach()
-          elif self.cfg['reward_normalize'] == 'reward_std':
-            predicted_reward = predicted_reward / predicted_reward.std().detach()
-          if self.cfg['reward_normalize'] == 'v_next_std':
-            predicted_reward = predicted_reward / v_next_std.detach()
+          if self.cfg['adv_normalize']:
+            predicted_reward = predicted_reward / adv_std
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
           obj = predicted_reward + self.discount * entries.adv[batch_idx] * prediction['log_pi']
-          obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * obj
-          actor_loss = -torch.min(ratio*obj, obj_clipped).mean()
+          mask = (entries.adv_true[batch_idx]>0) & (ratio > 1+self.cfg['clip_ratio'])
+          mask = mask | ((entries.adv_true[batch_idx]<0) & (ratio < 1-self.cfg['clip_ratio']))
+          ratio[mask] = 0
+          actor_loss = -(ratio*obj).mean()
           self.optimizer['actor'].zero_grad()
           actor_loss.backward()
           if self.gradient_clip > 0:
@@ -104,10 +108,7 @@ class OnRPG2(PPO):
           for p in self.network.reward_net.parameters():
             p.requires_grad = True
         # Take an optimization step for critic
-        if self.cfg['critic_loss'] == 'OneStep':
-          critic_loss = (entries.reward[batch_idx] + self.discount * v_next[batch_idx] - prediction['v']).pow(2).mean()
-        elif self.cfg['critic_loss'] == 'NStep':
-          critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
+        critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
         self.optimizer['critic'].zero_grad()
         critic_loss.backward()
         if self.gradient_clip > 0:
@@ -125,14 +126,14 @@ class OnRPG2(PPO):
     if self.show_tb:
       try:
         self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
-        self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
-        self.logger.add_scalar('v', entries.v.mean().item(), self.step_count)
+        # self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
+        # self.logger.add_scalar('v', entries.v.mean().item(), self.step_count)
       except:
         pass
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
       self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
-      action_std, _ = self.network.get_entropy_pi(entries.state)
-      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
-      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
+      # action_std, _ = self.network.get_entropy_pi(entries.state)
+      # self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
+      # self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
       self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)

@@ -109,17 +109,10 @@ class OffRPG(SAC):
   def compute_actor_loss(self, batch):
     # Compute v_next
     with torch.no_grad():
-      if self.cfg['v_next'] == 'network_target':
-        v_next = (batch.mask * self.network_target.get_state_value(batch.next_state) - self.network_target.get_state_value(batch.state)).detach()
-      elif self.cfg['v_next'] == 'network':
-        v_next = (batch.mask * self.network.get_state_value(batch.next_state) - self.network.get_state_value(batch.state)).detach()
+      v_next = (batch.mask * self.network_target.get_state_value(batch.next_state) - self.network_target.get_state_value(batch.state)).detach()
     # Compute predicted reward
     repara_action = self.network.get_repara_action(batch.state, batch.action)
     predicted_reward = self.network.get_reward(batch.state, repara_action)
-    if self.cfg['reward_normalize'] == 'reward_std':
-      predicted_reward = predicted_reward / predicted_reward.std().detach()
-    elif self.cfg['reward_normalize'] == 'v_next_std':
-      predicted_reward = predicted_reward / v_next.std().detach()
     # Normalize v_next
     if self.cfg['adv_normalize']:
       v_next = (v_next - v_next.mean()) / v_next.std()
@@ -127,5 +120,5 @@ class OffRPG(SAC):
     actor_loss = -(predicted_reward + self.discount * v_next * new_log_pi).mean()
     if self.show_tb:
       self.logger.add_scalar(f'log_pi', new_log_pi.mean().item(), self.step_count)
-      self.logger.add_scalar(f'adv', abs(adv).mean().item(), self.step_count)
+      self.logger.add_scalar(f'v_next', abs(v_next).mean().item(), self.step_count)
     return actor_loss

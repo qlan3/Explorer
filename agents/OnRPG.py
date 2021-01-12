@@ -14,7 +14,6 @@ class OnRPG(PPO):
     self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
     if cfg['state_normalizer']:
       self.state_normalizer = MeanStdNormalizer()
-    self.cfg.setdefault('reward_normalize', False)
 
   def createNN(self, input_type):
     # Set feature network
@@ -83,8 +82,6 @@ class OnRPG(PPO):
           # Get predicted reward
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
-          if self.cfg['reward_normalize']:
-            predicted_reward = predicted_reward / predicted_reward.std().detach()
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
           obj = predicted_reward + self.discount * entries.adv[batch_idx] * prediction['log_pi']
@@ -99,10 +96,7 @@ class OnRPG(PPO):
           for p in self.network.reward_net.parameters():
             p.requires_grad = True
         # Take an optimization step for critic
-        if self.cfg['critic_loss'] == 'OneStep':
-          critic_loss = (entries.reward[batch_idx] + self.discount * v_next[batch_idx] - prediction['v']).pow(2).mean()
-        elif self.cfg['critic_loss'] == 'NStep':
-          critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
+        critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
         self.optimizer['critic'].zero_grad()
         critic_loss.backward()
         if self.gradient_clip > 0:

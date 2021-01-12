@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["HalfCheetah-v2", "Ant-v2"],
+      "name": ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Swimmer-v2", "Ant-v2", "Reacher-v2"],
       "max_episode_steps": [-1],
       "input_type": ["feature"]
     }
@@ -9,7 +9,7 @@
   "train_steps": [3e6],
   "steps_per_epoch": [2048],
   "test_per_epochs": [-1],
-  "agent": [{"name": ["OnRPG1"]}],
+  "agent": [{"name": ["OnRPG2"]}],
   "optimizer": [
     {
       "name": ["Adam"],
@@ -17,16 +17,15 @@
       "critic_kwargs": [{"lr": [1e-3]}]
     }
   ],
-  "adv": ["v_next", "lambda_return"],
+  "adv": ["lambda_return"],
   "adv_normalize": [true, false],
-  "state_normalizer": [true, false],
+  "state_normalizer": [false],
   "actor_select": ["MLPGaussianActor"],
-  "critic_loss": ["NStep"],
   "batch_size": [64],
   "clip_ratio": [0.2],
   "target_kl": [0.01],
   "optimize_epochs": [10],
-  "gradient_clip": [-1, 1],
+  "gradient_clip": [-1, 2],
   "hidden_layers": [[64,64]],
   "hidden_act": ["Tanh"],
   "display_interval": [20],

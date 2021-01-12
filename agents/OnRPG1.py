@@ -14,7 +14,6 @@ class OnRPG1(PPO):
     self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv', 'adv_true'])
     if cfg['state_normalizer']:
       self.state_normalizer = MeanStdNormalizer()
-    self.cfg.setdefault('reward_normalize', False)
 
   def createNN(self, input_type):
     # Set feature network
@@ -67,6 +66,11 @@ class OnRPG1(PPO):
       v_next = entries.mask * self.replay.get(['v'], self.cfg['steps_per_epoch']+1, detach=True).v[1:]
       entries.adv.copy_(v_next)
     entries.adv.copy_(entries.adv - entries.v)
+    # Log
+    if self.show_tb:
+      self.logger.add_scalar('adv_std', entries.adv.std().item(), self.step_count)
+      self.logger.add_scalar('reward_std', entries.reward.std().item(), self.step_count)
+      self.logger.add_scalar('sum_std', (entries.reward+self.discount*entries.adv).std().item(), self.step_count)
     if self.cfg['adv_normalize']:
       entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
     entries.adv_true.copy_((entries.adv_true - entries.adv_true.mean()) / entries.adv_true.std())
@@ -85,8 +89,6 @@ class OnRPG1(PPO):
           # Get predicted reward
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
-          if self.cfg['reward_normalize']:
-            predicted_reward = predicted_reward / predicted_reward.std().detach()
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
           obj = predicted_reward + self.discount * entries.adv[batch_idx] * prediction['log_pi']
@@ -104,10 +106,7 @@ class OnRPG1(PPO):
           for p in self.network.reward_net.parameters():
             p.requires_grad = True
         # Take an optimization step for critic
-        if self.cfg['critic_loss'] == 'OneStep':
-          critic_loss = (entries.reward[batch_idx] + self.discount * v_next[batch_idx] - prediction['v']).pow(2).mean()
-        elif self.cfg['critic_loss'] == 'NStep':
-          critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
+        critic_loss = (entries.ret[batch_idx] - prediction['v']).pow(2).mean()
         self.optimizer['critic'].zero_grad()
         critic_loss.backward()
         if self.gradient_clip > 0:
@@ -125,14 +124,14 @@ class OnRPG1(PPO):
     if self.show_tb:
       try:
         self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
-        self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
-        self.logger.add_scalar('v', entries.v.mean().item(), self.step_count)
+        # self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
+        # self.logger.add_scalar('v', entries.v.mean().item(), self.step_count)
       except:
         pass
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
       self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
-      action_std, _ = self.network.get_entropy_pi(entries.state)
-      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
-      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
+      # action_std, _ = self.network.get_entropy_pi(entries.state)
+      # self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
+      # self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
       self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)
