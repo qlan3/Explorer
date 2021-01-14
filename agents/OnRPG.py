@@ -28,12 +28,7 @@ class OnRPG(PPO):
       feature_net = nn.Identity()
     # Set actor network
     assert self.action_type == 'CONTINUOUS', f"{self.cfg['agent']['name']} only supports continous action spaces."
-    if self.cfg['actor_select'] == 'MLPGaussianActor':
-      actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=False)
-    elif self.cfg['actor_select'] == 'MLPStdGaussianActor':
-      actor_net = MLPStdGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=False)
-    elif self.cfg['actor_select'] == 'MLPSquashedGaussianActor':
-      actor_net = MLPSquashedGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[2*self.action_size], hidden_act=self.cfg['hidden_act'], rsample=False)
+    actor_net = MLPGaussianActor(action_lim=self.action_lim, layer_dims=[input_size]+self.cfg['hidden_layers']+[self.action_size], hidden_act=self.cfg['hidden_act'], rsample=False)
     # Set critic network (state value)
     critic_net = MLPCritic(layer_dims=[input_size]+self.cfg['hidden_layers']+[1], hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     # Set reward network
@@ -60,13 +55,8 @@ class OnRPG(PPO):
         self.replay.adv[i-1] = (adv + self.replay.v[i]).detach()
     # Get training data and detach
     entries = self.replay.get(['log_pi', 'ret', 'adv', 'state', 'action', 'reward', 'v', 'mask'], self.cfg['steps_per_epoch'], detach=True)
-    # Compute advantage and normalize (or not)
-    if self.cfg['adv'] == 'v_next':
-      v_next = entries.mask * self.replay.get(['v'], self.cfg['steps_per_epoch']+1, detach=True).v[1:]
-      entries.adv.copy_(v_next)
-    entries.adv.copy_(entries.adv - entries.v)
-    if self.cfg['adv_normalize']:
-      entries.adv.copy_((entries.adv - entries.adv.mean()) / entries.adv.std())
+    # Compute advantage
+    entries.adv.copy_(self.discount * entries.adv - entries.v)
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
       batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
@@ -84,7 +74,7 @@ class OnRPG(PPO):
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
-          obj = predicted_reward + self.discount * entries.adv[batch_idx] * prediction['log_pi']
+          obj = predicted_reward + entries.adv[batch_idx] * prediction['log_pi']
           obj_clipped = torch.clamp(ratio, 1-self.cfg['clip_ratio'], 1+self.cfg['clip_ratio']) * obj
           actor_loss = -torch.min(ratio*obj, obj_clipped).mean()
           self.optimizer['actor'].zero_grad()
@@ -114,14 +104,7 @@ class OnRPG(PPO):
     if self.show_tb:
       try:
         self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
-        self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
-        self.logger.add_scalar('v', entries.v.mean().item(), self.step_count)
       except:
         pass
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
       self.logger.add_scalar('reward_loss', reward_loss.item(), self.step_count)
-      self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
-      action_std, _ = self.network.get_entropy_pi(entries.state)
-      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
-      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
-      self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)

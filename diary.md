@@ -333,9 +333,9 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-|   rpg_ppo  |  10  |   RPG  |  |
-| rpg_onrpg  |  10  |   RPG  |  |
-| rpg_offrpg |   5  |   RPG  |  |
+|   rpg_ppo  |  10  |   RPG  | 8698f73 |
+| rpg_onrpg  |  10  |   RPG  | 8698f73 |
+| rpg_offrpg |   5  |   RPG  | 8698f73 |
 
   - Goal: benchmark PPO, OnRPG, and OffRPG
   - Analysis: PPO is still better than OnRPG1 generally
@@ -349,11 +349,33 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-| rpg_onrpg1 |  10  |   RPG  |  |
-|    ppo2    |  10  |   RPG  |  |
+| rpg_onrpg1 |  10  |   RPG  | 8698f73 |
+|    ppo2    |  10  |   RPG  | 8698f73 |
   
   - Goal: try a new way to normalize reward; try the spinning up version of PPO
   - Analysis:
     - ppo2: PPO2 is better than PPO in most envs, but takes twice the training time of PPO.
     - rpg_onrpg1: the new way to normalize reward doesn't help in most envs; however, the new baseline V / gamma does help
   - Next: consider using state normalizer, gradient clipping, and the new baseline V / gamma.
+
+
+## 2021-01-12
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+| rpg_onrpg  |  10  |   RPG  |  |
+|  rpg_ppo   |  10  |   RPG  |  |
+
+  - Goal: benchmark OnRPG and PPO with state_normalizer and gradient clip.
+  - Analysis: 
+    - OnRPG1 is consistently better than OnRPG; gradient_clipis is very helpful; state_normalizer helps in most envs.
+    - OnRPG1 vs PPO: OnRPG1 wins 2 envs, lose 1, and 3 ties
+  - Next: normalize adv with global std, i.e. std(reward+adv).
+
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+| rpg_onrpg1 |  10  |   RPG  |  |
+
+  - Goal: normalize adv with global std in OnRPG1
+  - Analysis: worse than OnRPG1 without normalizing adv.

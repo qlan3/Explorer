@@ -19,4 +19,3 @@ from .OffRPG import OffRPG
 from .OffRPG2 import OffRPG2
 from .OnRPG import OnRPG
 from .OnRPG1 import OnRPG1
-from .OnRPG2 import OnRPG2

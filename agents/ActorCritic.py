@@ -88,7 +88,7 @@ class ActorCritic(REINFORCE):
           self.save_episode_result(mode)
           self.episode_count += 1
           self.reset_game(mode)
-      if self.cfg['agent']['name'] in ['ActorCritic', 'PPO', 'OnRPG'] or 'OnRPG' in self.cfg['agent']['name'] or 'PPO' in self.cfg['agent']['name']:
+      if self.cfg['agent']['name'] in ['ActorCritic', 'PPO', 'PPO2', 'OnRPG'] or 'OnRPG' in self.cfg['agent']['name']:
         prediction = self.get_action(mode)
         self.save_experience(prediction)
       # Update policy
