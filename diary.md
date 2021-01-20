@@ -363,8 +363,8 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-| rpg_onrpg  |  10  |   RPG  |  |
-|  rpg_ppo   |  10  |   RPG  |  |
+| rpg_onrpg  |  10  |   RPG  | a5fa26f |
+|  rpg_ppo   |  10  |   RPG  | a5fa26f |
 
   - Goal: benchmark OnRPG and PPO with state_normalizer and gradient clip.
   - Analysis: 
@@ -375,7 +375,18 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-| rpg_onrpg1 |  10  |   RPG  |  |
+| rpg_onrpg1 |  10  |   RPG  | a5fa26f |
 
   - Goal: normalize adv with global std in OnRPG1
   - Analysis: worse than OnRPG1 without normalizing adv.
+
+
+## 2021-01-18
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+| rpg_onrpg2 |  10  |   RPG  |  |
+
+  - Goal: test a variant of OnRPG1 that two IS ratios, one for reward part, one for state value. We only set IS ratio for state value to 0.
+  - Analysis: it is better than OnRPG1 on Walker2d, but worse on several other environments.
+  - Next:
