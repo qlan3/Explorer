@@ -2,19 +2,18 @@ from agents.PPO import *
 from torch.distributions import Normal
 
 
-class OnRPG1(PPO):
+class RPG(PPO):
   '''
-  Implementation of OnRPG (On-policy Reward Policy Gradient)
+  Implementation of RPG (On-policy Reward Policy Gradient)
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
     # Set optimizer for reward function
-    self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['critic_kwargs'])
+    self.optimizer['reward'] = getattr(torch.optim, cfg['optimizer']['name'])(self.network.reward_params, **cfg['optimizer']['reward_kwargs'])
     # Set replay buffer
     self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv', 'ppo_adv'])
-    if cfg['state_normalizer']:
-      self.state_normalizer = MeanStdNormalizer()
-    self.cfg.setdefault('normalize_adv', 'false')
+    # Set state normalizer
+    self.state_normalizer = MeanStdNormalizer()
 
   def createNN(self, input_type):
     # Set feature network
@@ -60,11 +59,6 @@ class OnRPG1(PPO):
     # Compute advantage
     entries.ppo_adv.copy_((entries.ppo_adv - entries.ppo_adv.mean()) / entries.ppo_adv.std())
     entries.adv.copy_(self.discount * entries.adv - entries.v)
-    adv_std = (entries.reward + entries.adv).std()
-    if self.cfg['normalize_adv'] == 'true_with_mean':
-      entries.adv.copy_((entries.adv - entries.adv.mean()) / adv_std)
-    elif self.cfg['normalize_adv'] == 'true_no_mean':
-      entries.adv.copy_(entries.adv / adv_std)
     # Optimize for multiple epochs
     for _ in range(self.cfg['optimize_epochs']):
       batch_idxs = generate_batch_idxs(len(entries.log_pi), self.cfg['batch_size'])
@@ -80,8 +74,6 @@ class OnRPG1(PPO):
           # Get predicted reward
           repara_action = self.network.get_repara_action(entries.state[batch_idx], entries.action[batch_idx])
           predicted_reward = self.network.get_reward(entries.state[batch_idx], repara_action)
-          if 'true' in self.cfg['normalize_adv']:
-            predicted_reward = predicted_reward / adv_std
           # Compute clipped objective
           ratio = torch.exp(prediction['log_pi'] - entries.log_pi[batch_idx]).detach()
           obj = predicted_reward + entries.adv[batch_idx] * prediction['log_pi']

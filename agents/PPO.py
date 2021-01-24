@@ -9,8 +9,8 @@ class PPO(ActorCritic):
     super().__init__(cfg)
     # Set replay buffer
     self.replay = FiniteReplay(self.cfg['steps_per_epoch']+1, keys=['state', 'action', 'reward', 'mask', 'v', 'log_pi', 'ret', 'adv'])
-    if cfg['state_normalizer']:
-      self.state_normalizer = MeanStdNormalizer()
+    # Set state normalizer
+    self.state_normalizer = MeanStdNormalizer()
 
   def save_experience(self, prediction):
     # Save state, action, reward, mask, v, log_pi
