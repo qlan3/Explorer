@@ -440,7 +440,7 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-|  rpg_reg   |  30  |   RPG  |  |
+|  rpg_reg   |  30  |   RPG  | 3824f1f |
 
 
   - Goal: benchmark RPG (with weight decay 4e-6) and PPO
@@ -451,7 +451,7 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-|    rpg     |  30  |   RPG  |  |
+|    rpg     |  30  |   RPG  | 3824f1f |
 
   - Goal: benchmark RPG (with no weight decay) and PPO on 6 tasks.
   - Analysis:
@@ -463,7 +463,7 @@
 
 |  experiment  |  runs  | branch | commit  |
 | ------------ | ------ | ------ | ------- |
-| rpg_gradclip |   10   |   RPG  |  |
+| rpg_gradclip |   10   |   RPG  | 3824f1f |
 
   - Goal: sweep grad_clip for PPO and RPG on Cedar.
   - Analysis: no dominant gradient clip.
