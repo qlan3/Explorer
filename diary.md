@@ -12,7 +12,6 @@
 
   - Goal:
   - Analysis:
-  - Next:
 
 ## 2020-12-15
 
@@ -369,7 +368,7 @@
   - Goal: benchmark OnRPG and PPO with state_normalizer and gradient clip.
   - Analysis: 
     - OnRPG1 is consistently better than OnRPG; gradient_clipis is very helpful; state_normalizer helps in most envs.
-    - OnRPG1 vs PPO: OnRPG1 wins 2 envs, lose 1, and 3 ties
+    - OnRPG1 vs PPO: OnRPG1 wins 2 envs, losses 1, and 3 ties
   - Next: normalize adv with global std, i.e. std(reward+adv).
 
 
@@ -385,8 +384,86 @@
 
 | experiment | runs | branch | commit  |
 | ---------- | ---- | ------ | ------- |
-| rpg_onrpg2 |  10  |   RPG  |  |
+| rpg_onrpg2 |  10  |   RPG  | 17ae0ca |
 
   - Goal: test a variant of OnRPG1 that two IS ratios, one for reward part, one for state value. We only set IS ratio for state value to 0.
   - Analysis: it is better than OnRPG1 on Walker2d, but worse on several other environments.
   - Next:
+
+
+## 2021-01-20
+
+**Change the name of OnRPG1 to RPG.**
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|   rpg_lr   |  10  |   RPG  | 3c8e907 |
+
+  - Goal: sweep lr for the reward net in RPG
+  - Analysis: no lr is consistently better than the original lr (1e-3)
+  - Next: final benchmark RPG and PPO
+
+
+## 2021-01-21
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|   rpg1     |  20  |   RPG  | 3c8e907 |
+
+  - Goal: benchmark RPG and PPO
+  - Analysis:
+    - Train: 2 wins, 3 losses, 1 tie
+    - Test: 3 wins, 1 loss, 2 ties
+
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|  rpg_reg1  |  10  |   RPG  | 3c8e907 |
+
+  - Goal: use weight_decay to make reward net smooth
+  - Analysis: except Reacher, there is improvement in other 5 envs.
+
+
+## 2021-01-23
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|  rpg_reg2  |  10  |   RPG  | 3c8e907 |
+|  rpg_reg3  |  10  |   RPG  | 3c8e907 |
+|  rpg_reg4  |  10  |   RPG  | 3c8e907 |
+
+  - Goal: sweep weight_decay with a smaller interval
+  - Analysis: no dominant weigt_decay but 2e-6 to 6e-6 seems to be good choices; all in all, the best weight decay is 4e-6.
+
+
+## 2021-01-24
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|  rpg_reg   |  30  |   RPG  |  |
+
+
+  - Goal: benchmark RPG (with weight decay 4e-6) and PPO
+  - Analysis: PPO is better now somehow with more runs while RPG is worse :(
+    - Train: 1 win, 2 losses, 3 ties
+    - Test:  2 wins, 2 losses, 2 ties
+
+
+| experiment | runs | branch | commit  |
+| ---------- | ---- | ------ | ------- |
+|    rpg     |  30  |   RPG  |  |
+
+  - Goal: benchmark RPG (with no weight decay) and PPO on 6 tasks.
+  - Analysis:
+    - Train: 1 win, 2 losses, 3 ties
+    - Test:  3 wins, 2 losses, 1 tie
+
+
+## 2021-01-27
+
+|  experiment  |  runs  | branch | commit  |
+| ------------ | ------ | ------ | ------- |
+| rpg_gradclip |   10   |   RPG  |  |
+
+  - Goal: sweep grad_clip for PPO and RPG on Cedar.
+  - Analysis: no dominant gradient clip.

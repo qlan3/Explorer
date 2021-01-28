@@ -10,6 +10,7 @@ def main(argv):
   parser = argparse.ArgumentParser(description="Config file")
   parser.add_argument('--config_file', type=str, default='./configs/catcher.json', help='Configuration file for the chosen model')
   parser.add_argument('--config_idx', type=int, default=1, help='Configuration index')
+  parser.add_argument('--slurm_dir', type=str, default='', help='slurm tempory directory')
   args = parser.parse_args()
   
   sweeper = Sweeper(args.config_file)
@@ -27,18 +28,16 @@ def main(argv):
 
   # Set experiment name and log paths
   cfg['exp'] = args.config_file.split('/')[-1].split('.')[0]
-  logs_dir = f"./logs/{cfg['exp']}/{cfg['config_idx']}/"
-  train_log_path = logs_dir + 'result_Train.feather'
-  test_log_path = logs_dir + 'result_Test.feather'
-  model_path = logs_dir + 'model.pt'
-  cfg_path = logs_dir + 'config.json'
-  cfg['logs_dir'] = logs_dir
-  cfg['train_log_path'] = train_log_path
-  cfg['test_log_path'] = test_log_path
-  cfg['model_path'] = model_path
-  cfg['cfg_path'] = cfg_path
-
-  make_dir(cfg['logs_dir'])
+  if len(args.slurm_dir) > 0:  
+    cfg['logs_dir'] = f"{args.slurm_dir}/{cfg['exp']}/{cfg['config_idx']}/"
+    make_dir(cfg['logs_dir'])
+  else:
+    cfg['logs_dir'] = f"./logs/{cfg['exp']}/{cfg['config_idx']}/"
+  make_dir(f"./logs/{cfg['exp']}/{cfg['config_idx']}/")
+  cfg['train_log_path'] = cfg['logs_dir'] + 'result_Train.feather'
+  cfg['test_log_path'] = cfg['logs_dir'] + 'result_Test.feather'
+  cfg['model_path'] = cfg['logs_dir'] + 'model.pt'
+  cfg['cfg_path'] = cfg['logs_dir'] + 'config.json'
 
   exp = Experiment(cfg)
   exp.run()

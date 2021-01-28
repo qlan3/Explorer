@@ -4,10 +4,8 @@
 # My ignores
 logs*
 output/
-*figure*
 sbatch*
 script.sh
-plot_paper.py
 *DS_Store*
 run*.sh
 

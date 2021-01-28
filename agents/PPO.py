@@ -75,13 +75,8 @@ class PPO(ActorCritic):
         self.optimizer['critic'].step()
     # Log
     if self.show_tb:
-      self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
+      try:
+        self.logger.add_scalar('actor_loss', actor_loss.item(), self.step_count)
+      except:
+        pass
       self.logger.add_scalar('critic_loss', critic_loss.item(), self.step_count)
-      self.logger.add_scalar('log_pi', entries.log_pi.mean().item(), self.step_count)
-      action_std, entropy = self.network.get_entropy_pi(entries.state)
-      self.logger.add_scalar('entropy', entropy.mean().item(), self.step_count)
-      self.logger.add_scalar('action_std', action_std.mean().item(), self.step_count)
-      self.logger.add_scalar('KL', approx_kl.item(), self.step_count)
-      self.logger.add_scalar('IS', ratio.mean().item(), self.step_count)
-      self.logger.add_scalar('v', prediction['v'].mean().item(), self.step_count)
-      self.logger.add_scalar('adv', abs(entries.adv).mean().item(), self.step_count)

@@ -1,4 +1,4 @@
-import os
+=import os
 import math
 from utils.plotter import Plotter
 from utils.sweeper import unfinished_index, time_info, memory_info
@@ -39,7 +39,7 @@ cfg = {
   'ylim': {'min': None, 'max': None},
   'EMA': True,
   'loc': 'lower right',
-  'sweep_keys': ['gradient_clip', 'state_normalizer'],
+  'sweep_keys': [],
   'sort_by': ['Return (mean)', 'Return (se)'],
   'ascending': [False, True],
   'runs': 1
@@ -55,33 +55,21 @@ def analyze(exp, runs=1):
   plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
   plotter.plot_results(mode='Train', indexes='all')
   plotter.plot_results(mode='Test', indexes='all')
-  # indexList = [11, 43, 15, 23, 31, 19, 22]
-  # plotter.plot_indexList(indexList, 'Train', exp)
   
   envs = ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Swimmer-v2", "Ant-v2", "Reacher-v2"]
   indexes = {
-    'onrpg': [31, 32, 33, 34, 35, 36],
-    'ppo': [13, 14, 15, 16, 17, 18]
+    'ppo': [1, 2, 3, 4, 5, 6],
+    'rpg': [7, 8, 9, 10, 11, 12]
   }
-  if exp == 'rpg_onrpg':
+  if exp == 'rpg':
     for i in range(6):
       for mode in ['Train', 'Test']:
-        expIndexModeList = [['rpg_onrpg', indexes['onrpg'][i], mode], ['rpg_ppo', indexes['ppo'][i], mode]]
+        expIndexModeList = [['rpg', indexes['ppo'][i], mode], ['rpg', indexes['rpg'][i], mode]]
         plotter.plot_expIndexModeList(expIndexModeList, f'{mode}_{envs[i]}')
   
 
 if __name__ == "__main__":
-  # unfinished_index('rpg_offrpg', runs=5)
-  # memory_info('rpg_offrpg', runs=5)
-  # time_info('rpg_offrpg', runs=5)
-  # analyze('rpg_offrpg', runs=5)
-
-  # unfinished_index('rpg_ppo', runs=10)
-  # memory_info('rpg_ppo', runs=10)
-  # time_info('rpg_ppo', runs=10)
-  # analyze('rpg_ppo', runs=10)
-
-  # unfinished_index('rpg_onrpg', runs=10)
-  # memory_info('rpg_onrpg', runs=10)
-  # time_info('rpg_onrpg', runs=10)
-  analyze('rpg_onrpg', runs=10)
+  unfinished_index('rpg', runs=30)
+  memory_info('rpg', runs=30)
+  time_info('rpg', runs=30)
+  analyze('rpg', runs=30)

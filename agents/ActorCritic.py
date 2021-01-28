@@ -165,5 +165,3 @@ class ActorCritic(REINFORCE):
     if self.show_tb:
       self.logger.add_scalar(f'actor_loss', actor_loss.item(), self.step_count)
       self.logger.add_scalar(f'critic_loss', critic_loss.item(), self.step_count)
-      self.logger.add_scalar(f'v', entries.v.mean().item(), self.step_count)
-      self.logger.add_scalar(f'log_pi', entries.log_pi.mean().item(), self.step_count)
