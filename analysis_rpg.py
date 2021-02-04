@@ -1,4 +1,4 @@
-=import os
+import os
 import math
 from utils.plotter import Plotter
 from utils.sweeper import unfinished_index, time_info, memory_info
