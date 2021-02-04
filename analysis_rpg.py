@@ -1,4 +1,4 @@
-=import os
+import os
 import math
 from utils.plotter import Plotter
 from utils.sweeper import unfinished_index, time_info, memory_info
@@ -51,9 +51,7 @@ def analyze(exp, runs=1):
   cfg['runs'] = runs
   plotter = Plotter(cfg)
 
-  plotter.csv_results('Train', get_csv_result_dict, get_process_result_dict)
   plotter.csv_results('Test', get_csv_result_dict, get_process_result_dict)
-  plotter.plot_results(mode='Train', indexes='all')
   plotter.plot_results(mode='Test', indexes='all')
   
   envs = ["HalfCheetah-v2", "Hopper-v2", "Walker2d-v2", "Swimmer-v2", "Ant-v2", "Reacher-v2"]
@@ -63,7 +61,7 @@ def analyze(exp, runs=1):
   }
   if exp == 'rpg':
     for i in range(6):
-      for mode in ['Train', 'Test']:
+      for mode in ['Test']:
         expIndexModeList = [['rpg', indexes['ppo'][i], mode], ['rpg', indexes['rpg'][i], mode]]
         plotter.plot_expIndexModeList(expIndexModeList, f'{mode}_{envs[i]}')
   
