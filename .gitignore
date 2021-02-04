@@ -4,10 +4,7 @@
 # My ignores
 logs*
 output/
-sbatch*
-script.sh
 *DS_Store*
-run*.sh
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
