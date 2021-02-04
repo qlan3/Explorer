@@ -21,7 +21,7 @@
   "hidden_layers": [[64,64]],
   "hidden_act": ["Tanh"],
   "display_interval": [20],
-  "rolling_score_window": [{"Train": [20], "Test": [10]}],
+  "rolling_score_window": [{"Train": [20], "Test": 5}],
   "discount": [0.99],
   "gae": [0.95],
   "seed": [1],

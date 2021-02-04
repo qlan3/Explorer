@@ -7,7 +7,7 @@
     }
   ],
   "train_steps": [3e6],
-  "test_per_episodes": [50],
+  "test_per_episodes": [10],
   "agent": [{"name": ["REINFORCE"]}],
   "optimizer": [
     {
@@ -19,7 +19,7 @@
   "hidden_layers": [[64,64]],
   "hidden_act": ["Tanh"],
   "display_interval": [20],
-  "rolling_score_window": [{"Train": [20], "Test": [10]}],
+  "rolling_score_window": [{"Train": [20], "Test": [5]}],
   "discount": [0.99],
   "seed": [1],
   "device": ["cpu"],

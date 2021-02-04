@@ -8,7 +8,7 @@
   ],
   "train_steps": [3e6],
   "steps_per_epoch": [2048],
-  "test_per_epochs": [10],
+  "test_per_epochs": [4],
   "agent": [{"name": ["PPO"]}],
   "optimizer": [
     {
@@ -21,11 +21,11 @@
   "clip_ratio": [0.2],
   "target_kl": [0.01],
   "optimize_epochs": [10],
-  "gradient_clip": [-1],
+  "gradient_clip": [2],
   "hidden_layers": [[64,64]],
   "hidden_act": ["Tanh"],
   "display_interval": [20],
-  "rolling_score_window": [{"Train": [20], "Test": [10]}],
+  "rolling_score_window": [{"Train": [20], "Test": [5]}],
   "discount": [0.99],
   "gae": [0.95],
   "seed": [1],
