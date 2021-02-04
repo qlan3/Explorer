@@ -17,9 +17,12 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
+- [Learning Continuous Control Policies by Reward Gradients (RPG)](coming_soon)
 
 ## To do list
-- Add more pygames to gym-games
+
+- SAC with automatically adjusted temperature
+- SAC with discrete action spaces
 
 ## The dependency tree of agent classes
 
@@ -30,7 +33,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
       |     └── Averaged DQN
       └── REINFORCE 
             ├── Actor-Critic
-            |     ├── PPO
+            |     ├── PPO ── RPG
             |     └── RepOnPG (experimental)
             └── SAC ── DDPG
                         ├── TD3
@@ -42,8 +45,10 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - Python (>=3.6)
 - [PyTorch](https://pytorch.org/)
 - [Gym && Gym Games](https://github.com/qlan3/gym-games): You may only install part of Gym (`classic_control, box2d`) by command `pip install 'gym[classic_control, box2d]'`.
-- Optional: [Gym Atari](https://github.com/openai/gym/blob/master/docs/environments.md#atari), [Gym Mujoco](https://github.com/openai/gym/blob/master/docs/environments.md#mujoco)
-- [PyBullet](https://pybullet.org/): `pip install pybullet`
+- Optional: 
+  - [Gym Atari](https://github.com/openai/gym/blob/master/docs/environments.md#atari)
+  - [Gym Mujoco](https://github.com/openai/gym/blob/master/docs/environments.md#mujoco)
+  - [PyBullet](https://pybullet.org/): `pip install pybullet`
 - Others: Please check `requirements.txt`.
 
 
@@ -79,7 +84,7 @@ do
 done
 ```
 
-[Parallel](https://www.gnu.org/software/parallel/) is usually a better choice for scheduling a large number of jobs:
+[Parallel](https://www.gnu.org/software/parallel/) is usually a better choice to schedule a large number of jobs:
 
 ``` bash
 parallel --eta --ungroup python main.py --config_file ./configs/catcher.json --config_idx {1} ::: $(seq 1 90)
@@ -99,7 +104,6 @@ Or a simpler way:
 parallel --eta --ungroup python main.py --config_file ./configs/catcher.json --config_idx {1} ::: $(seq 1 90 450)
 ```
 
-To reproduce the results in the [Maxmin Q-learning paper](https://openreview.net/forum?id=Bkg0u3Etwr&noteId=Bkg0u3Etwr), please run experiments with the configuration files provided in directory `configs` (except for `atari_ram.json` which is experimental).
 
 ### Analysis (Optional)
 
@@ -107,12 +111,19 @@ To analysis the experimental results, just run:
 
 `python analysis.py`
 
-Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/catcher/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/catcher/0`. Finally, `analyze` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
+Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/rpg/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/rpg/0`. Finally, `analyze` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
 
 Enjoy!
 
 
-### Cite
+## Code of My Papers
+
+- **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](/media/paper/maxmin2020.pdf) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0) [[video]](https://iclr.cc/virtual/poster_Bkg0u3Etwr.html)
+
+- **Qingfeng Lan**, Rupam Mahmood. **Learning Continuous Control Policies by Reward Gradients.** Under review. [[paper]](coming_soon) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
+
+
+## Cite
 
 Please use this bibtex to cite this repo
 
