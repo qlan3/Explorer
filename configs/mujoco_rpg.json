@@ -9,7 +9,7 @@
   "train_steps": [3e6],
   "steps_per_epoch": [2048],
   "test_per_epochs": [4],
-  "agent": [{"name": ["PPO", "RPG"]}],
+  "agent": [{"name": ["RPG"]}],
   "optimizer": [
     {
       "name": ["Adam"],

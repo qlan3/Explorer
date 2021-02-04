@@ -4,7 +4,7 @@ from torch.distributions import Normal
 
 class RPG(PPO):
   '''
-  Implementation of RPG (On-policy Reward Policy Gradient)
+  Implementation of RPG (Reward Policy Gradient)
   '''
   def __init__(self, cfg):
     super().__init__(cfg)
