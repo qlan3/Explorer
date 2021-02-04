@@ -169,7 +169,8 @@ class VanillaDQN(BaseAgent):
       result.to_feather(self.log_path[mode])
       # Show log
       speed = self.step_count / (time.time() - self.start_time)
-      self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.episode_return[mode]:.2f}, Speed={speed:.2f}(steps/s)')
+      eta = (self.train_steps - self.step_count) / speed / 60 if speed>0 else -1
+      self.logger.info(f'<{self.config_idx}> [{mode}] Episode {self.episode_count}, Step {self.step_count}: Average Return({self.rolling_score_window[mode]})={rolling_score:.2f}, Return={self.episode_return[mode]:.2f}, Speed={speed:.2f} (steps/s), ETA={eta:.2f} (mins)')
 
   def get_action(self, mode='Train'):
     '''
