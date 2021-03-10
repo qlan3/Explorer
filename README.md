@@ -1,6 +1,6 @@
 This branch is the code for the paper:
 
-**Qingfeng Lan**, Rupam Mahmood. **Learning Continuous Control Policies by Reward Gradients.** Under review. [[paper]](coming_soon)
+**Qingfeng Lan**, Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** Under review. [[paper]](https://arxiv.org/abs/2103.05147)
 
 
 ## Requirements
