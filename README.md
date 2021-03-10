@@ -17,7 +17,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
-- [Model-free Policy Learning with Reward Gradients (RPG)](https://arxiv.org/abs/2103.05147)
+- [Reward Policy Gradient (RPG)](https://arxiv.org/abs/2103.05147)
 
 ## To do list
 
