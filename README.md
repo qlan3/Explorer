@@ -17,7 +17,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Soft Actor-Critic (SAC)](https://arxiv.org/pdf/1812.05905.pdf)
 - [Deep Deterministic Policy Gradients (DDPG)](https://arxiv.org/pdf/1509.02971.pdf)
 - [Twin Delayed Deep Deterministic Policy Gradients (TD3)](https://arxiv.org/pdf/1802.09477.pdf)
-- [Learning Continuous Control Policies by Reward Gradients (RPG)](coming_soon)
+- [Model-free Policy Learning with Reward Gradients (RPG)](https://arxiv.org/abs/2103.05147)
 
 ## To do list
 
@@ -120,7 +120,7 @@ Enjoy!
 
 - **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](/media/paper/maxmin2020.pdf) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0) [[video]](https://iclr.cc/virtual/poster_Bkg0u3Etwr.html)
 
-- **Qingfeng Lan**, Rupam Mahmood. **Learning Continuous Control Policies by Reward Gradients.** Under review. [[paper]](coming_soon) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
+- **Qingfeng Lan**, Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** Under review. [[paper]](https://arxiv.org/abs/2103.05147) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
 
 
 ## Cite
