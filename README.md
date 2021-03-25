@@ -118,7 +118,7 @@ Enjoy!
 
 ## Code of My Papers
 
-- **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](/media/paper/maxmin2020.pdf) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0) [[video]](https://iclr.cc/virtual/poster_Bkg0u3Etwr.html)
+- **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](https://openreview.net/pdf?id=Bkg0u3Etwr) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0) [[video]](https://iclr.cc/virtual/poster_Bkg0u3Etwr.html)
 
 - **Qingfeng Lan**, Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** Under review. [[paper]](https://arxiv.org/abs/2103.05147) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
 
