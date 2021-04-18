@@ -1,6 +1,7 @@
 import gym
 import gym_pygame
 import gym_minatar
+import gym_exploration
 try:
   import pybullet
   import pybullet_envs
@@ -32,7 +33,7 @@ def make_env(env_name, max_episode_steps, episode_life=True):
     if len(env.observation_space.shape) == 3:
       env = TransposeImage(env)
     env = FrameStack(env, 4)
-  elif env_group_title in ['classic_control', 'box2d', 'gym_pygame', 'pybullet', 'mujoco', 'robotics']:
+  elif env_group_title in ['classic_control', 'box2d', 'gym_pygame', 'gym_exploration', 'pybullet', 'mujoco', 'robotics']:
     if max_episode_steps > 0: # Set max episode steps
       env = TimeLimit(env.unwrapped, max_episode_steps)
   return env
@@ -45,19 +46,23 @@ def get_env_group_title(env):
     - gym: atari, algorithmic, classic_control, box2d, toy_text, mujoco, robotics, unittest
     - gym_ple 
     - gym_pygame
+    - gym_minatar
+    - gym_exploration
     - pybullet
   '''
   # env_name = env.unwrapped.spec.id
   s = env.unwrapped.spec.entry_point
-  if 'gym_ple' in s:          # e.g. 'gym_ple:PLEEnv'
+  if 'gym_ple' in s:           # e.g. 'gym_ple:PLEEnv'
     group_title = 'gym_ple'
-  elif 'gym_pygame' in s:     # e.g. 'gym_pygame.envs:CatcherEnv'
+  elif 'gym_pygame' in s:      # e.g. 'gym_pygame.envs:CatcherEnv'
     group_title = 'gym_pygame'
-  elif 'gym_minatar' in s:    # e.g. 'gym_minatar.envs:BreakoutEnv'
+  elif 'gym_minatar' in s:     # e.g. 'gym_minatar.envs:BreakoutEnv'
     group_title = 'gym_minatar'
-  elif 'pybullet' in s:       # e.g. 'pybullet_envs.gym_locomotion_envs:AntBulletEnv'
+  elif 'gym_exploration' in s: # e.g. 'gym_exploration.envs:NChainEnv'
+    group_title = 'gym_exploration'
+  elif 'pybullet' in s:        # e.g. 'pybullet_envs.gym_locomotion_envs:AntBulletEnv'
     group_title = 'pybullet'  
-  elif 'gym' in s:            # e.g. 'gym.envs.classic_control:CartPoleEnv'
+  elif 'gym' in s:             # e.g. 'gym.envs.classic_control:CartPoleEnv'
     group_title = s.split('.')[2].split(':')[0]
   else:
     group_title = None

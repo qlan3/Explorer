@@ -19,7 +19,10 @@ class VanillaDQN(BaseAgent):
     self.env = {
       'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps'])),
       'Test': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
-    } 
+    }
+    if cfg['env']['name'] in ['NChain-v1', 'LockBernoulli-v0', 'LockGaussian-v0']:
+      self.env['Train'].init(**cfg['env']['cfg'])
+      self.env['Test'].init(**cfg['env']['cfg'])
     self.config_idx = cfg['config_idx']
     self.device = cfg['device']
     self.discount = cfg['discount']
@@ -86,7 +89,6 @@ class VanillaDQN(BaseAgent):
       feature_net = nn.Identity()
     # Set value network
     assert self.action_type == 'DISCRETE', f'{self.agent_name} only supports discrete action spaces.'
-    # value_net = MLP(layer_dims=layer_dims, hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'])
     value_net = MLPCritic(layer_dims=layer_dims, hidden_act=self.cfg['hidden_act'], output_act=self.cfg['output_act'], last_w_scale=1.0)
     NN = DQNNet(feature_net, value_net)
     return NN
@@ -253,7 +255,16 @@ class VanillaDQN(BaseAgent):
 
   def get_state_size(self):
     mode = 'Train'
-    return int(np.prod(self.env[mode].observation_space.shape))
+    if isinstance(self.env[mode].observation_space, Discrete):
+      if hasattr(self.env[mode], 'env'):
+        return self.env[mode].env.observation_space.n
+      else:
+        return self.env[mode].observation_space.n
+    else: # Box, MultiBinary
+      if hasattr(self.env[mode], 'env'):
+        return int(np.prod(self.env[mode].env.observation_space.shape))
+      else:
+        return int(np.prod(self.env[mode].observation_space.shape))
 
   def set_net_mode(self, mode):
     if mode == 'Test':

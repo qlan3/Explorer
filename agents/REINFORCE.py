@@ -18,7 +18,10 @@ class REINFORCE(BaseAgent):
     self.env = {
       'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps'])),
       'Test': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
-    } 
+    }
+    if cfg['env']['name'] in ['NChain-v1', 'LockBernoulli-v0', 'LockGaussian-v0']:
+      self.env['Train'].init(**cfg['env']['cfg'])
+      self.env['Test'].init(**cfg['env']['cfg'])
     self.config_idx = cfg['config_idx']
     self.device = cfg['device']
     self.discount = cfg['discount']
@@ -224,7 +227,16 @@ class REINFORCE(BaseAgent):
     
   def get_state_size(self):
     mode = 'Train'
-    return int(np.prod(self.env[mode].observation_space.shape))
+    if isinstance(self.env[mode].observation_space, Box):
+      if hasattr(self.env[mode], 'env'):
+        return int(np.prod(self.env[mode].env.observation_space.shape))
+      else:
+        return int(np.prod(self.env[mode].observation_space.shape))
+    else:
+      if hasattr(self.env[mode], 'env'):
+        return self.env[mode].env.observation_space.n
+      else:
+        return self.env[mode].observation_space.n
 
   def set_net_mode(self, mode):
     if mode == 'Test':
