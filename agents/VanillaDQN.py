@@ -82,7 +82,7 @@ class VanillaDQN(BaseAgent):
       else:
         feature_net = Conv2d_Atari(in_channels=4, feature_dim=layer_dims[0])
     elif input_type == 'feature':
-      layer_dims = [self.state_size] +self.cfg['hidden_layers'] + [self.action_size]
+      layer_dims = [self.state_size] + self.cfg['hidden_layers'] + [self.action_size]
       feature_net = nn.Identity()
     # Set value network
     assert self.action_type == 'DISCRETE', f'{self.agent_name} only supports discrete action spaces.'
@@ -181,10 +181,10 @@ class VanillaDQN(BaseAgent):
     state = to_tensor(self.state[mode], device=self.device)
     state = state.unsqueeze(0) # Add a batch dimension (Batch, Channel, Height, Width)
     q_values = self.get_action_selection_q_values(state)
-    if mode == 'Train':
-      action = self.exploration.select_action(q_values, self.step_count)
-    elif mode == 'Test':
+    if mode == 'Test':
       action = np.argmax(q_values) # During test, select best action
+    elif mode == 'Train':
+      action = self.exploration.select_action(q_values, self.step_count)
     return action
 
   def time_to_learn(self):
@@ -201,7 +201,7 @@ class VanillaDQN(BaseAgent):
   def learn(self):
     mode = 'Train'
     batch = self.replay.sample(['state', 'action', 'reward', 'next_state', 'mask'], self.cfg['batch_size'])
-    q, q_target = self.comput_q(batch), self.compute_q_target(batch)
+    q, q_target = self.compute_q(batch), self.compute_q_target(batch)
     # Compute loss
     loss = self.loss(q, q_target)
     # Take an optimization step
@@ -219,7 +219,7 @@ class VanillaDQN(BaseAgent):
       q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target
   
-  def comput_q(self, batch):
+  def compute_q(self, batch):
     # Convert actions to long so they can be used as indexes
     action = batch.action.long().unsqueeze(1)
     q = self.Q_net[self.update_Q_net_index](batch.state).gather(1, action).squeeze()

@@ -34,7 +34,7 @@ class TD3(DDPG):
     return actor_loss
 
   def compute_critic_loss(self, batch):
-    q1, q2 = self.comput_q(batch) # Compute q
+    q1, q2 = self.compute_q(batch) # Compute q
     q_target = self.compute_q_target(batch) # Compute q target
     critic_loss = ((q1-q_target).pow(2) + (q2-q_target).pow(2)).mean()
     return critic_loss
@@ -50,6 +50,6 @@ class TD3(DDPG):
       q_target = batch.reward + self.discount * batch.mask * q_next
     return q_target
 
-  def comput_q(self, batch):
+  def compute_q(self, batch):
     q1, q2 = self.network.get_q(batch.state, batch.action)
     return q1, q2
