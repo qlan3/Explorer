@@ -11,6 +11,8 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Maxmin Deep Q-learning (MaxminDQN)](https://openreview.net/pdf?id=Bkg0u3Etwr)
 - [Averaged Deep Q-learning (AveragedDQN)](https://arxiv.org/pdf/1611.01929.pdf)
 - [Ensemble Deep Q-learning (EnsembleDQN)](https://arxiv.org/pdf/1611.01929.pdf)
+- [Bootstrapped Deep Q-learning (BootstrappedDQN)](https://arxiv.org/abs/1602.04621)
+- [NoisyNet Deep Q-learning (NoisyNetDQN)](https://arxiv.org/abs/1706.10295)
 - [REINFORCE](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Actor-Critic](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
@@ -28,7 +30,10 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 
     Base Agent
       ├── Vanalla DQN
-      |     ├── DQN ── DDQN
+      |     ├── DQN
+      |     |    ├── DDQN
+      |     |    ├── NoisyNetDQN
+      |     |    └── BootstrappedDQN
       |     ├── Maxmin DQN ── Ensemble DQN
       |     └── Averaged DQN
       └── REINFORCE 
@@ -144,3 +149,5 @@ Please use this bibtex to cite this repo
 - [Deep Reinforcement Learning Algorithms with PyTorch](https://github.com/p-christ/Deep-Reinforcement-Learning-Algorithms-with-PyTorch)
 - [Classic Control](https://github.com/muhammadzaheer/classic-control)
 - [Spinning Up in Deep RL](https://github.com/openai/spinningup)
+- [Randomized Value functions](https://github.com/facebookresearch/RandomizedValueFunctions)
+- [Rainbow](https://github.com/Kaixhin/Rainbow)

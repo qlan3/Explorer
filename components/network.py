@@ -36,6 +36,49 @@ def layer_init(layer, init_type='default', nonlinearity='relu', w_scale=1.0):
   return layer
 
 
+# Adapted from https://github.com/Kaixhin/Rainbow/blob/master/model.py
+class NoisyLinear(nn.Module):
+  '''
+  Noisy linear layer with Factorised Gaussian noise
+  '''
+  def __init__(self, in_features, out_features, std_init=0.4):
+    super().__init__()
+    self.in_features = in_features
+    self.out_features = out_features
+    self.std_init = std_init
+    self.weight_mu = nn.Parameter(torch.Tensor(out_features, in_features))
+    self.weight_sigma = nn.Parameter(torch.Tensor(out_features, in_features))
+    self.bias_mu = nn.Parameter(torch.Tensor(out_features))
+    self.bias_sigma = nn.Parameter(torch.Tensor(out_features))
+    self.register_buffer('weight_epsilon', torch.Tensor(out_features, in_features))
+    self.register_buffer('bias_epsilon', torch.Tensor(out_features))
+    self.reset_parameters()
+    self.reset_noise()
+
+  def reset_parameters(self):
+    mu_range = 1 / math.sqrt(self.in_features)
+    self.weight_mu.data.uniform_(-mu_range, mu_range)
+    self.weight_sigma.data.fill_(self.std_init / math.sqrt(self.in_features))
+    self.bias_mu.data.uniform_(-mu_range, mu_range)
+    self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.out_features))
+
+  def _scale_noise(self, size):
+    x = torch.randn(size)
+    return x.sign().mul_(x.abs().sqrt_())
+
+  def reset_noise(self):
+    epsilon_in = self._scale_noise(self.in_features)
+    epsilon_out = self._scale_noise(self.out_features)
+    self.weight_epsilon.copy_(epsilon_out.outer(epsilon_in))
+    self.bias_epsilon.copy_(epsilon_out)
+
+  def forward(self, input):
+    if self.training:
+      return F.linear(input, self.weight_mu + self.weight_sigma * self.weight_epsilon, self.bias_mu + self.bias_sigma * self.bias_epsilon)
+    else:
+      return F.linear(input, self.weight_mu, self.bias_mu)
+
+
 class MLP(nn.Module):
   '''
   Multilayer Perceptron
@@ -62,6 +105,31 @@ class MLP(nn.Module):
     for layer in self.mlp:
       x = layer(x)
     return x
+
+
+class NoisyMLP(nn.Module):
+  '''
+  Multilayer Perceptron with Noisy nets
+  '''
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
+    super().__init__()
+    # Create layers
+    layers = []
+    for i in range(len(layer_dims)-1):
+      act = hidden_act if i+2 != len(layer_dims) else output_act
+      layers.append(NoisyLinear(layer_dims[i], layer_dims[i+1]))
+      layers.append(activations[act])
+    self.mlp = nn.Sequential(*layers) 
+  
+  def forward(self, x):
+    for layer in self.mlp:
+      x = layer(x)
+    return x
+  
+  def reset_noise(self):
+    for layer in self.mlp:
+      if isinstance(layer, NoisyLinear):
+        layer.reset_noise()
 
 
 class Conv2d_Atari(nn.Module):
@@ -132,6 +200,26 @@ class DQNNet(nn.Module):
     return q
 
 
+class BootstrappedDQNNet(nn.Module):
+  def __init__(self, feature_net, heads_net):
+    super().__init__()
+    self.feature_net = feature_net
+    self.heads_net = heads_net
+    self.k = len(heads_net)
+
+  def forward(self, obs, head_idx='all'):
+    # Generate the latent feature
+    phi = self.feature_net(obs)
+    # Compute action values for all actions
+    if head_idx == 'all':
+      all_q = [head(phi) for head in self.heads_net]
+      return all_q
+    else:
+      assert head_idx >= 0 and head_idx < self.k, 'Wrong head index!'
+      q = self.heads_net[head_idx](phi)
+      return q
+
+
 class MLPCritic(nn.Module):
   def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', last_w_scale=1e-3):
     super().__init__()
@@ -139,6 +227,18 @@ class MLPCritic(nn.Module):
 
   def forward(self, phi):
     return self.value_net(phi).squeeze(-1)
+
+
+class NoisyMLPCritic(nn.Module):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
+    super().__init__()
+    self.value_net = NoisyMLP(layer_dims=layer_dims, hidden_act=hidden_act, output_act=output_act)
+
+  def forward(self, phi):
+    return self.value_net(phi).squeeze(-1)
+  
+  def reset_noise(self):
+    self.value_net.reset_noise()
 
 
 class MLPQCritic(nn.Module):

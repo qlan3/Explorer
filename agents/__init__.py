@@ -5,6 +5,8 @@ from .DDQN import DDQN
 from .MaxminDQN import MaxminDQN
 from .EnsembleDQN import EnsembleDQN
 from .AveragedDQN import AveragedDQN
+from .BootstrappedDQN import BootstrappedDQN
+from .NoisyNetDQN import NoisyNetDQN
 
 from .REINFORCE import REINFORCE
 from .ActorCritic import ActorCritic
