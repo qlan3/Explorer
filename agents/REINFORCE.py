@@ -19,7 +19,7 @@ class REINFORCE(BaseAgent):
       'Train': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps'])),
       'Test': make_env(cfg['env']['name'], max_episode_steps=int(cfg['env']['max_episode_steps']))
     }
-    if cfg['env']['name'] in ['NChain-v1', 'LockBernoulli-v0', 'LockGaussian-v0']:
+    if cfg['env']['name'] in ['NChain-v1', 'LockBernoulli-v0', 'LockGaussian-v0'] and 'cfg' in cfg['env'].keys():
       self.env['Train'].init(**cfg['env']['cfg'])
       self.env['Test'].init(**cfg['env']['cfg'])
     self.config_idx = cfg['config_idx']

@@ -1,7 +1,7 @@
 {
   "env": [
     {
-      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "Freeway-MinAtar-v0", "Space_invaders-MinAtar-v0"],
+      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "Freeway-MinAtar-v0", "SpaceInvaders-MinAtar-v0"],
       "max_episode_steps": [-1],
       "input_type": ["pixel"]
     },
