@@ -33,12 +33,13 @@ class MaxminDQN(VanillaDQN):
         self.Q_net_target[i].load_state_dict(self.Q_net[i].state_dict())
 
   def compute_q_target(self, batch):
-    q_min = self.Q_net_target[0](batch.next_state).clone()
-    for i in range(1, self.k):
-      q = self.Q_net_target[i](batch.next_state)
-      q_min = torch.min(q_min, q)
-    q_next = q_min.max(1)[0]
-    q_target = batch.reward + self.discount * q_next * batch.mask
+    with torch.no_grad():
+      q_min = self.Q_net_target[0](batch.next_state).clone()
+      for i in range(1, self.k):
+        q = self.Q_net_target[i](batch.next_state)
+        q_min = torch.min(q_min, q)
+      q_next = q_min.max(1)[0]
+      q_target = batch.reward + self.discount * q_next * batch.mask
     return q_target
   
   def get_action_selection_q_values(self, state):
