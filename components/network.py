@@ -83,7 +83,7 @@ class MLP(nn.Module):
   '''
   Multilayer Perceptron
   '''
-  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', init_type='orthogonal_', w_scale=1.0, last_w_scale=1.0):
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear', init_type='kaiming_uniform_', w_scale=1.0, last_w_scale=1.0):
     super().__init__()
     # Create layers
     layers = []
