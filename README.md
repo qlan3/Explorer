@@ -4,14 +4,16 @@ This branch is the code for the paper:
 
 Please use this bibtex to cite this paper
 
-```
+~~~bibtex
 @inproceedings{lan2022model,
   title={Model-free Policy Learning with Reward Gradients},
   author={Lan, Qingfeng and Tosatto, Samuele and Farrahi, Homayoon and Mahmood, A. Rupam},
-  booktitle={The 25th International Conference on Artificial Intelligence and Statistics},
+  booktitle={Proceedings of the 25th International Conference on Artificial Intelligence and Statistics},
+  volume={151},
+  publisher={PMLR},
   year={2022}
 }
-```
+~~~
 
 
 ## Requirements
