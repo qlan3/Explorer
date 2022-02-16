@@ -3,7 +3,10 @@
 
 # My ignores
 logs*
-output/
+logfile
+procfile
+*figure*
+*output*
 *DS_Store*
 
 ### Python ###
