@@ -7,7 +7,7 @@ class Logger(object):
   def __init__(self, logs_dir, file_name='log.txt', filemode='w'):
     logging.basicConfig(
       format='%(asctime)s - %(levelname)s: %(message)s',
-      filename=f'{logs_dir}/{file_name}',
+      filename=f'{logs_dir}{file_name}',
       filemode=filemode
     )
     logger = logging.getLogger()

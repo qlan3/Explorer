@@ -18,7 +18,7 @@ def main(argv):
     # Job time
     'time': '0-10:00:00',
     # GPU/CPU type
-    '--cpus-per-task': 1,
+    'cpus-per-task': 1,
     # Memory
     'mem-per-cpu': '2000M',
     # Email address

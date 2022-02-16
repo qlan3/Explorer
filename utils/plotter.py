@@ -72,7 +72,7 @@ class Plotter(object):
         result_list[i] = result_list[i][:n]
         result_list[i].loc[:, self.x_label] = new_x
         result_list[i].loc[:, self.y_label] = new_y
-    else:
+    elif processed == False:
       # Cut off redundant results
       n = min(len(result) for result in result_list)
       for i in range(len(result_list)):
@@ -381,7 +381,7 @@ def find_key_value(config_dict, key):
       return config_dict[k]
     elif type(v) == dict:
       value = find_key_value(v, key)
-      if value is not '/':
+      if value != '/':
         return value
   return '/'
 

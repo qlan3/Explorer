@@ -49,4 +49,4 @@ class Submitter(object):
           if len(self.job_list) == 0:
             print("Finish submitting all jobs!")
             exit(1)
-      time.sleep(self.check-time-interval)
+      time.sleep(self.check_time_interval)

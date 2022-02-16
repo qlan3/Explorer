@@ -2,20 +2,24 @@ import gym
 import gym_pygame
 import gym_minatar
 import gym_exploration
-try:
-  import pybullet
-  import pybullet_envs
-except ImportError:
-  pass
 from gym.wrappers.time_limit import TimeLimit
 
 from envs.wrapper import *
 
 
 def make_env(env_name, max_episode_steps, episode_life=True):
-  env = gym.make(env_name)
-  env_group_title = get_env_group_title(env)
-  # print(env_group_title, env_name)
+  if 'DMC' in env_name:
+    import dmc2gym
+    domain, task, _ = env_name.split('-')  # reacher-hard-DMC
+    env = dmc2gym.make(domain_name=domain, task_name=task)
+    env_group_title = 'dmc'
+  else:
+    if 'BulletEnv' in env_name:
+      import pybullet
+      import pybullet_envs
+    env = gym.make(env_name)
+    env_group_title = get_env_group_title(env)
+  
   if env_group_title == 'gym_minatar':
     env = make_minatar(env, max_episode_steps, scale=False)
     if len(env.observation_space.shape) == 3:
@@ -33,7 +37,7 @@ def make_env(env_name, max_episode_steps, episode_life=True):
     if len(env.observation_space.shape) == 3:
       env = TransposeImage(env)
     env = FrameStack(env, 4)
-  elif env_group_title in ['classic_control', 'box2d', 'gym_pygame', 'gym_exploration', 'pybullet', 'mujoco', 'robotics']:
+  elif env_group_title in ['classic_control', 'box2d', 'gym_pygame', 'gym_exploration', 'pybullet', 'mujoco', 'robotics', 'dmc']:
     if max_episode_steps > 0: # Set max episode steps
       env = TimeLimit(env.unwrapped, max_episode_steps)
   return env
