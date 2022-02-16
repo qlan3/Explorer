@@ -1,6 +1,17 @@
 This branch is the code for the paper:
 
-**Qingfeng Lan**, Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** Under review. [[paper]](https://arxiv.org/abs/2103.05147)
+**Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/abs/2103.05147)
+
+Please use this bibtex to cite this paper
+
+```
+@inproceedings{lan2022model,
+  title={Model-free Policy Learning with Reward Gradients},
+  author={Lan, Qingfeng and Tosatto, Samuele and Farrahi, Homayoon and Mahmood, A. Rupam},
+  booktitle={The 25th International Conference on Artificial Intelligence and Statistics},
+  year={2022}
+}
+```
 
 
 ## Requirements
@@ -12,6 +23,7 @@ This branch is the code for the paper:
   - [Gym Atari](https://github.com/openai/gym/blob/master/docs/environments.md#atari)
   - [Gym Mujoco](https://github.com/openai/gym/blob/master/docs/environments.md#mujoco)
   - [PyBullet](https://pybullet.org/): `pip install pybullet`
+  - [DeepMind Control Suite](https://github.com/denisyarats/dmc2gym): `pip install git+git://github.com/denisyarats/dmc2gym.git`
 - Others: Please check `requirements.txt`.
 
 
