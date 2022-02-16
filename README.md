@@ -117,7 +117,7 @@ To analysis the experimental results, just run:
 
 `python analysis.py`
 
-Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/rpg/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/rpg/0`. Finally, `analyze` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
+Inside `analysis.py`, `unfinished_index` will print out the configuration indexes of unfinished jobs based on the existence of the result file. `memory_info` will print out the memory usage information and generate a histogram to show the distribution of memory usages in directory `logs/catcher/0`. Similarly, `time_info` will print out the time information and generate a histogram to show the distribution of time in directory `logs/catcher/0`. Finally, `analyze` will generate `csv` files that store training and test results. More functions are available in `utils/plotter.py`.
 
 Enjoy!
 
