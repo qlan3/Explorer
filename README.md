@@ -54,6 +54,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
   - [Gym Atari](https://github.com/openai/gym/blob/master/docs/environments.md#atari)
   - [Gym Mujoco](https://github.com/openai/gym/blob/master/docs/environments.md#mujoco)
   - [PyBullet](https://pybullet.org/): `pip install pybullet`
+  - [DeepMind Control Suite](https://github.com/denisyarats/dmc2gym): `pip install git+git://github.com/denisyarats/dmc2gym.git`
 - Others: Please check `requirements.txt`.
 
 
@@ -125,12 +126,12 @@ Enjoy!
 
 - **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](https://openreview.net/pdf?id=Bkg0u3Etwr) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0) [[video]](https://iclr.cc/virtual/poster_Bkg0u3Etwr.html)
 
-- **Qingfeng Lan**, Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** Under review. [[paper]](https://arxiv.org/abs/2103.05147) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
+- **Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/abs/2103.05147) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
 
 
 ## Cite
 
-Please use this bibtex to cite this repo
+If you find this repo useful to your research, please cite my paper if it is related. Otherwisee, please use this bibtex to cite this repo
 
 ```
 @misc{Explorer,
