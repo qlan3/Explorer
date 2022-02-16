@@ -133,7 +133,7 @@ Enjoy!
 
 If you find this repo useful to your research, please cite my paper if it is related. Otherwisee, please use this bibtex to cite this repo
 
-```
+~~~bibtex
 @misc{Explorer,
   author = {Lan, Qingfeng},
   title = {A PyTorch Reinforcement Learning Framework for Exploring New Ideas},
@@ -142,7 +142,7 @@ If you find this repo useful to your research, please cite my paper if it is rel
   journal = {GitHub Repository},
   howpublished = {\url{https://github.com/qlan3/Explorer}}
 }
-```
+~~~
 
 # Acknowledgements
 
