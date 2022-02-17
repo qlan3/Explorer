@@ -14,6 +14,10 @@ from utils.plotter import read_file, get_total_combination
 #font = {'family':'normal', 'weight':'normal', 'size': 12}
 font = {'size': 15}
 matplotlib.rc('font', **font)
+# Avoid Type 3 fonts in matplotlib plots: http://phyletica.org/matplotlib-fonts/
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 
 class Plotter(object):
   def __init__(self, cfg):
