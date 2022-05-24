@@ -17,7 +17,7 @@ def main(argv):
   cfg = sweeper.generate_config_for_idx(args.config_idx)
   
   # Set config dict default value
-  cfg.setdefault('network_update_frequency', 1)
+  cfg.setdefault('network_update_steps', 1)
   cfg['env'].setdefault('max_episode_steps', -1)
   cfg.setdefault('show_tb', False)
   cfg.setdefault('render', False)

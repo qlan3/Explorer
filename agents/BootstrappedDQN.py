@@ -62,9 +62,6 @@ class BootstrappedDQN(DQN):
     if self.gradient_clip > 0:
       nn.utils.clip_grad_norm_(self.Q_net[0].parameters(), self.gradient_clip)
     self.optimizer[0].step()
-    # Update target network
-    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
-      self.Q_net_target[0].load_state_dict(self.Q_net[0].state_dict())
     if self.show_tb:
       self.logger.add_scalar(f'Loss', loss.item(), self.step_count)  
   

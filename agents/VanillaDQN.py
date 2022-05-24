@@ -70,8 +70,7 @@ class VanillaDQN(BaseAgent):
     # Set loss function
     self.loss = getattr(torch.nn, cfg['loss'])(reduction='mean')
     # Set replay buffer
-    # self.replay = getattr(components.replay, cfg['memory_type'])(cfg['memory_size'], self.cfg['batch_size'], self.device)
-    self.replay = FiniteReplay(cfg['memory_size'], keys=['state', 'action', 'next_state', 'reward', 'mask'])
+    self.replay = getattr(components.replay, cfg['memory_type'])(cfg['memory_size'], keys=['state', 'action', 'next_state', 'reward', 'mask'])
     # Set log dict
     for key in ['state', 'next_state', 'action', 'reward', 'done', 'episode_return', 'episode_step_count']:
       setattr(self, key, {'Train': None, 'Test': None})
@@ -95,7 +94,8 @@ class VanillaDQN(BaseAgent):
 
   def reset_game(self, mode):
     # Reset the game before a new episode
-    self.state[mode] = self.state_normalizer(self.env[mode].reset())
+    self.original_state = self.env[mode].reset() # state before processed
+    self.state[mode] = self.state_normalizer(self.original_state)
     self.next_state[mode] = None
     self.action[mode] = None
     self.reward[mode] = None
@@ -129,8 +129,8 @@ class VanillaDQN(BaseAgent):
       if render:
         self.env[mode].render()
       # Take a step
-      self.next_state[mode], self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
-      self.next_state[mode] = self.state_normalizer(self.next_state[mode])
+      next_state, self.reward[mode], self.done[mode], _ = self.env[mode].step(self.action[mode])
+      self.next_state[mode] = self.state_normalizer(next_state)
       self.reward[mode] = self.reward_normalizer(self.reward[mode])
       self.episode_return[mode] += self.reward[mode]
       self.episode_step_count[mode] += 1
@@ -140,9 +140,12 @@ class VanillaDQN(BaseAgent):
         # Update policy
         if self.time_to_learn():
           self.learn()
+        # Update target Q network: used only in DQN variants
+        self.update_target_net()
         self.step_count += 1
       # Update state
       self.state[mode] = self.next_state[mode]
+      self.original_state = next_state
     # End of one episode
     self.save_episode_result(mode)
     # Reset environment
@@ -195,10 +198,13 @@ class VanillaDQN(BaseAgent):
     - The agent is not on exploration stage
     - There are enough experiences in replay buffer
     """
-    if self.step_count > self.cfg['exploration_steps'] and self.step_count % self.cfg['network_update_frequency'] == 0:
+    if self.step_count > self.cfg['exploration_steps'] and self.step_count % self.cfg['network_update_steps'] == 0:
       return True
     else:
       return False
+
+  def update_target_net(self):
+    pass
 
   def learn(self):
     mode = 'Train'

@@ -106,7 +106,7 @@ class SAC(REINFORCE):
     - The agent is not on exploration stage
     - It is time to update network
     """
-    if self.step_count > self.cfg['exploration_steps'] and self.step_count % self.cfg['network_update_frequency'] == 0:
+    if self.step_count > self.cfg['exploration_steps'] and self.step_count % self.cfg['network_update_steps'] == 0:
       return True
     else:
       return False
@@ -122,7 +122,7 @@ class SAC(REINFORCE):
       nn.utils.clip_grad_norm_(self.network.critic_params, self.gradient_clip)
     self.optimizer['critic'].step()
     # Take an optimization step for actor
-    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['actor_update_frequency'] == 0:
+    if (self.step_count // self.cfg['network_update_steps']) % self.cfg['actor_update_frequency'] == 0:
       # Freeze Q-networks to avoid computing gradients for them
       for p in self.network.critic_net.parameters():
         p.requires_grad = False

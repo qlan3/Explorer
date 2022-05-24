@@ -6,14 +6,17 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt; plt.style.use('seaborn-ticks')
 from matplotlib.ticker import FuncFormatter
-
-from utils.helper import make_dir
-from utils.plotter import read_file, get_total_combination
-
+# Avoid Type 3 fonts: http://phyletica.org/matplotlib-fonts/
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 # Set font family, bold, and font size
 #font = {'family':'normal', 'weight':'normal', 'size': 12}
 font = {'size': 15}
 matplotlib.rc('font', **font)
+
+from utils.helper import make_dir
+from utils.plotter import read_file, get_total_combination, symmetric_ema
+
 
 class Plotter(object):
   def __init__(self, cfg):
@@ -42,6 +45,22 @@ class Plotter(object):
         result_list.append(result)
       config_idx += total_combination
 
+    # Do symmetric EMA (exponential moving average)
+    # Get x's and y's in form of numpy arries
+    xs, ys = [], []
+    for result in result_list:
+      xs.append(result[self.x_label].to_numpy())
+      ys.append(result[self.y_label].to_numpy())
+    # Do symetric EMA to get new x's and y's
+    low  = max(x[0] for x in xs)
+    high = min(x[-1] for x in xs)
+    n = min(len(x) for x in xs)
+    for i in range(len(xs)):
+      new_x, new_y, _ = symmetric_ema(xs[i], ys[i], low, high, n)
+      result_list[i] = result_list[i][:n]
+      result_list[i].loc[:, self.x_label] = new_x
+      result_list[i].loc[:, self.y_label] = new_y
+
     ys = []
     for result in result_list:
       ys.append(result[self.y_label].to_numpy())
@@ -64,7 +83,7 @@ cfg = {
   'x_label': 'Step',
   'y_label': 'Average Return',
   'show': False,
-  'imgType': 'pdf',
+  'imgType': 'png',
   'ci': 'se',
   'x_format': None,
   'y_format': None,
@@ -132,4 +151,4 @@ def learning_curve(exp, runs=1):
     plt.close() # close window
 
 if __name__ == "__main__":
-  learning_curve('rpg', 30)
+  learning_curve('RPG', 30)

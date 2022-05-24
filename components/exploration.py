@@ -47,6 +47,9 @@ class LinearEpsilonGreedy(BaseExploration):
     else:
       action = np.argmax(q_values)
     return action
+  
+  def get_epsilon(self, step_count):
+    return self.bound(self.start + step_count * self.inc, self.end)
 
 
 class ExponentialEpsilonGreedy(BaseExploration):
@@ -71,3 +74,6 @@ class ExponentialEpsilonGreedy(BaseExploration):
     else:
       action = np.argmax(q_values)
     return action
+  
+  def get_epsilon(self, step_count):
+    return self.bound(self.start * math.pow(self.decay, step_count), self.end)

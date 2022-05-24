@@ -4,8 +4,12 @@ import math
 import numpy as np
 import pandas as pd
 import seaborn as sns; sns.set(style="ticks"); sns.set_context("paper") #sns.set_context("talk")
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+# Avoid Type 3 fonts in matplotlib plots: http://phyletica.org/matplotlib-fonts/
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 from utils.helper import make_dir
 from utils.sweeper import Sweeper

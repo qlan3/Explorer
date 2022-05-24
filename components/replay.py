@@ -39,7 +39,7 @@ class InfiniteReplay(object):
 
 class FiniteReplay(object):
   '''
-  Finite replay buffer to store experiences
+  Finite replay buffer to store experiences: FIFO (first in, firt out)
   '''
   def __init__(self, memory_size, keys=None):
     if keys is None:
@@ -64,6 +64,8 @@ class FiniteReplay(object):
       self.full = True
 
   def get(self, keys, data_size, detach=False):
+    # Get first several samples (without replacement)
+    data_size = min(self.size(), data_size) 
     data = [getattr(self, k)[:data_size] for k in keys]
     data = map(lambda x: torch.stack(x), data)
     if detach:
@@ -72,12 +74,8 @@ class FiniteReplay(object):
     return Entry(*list(data))
 
   def sample(self, keys, batch_size, detach=False):
-    '''
-    if self.size() < batch_size:
-      return None
-    '''
+    # Sampling with replacement
     idxs = np.random.randint(0, self.size(), size=batch_size)
-    # data = [getattr(self, k)[idxs] for k in keys]
     data = [[getattr(self, k)[idx] for idx in idxs] for k in keys]
     data = map(lambda x: torch.stack(x), data)
     if detach:
@@ -98,4 +96,41 @@ class FiniteReplay(object):
     if self.full:
       return self.memory_size
     else:
-      return self.pos 
+      return self.pos
+
+
+class ContinousUniformSampler(object):
+  '''
+  A uniform sampler for continous space
+  '''
+  def __init__(self, shape, normalizer, device):
+    self.shape = shape
+    self.normalizer = normalizer
+    self.device = device
+    self.reset()
+  
+  def reset(self):
+    self.low = np.inf * np.ones(self.shape)
+    self.high = -np.inf * np.ones(self.shape)
+  
+  def update_bound(self, data):
+    self.low = np.minimum(self.low, data)
+    self.high = np.maximum(self.high, data)
+
+  def sample(self, batch_size):
+    data = np.random.uniform(low=self.low, high=self.high, size=tuple([batch_size]+list(self.shape)))
+    data = to_tensor(self.normalizer(data), self.device)
+    return data
+
+
+class DiscreteUniformSampler(ContinousUniformSampler):
+  '''
+  A uniform sampler for discrete space
+  '''
+  def __init__(self, shape, normalizer, device):
+    super().__init__(shape, normalizer, device)
+
+  def sample(self, batch_size):
+    data = np.random.randint(low=np.rint(self.low), high=np.rint(self.high)+1, size=tuple([batch_size]+list(self.shape)))
+    data = to_tensor(self.normalizer(data), self.device)
+    return data

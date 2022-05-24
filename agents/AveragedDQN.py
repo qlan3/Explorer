@@ -17,10 +17,8 @@ class AveragedDQN(VanillaDQN):
       self.Q_net_target[i].eval()
     self.update_target_net_index = 0
   
-  def learn(self):
-    super().learn()
-    # Update target network
-    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
+  def update_target_net(self):
+    if self.step_count % self.cfg['target_network_update_steps'] == 0:
       self.Q_net_target[self.update_target_net_index].load_state_dict(self.Q_net[self.update_Q_net_index].state_dict())
       self.update_target_net_index = (self.update_target_net_index + 1) % self.k
  

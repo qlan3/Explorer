@@ -59,15 +59,16 @@ def analyze(exp, runs=1):
     'ppo': [1, 2, 3, 4, 5, 6],
     'rpg': [7, 8, 9, 10, 11, 12]
   }
-  if exp == 'rpg':
+  if exp == 'RPG':
     for i in range(6):
       for mode in ['Test']:
-        expIndexModeList = [['rpg', indexes['ppo'][i], mode], ['rpg', indexes['rpg'][i], mode]]
+        expIndexModeList = [['RPG', indexes['ppo'][i], mode], ['RPG', indexes['rpg'][i], mode]]
         plotter.plot_expIndexModeList(expIndexModeList, f'{mode}_{envs[i]}')
   
 
 if __name__ == "__main__":
-  unfinished_index('rpg', runs=30)
-  memory_info('rpg', runs=30)
-  time_info('rpg', runs=30)
-  analyze('rpg', runs=30)
+  exp, runs = 'RPG', 30
+  unfinished_index(exp, runs=runs)
+  memory_info(exp, runs=runs)
+  time_info(exp, runs=runs)
+  analyze(exp, runs=runs)

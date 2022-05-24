@@ -1,26 +1,32 @@
 {
   "env": [
     {
-      "name": ["Pixelcopter-PLE-v0"],
-      "max_episode_steps": [500],
+      "name": ["Catcher-PLE-v0"],
+      "max_episode_steps": [2000],
       "input_type": ["feature"]
     }
   ],
   "agent": [
     {
-      "name": ["DQN", "DDQN"]
+      "name": ["MeDQN_Real"],
+      "consod_start": [0.01],
+      "consod_end": [4, 2, 1],
+      "consod_epoch": [4, 2, 1],
+      "consod_size": [1e4]
     },
     {
-      "name": ["MaxminDQN", "AveragedDQN"],
-      "target_networks_num": [2,3,4,5,6,7,8,9]
+      "name": ["MeDQN_Uniform"],
+      "consod_start": [0.01],
+      "consod_end": [4, 2, 1],
+      "consod_epoch": [4, 2, 1]
     }
   ],
-  "train_steps": [2e6],
+  "train_steps": [1.5e6],
   "test_per_episodes": [-1],
   "device": ["cpu"],
   "hidden_layers": [[64,64]],
-  "memory_type": ["Replay"],
-  "memory_size": [1e4],
+  "memory_type": ["FiniteReplay"],
+  "memory_size": [32],
   "exploration_type": ["LinearEpsilonGreedy"],
   "exploration_steps": [1e3],
   "epsilon_steps": [1e3],
@@ -41,7 +47,7 @@
   "seed": [1],
   "show_tb": [false],
   "gradient_clip": [5],
-  "target_network_update_frequency": [200],
-  "network_update_frequency": [1],
+  "target_network_update_steps": [200],
+  "network_update_steps": [1, 2, 4, 8],
   "generate_random_seed": [true]
 }

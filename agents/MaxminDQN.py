@@ -27,8 +27,9 @@ class MaxminDQN(VanillaDQN):
     # Choose a Q_net to udpate
     self.update_Q_net_index = np.random.choice(list(range(self.k)))
     super().learn()
-    # Update target network
-    if (self.step_count // self.cfg['network_update_frequency']) % self.cfg['target_network_update_frequency'] == 0:
+
+  def update_target_net(self):
+    if self.step_count % self.cfg['target_network_update_steps'] == 0:
       for i in range(self.k):
         self.Q_net_target[i].load_state_dict(self.Q_net[i].state_dict())
 

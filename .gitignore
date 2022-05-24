@@ -2,10 +2,8 @@
 # Edit at https://www.gitignore.io/?templates=python,windows,visualstudiocode
 
 # My ignores
-logs*
+*logs*
 logfile
-procfile
-*figure*
 *output*
 *DS_Store*
 

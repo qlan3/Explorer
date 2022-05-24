@@ -1,0 +1,47 @@
+{
+  "env": [
+    {
+      "name": ["MountainCar-v0"],
+      "max_episode_steps": [1000],
+      "input_type": ["feature"]
+    }
+  ],
+  "agent": [
+    {
+      "name": ["MeDQN_Real", "MeDQN_Uniform"],
+      "consod_start": [0.01, 0.1, 2, 4, 8],
+      "consod_end": [0.01, 0.1, 2, 4, 8],
+      "consod_epoch": [4],
+      "consod_size": [1e4]
+    }
+  ],
+  "train_steps": [1e5],
+  "test_per_episodes": [-1],
+  "device": ["cpu"],
+  "hidden_layers": [[32,32]],
+  "memory_type": ["FiniteReplay"],
+  "memory_size": [32],
+  "exploration_type": ["LinearEpsilonGreedy"],
+  "exploration_steps": [1e3],
+  "epsilon_steps": [1e3],
+  "epsilon_start": [1.0],
+  "epsilon_end": [0.01],
+  "epsilon_decay": [0.999],
+  "loss": ["MSELoss"],
+  "optimizer": [
+    {
+      "name": ["Adam"],
+      "kwargs": [{"lr": [1e-2, 3e-3, 1e-3, 3e-4, 1e-4]}]
+    }
+  ],
+  "batch_size": [32],
+  "display_interval": [20],
+  "rolling_score_window": [{"Train": [20], "Test": [5]}],
+  "discount": [0.99],
+  "seed": [1],
+  "show_tb": [false],
+  "gradient_clip": [5],
+  "target_network_update_steps": [100],
+  "network_update_steps": [1],
+  "generate_random_seed": [true]
+}

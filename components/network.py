@@ -3,14 +3,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
+# torch.autograd.set_detect_anomaly(True)
 
 
 activations = {
   'Linear': nn.Identity(),
   'ReLU': nn.ReLU(),
+  'ELU': nn.ELU(),
+  'Softplus': nn.Softplus(),
   'LeakyReLU': nn.LeakyReLU(),
   'Tanh': nn.Tanh(),
   'Sigmoid': nn.Sigmoid(),
+  'Hardsigmoid': nn.Hardsigmoid(),
   'Softmax-1': nn.Softmax(dim=-1),
   'Softmax0': nn.Softmax(dim=0),
   'Softmax1': nn.Softmax(dim=1),
@@ -94,7 +98,7 @@ class MLP(nn.Module):
         layer_init(
           nn.Linear(layer_dims[i], layer_dims[i+1], bias=True), 
           init_type=init_type, 
-          nonlinearity=act, 
+          nonlinearity=act,
           w_scale=w_s
         )
       )
@@ -102,9 +106,7 @@ class MLP(nn.Module):
     self.mlp = nn.Sequential(*layers) 
   
   def forward(self, x):
-    for layer in self.mlp:
-      x = layer(x)
-    return x
+    return self.mlp(x)
 
 
 class NoisyMLP(nn.Module):
@@ -122,14 +124,70 @@ class NoisyMLP(nn.Module):
     self.mlp = nn.Sequential(*layers) 
   
   def forward(self, x):
-    for layer in self.mlp:
-      x = layer(x)
-    return x
+    return self.mlp(x)
   
   def reset_noise(self):
     for layer in self.mlp:
       if isinstance(layer, NoisyLinear):
         layer.reset_noise()
+
+
+class Conv2dLayers(nn.Module):
+  '''
+  Multiple Conv2d layers
+  '''
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Linear'):
+    super().__init__()
+    # Create layers
+    layers = []
+    for i in range(len(layer_dims)-1):
+      layers.append(
+        layer_init(
+          nn.Conv2d(layer_dims[i], layer_dims[i+1], kernel_size=len(layer_dims)-i, stride=1),
+          nonlinearity=hidden_act
+        )
+      )
+      layers.append(activations[hidden_act])
+    layers.append(
+      layer_init(
+        nn.Conv2d(layer_dims[-1], layer_dims[-1], kernel_size=1, stride=1),
+        nonlinearity=output_act
+      )
+    )
+    layers.append(activations[output_act])
+    self.conv = nn.Sequential(*layers)
+  
+  def forward(self, x):
+    return self.conv(x)
+
+
+class ConvTranspose2dLayers(nn.Module):
+  '''
+  Multiple ConvTranspose2d layers
+  '''
+  def __init__(self, layer_dims, hidden_act='ReLU', output_act='Sigmoid'):
+    super().__init__()
+    # Create layers
+    layers = []
+    layers.append(
+      layer_init(
+        nn.ConvTranspose2d(layer_dims[0], layer_dims[0], kernel_size=1, stride=1),
+        nonlinearity=hidden_act
+      )
+    )
+    for i in range(len(layer_dims)-1):
+      layers.append(activations[hidden_act])
+      layers.append(
+        layer_init(
+          nn.ConvTranspose2d(layer_dims[i], layer_dims[i+1], kernel_size=i+2, stride=1),
+          nonlinearity=hidden_act
+        )
+      )
+    layers.append(activations[output_act])
+    self.conv = nn.Sequential(*layers)
+  
+  def forward(self, x):
+    return self.conv(x)
 
 
 class Conv2d_Atari(nn.Module):

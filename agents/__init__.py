@@ -7,6 +7,8 @@ from .EnsembleDQN import EnsembleDQN
 from .AveragedDQN import AveragedDQN
 from .BootstrappedDQN import BootstrappedDQN
 from .NoisyNetDQN import NoisyNetDQN
+from .MeDQN_Real import MeDQN_Real
+from .MeDQN_Uniform import MeDQN_Uniform
 
 from .REINFORCE import REINFORCE
 from .ActorCritic import ActorCritic
@@ -14,6 +16,4 @@ from .PPO import PPO
 from .SAC import SAC
 from .DDPG import DDPG
 from .TD3 import TD3
-from .RepOffPG import RepOffPG
-from .RepOnPG import RepOnPG
 from .RPG import RPG

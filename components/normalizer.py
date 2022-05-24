@@ -40,6 +40,18 @@ class ImageNormalizer(RescaleNormalizer):
     RescaleNormalizer.__init__(self, 1.0 / 255)
 
 
+class RescaleShiftNormalizer(BaseNormalizer):
+  def __init__(self, coef=2.0, bias=-1.0):
+    BaseNormalizer.__init__(self)
+    self.coef = coef
+    self.bias = bias
+
+  def __call__(self, x):
+    if not isinstance(x, torch.Tensor):
+      x = np.asarray(x)
+    return self.coef * x + self.bias
+
+
 class SignNormalizer(BaseNormalizer):
   def __call__(self, x):
     return np.sign(x)
