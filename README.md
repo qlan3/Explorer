@@ -30,7 +30,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 ## The dependency tree of agent classes
 
     Base Agent
-      ├── Vanalla DQN
+      ├── Vanilla DQN
       |     ├── DQN
       |     |    ├── DDQN
       |     |    ├── NoisyNetDQN
