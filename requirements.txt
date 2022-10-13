@@ -1,7 +1,7 @@
 gym==0.23.1
 gym_games==1.0.4
 matplotlib==3.5.2
-numpy==1.21.5
+numpy==1.22.0
 opencv_python==4.5.5.64
 pandas==1.4.2
 psutil==5.9.0
