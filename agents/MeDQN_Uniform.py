@@ -3,10 +3,7 @@ from agents.DQN import *
 
 class MeDQN_Uniform(DQN):
   '''
-  Implementation of MeDQN_Uniform (Memory-efficient DQN with uniform state sampling)
-  - Consolidatie knowledge from target Q-network to current Q-network.
-  - The bounds of state space are updated with real states frequently.
-  - A tiny (e.g., one mini-batch size) experience replay buffer is used in practice.
+  Implementation of Memory efficient DQN (MeDQN) with uniform state sampling.
   '''
   def __init__(self, cfg):
     # Set the consolidation batch size

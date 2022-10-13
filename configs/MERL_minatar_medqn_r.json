@@ -13,11 +13,10 @@
   ],
   "agent": [
     {
-      "name": ["MeDQN_Real"],
+      "name": ["MeDQN_Real2"],
       "consod_start": [0.01],
       "consod_end": [4, 2],
-      "consod_epoch": [2, 1],
-      "consod_size": [1e5]
+      "consod_epoch": [2, 1]
     }
   ],
   "train_steps": [5e6],
@@ -26,7 +25,7 @@
   "feature_dim": [128],
   "hidden_layers": [[]],
   "memory_type": ["FiniteReplay"],
-  "memory_size": [32],
+  "memory_size": [1e4],
   "exploration_type": ["LinearEpsilonGreedy"],
   "exploration_steps": [5e3],
   "epsilon_steps": [1e5],
