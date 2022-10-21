@@ -129,7 +129,7 @@ Enjoy!
 
 - **Qingfeng Lan**, Yangchen Pan, Alona Fyshe, Martha White. **Maxmin Q-learning: Controlling the Estimation Bias of Q-learning.** ICLR, 2020. **(Poster)** [[paper]](https://openreview.net/pdf?id=Bkg0u3Etwr) [[code]](https://github.com/qlan3/Explorer/releases/tag/maxmin1.0)
 
-- **Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/pdf/2103.05147.pdf) [[code]](https://github.com/qlan3/Explorer/tree/RPG)
+- **Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/pdf/2103.05147.pdf) [[code]](https://github.com/qlan3/Explorer/tree/RPG) [[robot experiment code]](https://github.com/homayoonfarrahi/rpg-ur5)
 
 - **Qingfeng Lan**, Yangchen Pan, Jun Luo, A. Rupam Mahmood. **Memory-efficient Reinforcement Learning with Knowledge Consolidation.** Arxiv [[paper]](https://arxiv.org/pdf/2205.10868.pdf) [[code]](https://github.com/qlan3/Explorer/)
 
