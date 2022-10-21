@@ -2,6 +2,8 @@ This branch is the code for the paper:
 
 **Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/abs/2103.05147)
 
+For **robot experiment on UR5**, please check this [code](https://github.com/homayoonfarrahi/rpg-ur5).
+
 Please use this bibtex to cite this paper
 
 ~~~bibtex
