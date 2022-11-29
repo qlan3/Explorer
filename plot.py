@@ -143,8 +143,8 @@ def learning_curve(exp, runs=1):
     #   ax.yaxis.set_major_formatter(FuncFormatter(cfg['y_format']))  
     # # Set legend
     ax.legend(loc=cfg['loc'], frameon=False, fontsize=16)
-    # Adjust to show y label
-    # fig.subplots_adjust(left=0.2, bottom=0.14)
+    # Adjust layout automatically
+    plt.tight_layout()
     # Save and show
     image_path = f'./figures/{env}.{cfg["imgType"]}'
     ax.get_figure().savefig(image_path)
