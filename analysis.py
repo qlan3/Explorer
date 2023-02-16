@@ -10,7 +10,7 @@ def get_process_result_dict(result, config_idx, mode='Train'):
     'Env': result['Env'][0],
     'Agent': result['Agent'][0],
     'Config Index': config_idx,
-    'Return (mean)': result['Return'][-100:].mean() if mode=='Train' else result['Return'][-5:].mean()
+    'Return (mean)': result['Return'][-100:].mean(skipna=False) if mode=='Train' else result['Return'][-5:].mean(skipna=False)
   }
   return result_dict
 
@@ -19,7 +19,7 @@ def get_csv_result_dict(result, config_idx, mode='Train'):
     'Env': result['Env'][0],
     'Agent': result['Agent'][0],
     'Config Index': config_idx,
-    'Return (mean)': result['Return (mean)'].mean(),
+    'Return (mean)': result['Return (mean)'].mean(skipna=False),
     'Return (se)': result['Return (mean)'].sem(ddof=0)
   }
   return result_dict
@@ -29,6 +29,8 @@ cfg = {
   'merged': True,
   'x_label': 'Step',
   'y_label': 'Average Return',
+    # 'rolling_score_window': 20,
+  'rolling_score_window': -1,
   'hue_label': 'Agent',
   'show': False,
   'imgType': 'png',
@@ -39,7 +41,7 @@ cfg = {
   'ylim': {'min': None, 'max': None},
   'EMA': True,
   'loc': 'lower right',
-  'sweep_keys': [],
+  'sweep_keys': ['optimizer/actor_kwargs/lr', 'optimizer/critic_kwargs/lr', 'optimizer/reward_kwargs/lr'],
   'sort_by': ['Return (mean)', 'Return (se)'],
   'ascending': [False, True],
   'runs': 1

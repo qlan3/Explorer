@@ -21,16 +21,24 @@ class Plotter(object):
     # Note that EMA only works when merged is True
     cfg.setdefault('EMA', False)
     cfg.setdefault('ci', None)
+    cfg.setdefault('rolling_score_window', -1)
     # Copy parameters
     self.exp = cfg['exp']
     self.merged = cfg['merged']
     self.x_label = cfg['x_label']
     self.y_label = cfg['y_label']
+    self.rolling_score_window = cfg['rolling_score_window']
     self.hue_label = cfg['hue_label']
     self.show = cfg['show']
     self.imgType = cfg['imgType']
     self.ci = cfg['ci']
     self.EMA = cfg['EMA']
+    ''' Set sweep_keys:
+    For a hierarchical dict, all keys along the path are cancatenated with '/' into one key.
+    For example, for config_dict = {"env": {"names": ["Catch-bsuite"]}},
+      key = 'env': return the whole dict {"names": ["Catch-bsuite"]},
+      key = 'env/names': return ["Catch-bsuite"].
+    '''
     self.sweep_keys = cfg['sweep_keys']
     self.sort_by = cfg['sort_by']
     self.ascending = cfg['ascending']
@@ -67,6 +75,10 @@ class Plotter(object):
       for result in result_list:
         xs.append(result[self.x_label].to_numpy())
         ys.append(result[self.y_label].to_numpy())
+      # Moving average
+      if self.rolling_score_window > 0:
+        for i in range(len(xs)):
+          ys[i] = moving_average(ys[i], self.rolling_score_window)
       # Do symetric EMA to get new x's and y's
       low  = max(x[0] for x in xs)
       high = min(x[-1] for x in xs)
@@ -77,6 +89,13 @@ class Plotter(object):
         result_list[i].loc[:, self.x_label] = new_x
         result_list[i].loc[:, self.y_label] = new_y
     elif processed == False:
+      # Moving average
+      if self.rolling_score_window > 0:
+        for i in range(len(result_list)):
+          x, y = result_list[i][self.x_label].to_numpy(), result_list[i][self.y_label].to_numpy()
+          y = moving_average(y, self.rolling_score_window)
+          result_list[i].loc[:, self.x_label] = new_x
+          result_list[i].loc[:, self.y_label] = new_y
       # Cut off redundant results
       n = min(len(result) for result in result_list)
       for i in range(len(result_list)):
@@ -98,9 +117,6 @@ class Plotter(object):
       processed = False
     
     if self.merged == True or processed == True:
-      # Check mode
-      if not (mode in ['Train', 'Valid', 'Test', 'Dynamic']):
-        return None
       # Merge results
       print(f'[{exp}]: Merge {mode} results: {config_idx}/{get_total_combination(exp)}')
       result_list = self.merge_index(config_idx, mode, processed, exp)
@@ -225,9 +241,9 @@ class Plotter(object):
         continue
       # Plot
       if self.merged:
-        image_path = f'./logs/{self.exp}/{config_idx}/{mode}_{self.y_label}_merged.{self.imgType}'
+        image_path = f'./logs/{self.exp}/{config_idx}/{self.y_label}_{mode}_merged.{self.imgType}'
       else:
-        image_path = f'./logs/{self.exp}/{config_idx}/{mode}_{self.y_label}.{self.imgType}'
+        image_path = f'./logs/{self.exp}/{config_idx}/{self.y_label}_{mode}.{self.imgType}'
       self.plot_vanilla([result_list], image_path)
 
   def csv_results(self, mode, get_csv_result_dict, get_process_result_dict):
@@ -248,7 +264,7 @@ class Plotter(object):
       with open(config_file, 'r') as f:
         config_dict = json.load(f)
         for key in self.sweep_keys:
-          result_dict[key] = find_key_value(config_dict, key)
+          result_dict[key] = find_key_value(config_dict, key.split('/'))
       new_result_list.append(result_dict)
 
     if len(new_result_list) == 0:
@@ -259,7 +275,7 @@ class Plotter(object):
     # Sort by mean and ste of test result label value
     sorted_results = results.sort_values(by=self.sort_by, ascending=self.ascending)
     # Save sorted test results into a .feather file
-    sorted_results_file = f'./logs/{self.exp}/0/{mode}_results.csv'
+    sorted_results_file = f'./logs/{self.exp}/0/results_{mode}.csv'
     sorted_results.to_csv(sorted_results_file, index=False)
 
 
@@ -357,6 +373,16 @@ def symmetric_ema(xolds, yolds, low=None, high=None, n=512, decay_steps=1.0, low
   return xs, ys, count_ys
 
 def moving_average(values, window):
+  # Copied from https://github.com/deepmind/dqn_zoo/blob/master/dqn_zoo_plots.ipynb
+  numerator = np.nancumsum(values)
+  numerator[window:] = numerator[window:] - numerator[:-window]
+  denominator = np.ones(len(values)) * window
+  denominator[:window] = np.arange(1, window + 1)
+  smoothed = numerator / denominator
+  assert values.shape == smoothed.shape
+  return smoothed
+
+def moving_average1(values, window, mode='valid'):
   '''
   Smooth values by doing a moving average
   :param values: (numpy array)
@@ -364,7 +390,22 @@ def moving_average(values, window):
   :return: (numpy array)
   '''
   weights = np.repeat(1.0, window) / window
-  return np.convolve(values, weights, 'valid')
+  return np.convolve(values, weights, mode)
+
+def moving_average2(values, window):
+  '''
+  Smooth values by doing a moving average
+  :param values: (numpy array)
+  :param window: (int)
+  :return: (numpy array)
+  '''
+  new_values = []
+  for i in range(len(values)):
+    if i < window:
+      new_values.append(values[:i+1].mean())
+    else:
+      new_values.append(values[i-window+1:i+1].mean())
+  return np.array(new_values)
   
 def get_total_combination(exp):
   '''
@@ -375,20 +416,17 @@ def get_total_combination(exp):
   sweeper = Sweeper(config_file)
   return sweeper.config_dicts['num_combinations']
 
-
-def find_key_value(config_dict, key):
+def find_key_value(config_dict, key_list):
   '''
-  Find key value in config dict recursively
+  Find key value in config dict recursively given a key_list which represents the keys in path.
   '''
   for k, v in config_dict.items():
-    if k == key:
-      return config_dict[k]
-    elif type(v) == dict:
-      value = find_key_value(v, key)
-      if value != '/':
-        return value
+    if k == key_list[0]:
+      if len(key_list)==1:
+        return v
+      else:
+        return find_key_value(v, key_list[1:])
   return '/'
-
 
 def read_file(result_file):
   if not os.path.isfile(result_file):

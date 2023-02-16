@@ -35,7 +35,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
       |     |    ├── DDQN
       |     |    ├── NoisyNetDQN
       |     |    ├── BootstrappedDQN
-      |     |    └── MeDQN_Uniform, MeDQN_Real
+      |     |    └── MeDQN: MeDQN(U), MeDQN(R)
       |     ├── Maxmin DQN ── Ensemble DQN
       |     └── Averaged DQN
       └── REINFORCE 

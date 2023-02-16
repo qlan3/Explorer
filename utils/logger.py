@@ -5,6 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 class Logger(object):
   def __init__(self, logs_dir, file_name='log.txt', filemode='w'):
+    self.logs_dir = logs_dir
     logging.basicConfig(
       format='%(asctime)s - %(levelname)s: %(message)s',
       filename=f'{logs_dir}{file_name}',
@@ -18,18 +19,11 @@ class Logger(object):
     self.warning = logger.warning
     self.error = logger.error
     self.critical = logger.critical
-    
-    self.logs_dir = logs_dir
+    # Set default writer
     self.writer = None
 
   def init_writer(self):
     self.writer = SummaryWriter(self.logs_dir)
-
-  def add_scalar(self, tag, scalar_value, global_step=None):
-    self.writer.add_scalar(tag, scalar_value, global_step)
-
-  def add_scalars(self, main_tag, tag_scalar_dict, global_step=None):
-    self.writer.add_scalars(main_tag, tag_scalar_dict, global_step)
-
-  def add_histogram(self, tag, values, global_step=None):
-    self.writer.add_histogram(tag, values, global_step)
+    self.add_scalar = self.writer.add_scalar       # Input: tag, scalar_value, global_step
+    self.add_scalars = self.writer.add_scalars     # Input: main_tag, tag_scalar_dict, global_step
+    self.add_histogram = self.writer.add_histogram # Input: tag, values, global_step
