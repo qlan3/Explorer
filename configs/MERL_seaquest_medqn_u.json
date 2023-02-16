@@ -1,8 +1,8 @@
 {
   "env": [
     {
-      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "SpaceInvaders-MinAtar-v0"],
-      "max_episode_steps": [-1],
+      "name": ["Seaquest-MinAtar-v0"],
+      "max_episode_steps": [1e4],
       "input_type": ["pixel"]
     }
   ],
@@ -14,7 +14,7 @@
       "consod_epoch": [2, 1]
     }
   ],
-  "train_steps": [5e6],
+  "train_steps": [1e7],
   "test_per_episodes": [-1],
   "device": ["cpu"],
   "feature_dim": [128],

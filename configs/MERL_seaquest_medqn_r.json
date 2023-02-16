@@ -1,26 +1,26 @@
 {
   "env": [
     {
-      "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "SpaceInvaders-MinAtar-v0"],
-      "max_episode_steps": [-1],
+      "name": ["Seaquest-MinAtar-v0"],
+      "max_episode_steps": [1e4],
       "input_type": ["pixel"]
     }
   ],
   "agent": [
     {
-      "name": ["MeDQN_Uniform"],
+      "name": ["MeDQN_Real"],
       "consod_start": [0.01],
       "consod_end": [4, 2],
       "consod_epoch": [2, 1]
     }
   ],
-  "train_steps": [5e6],
+  "train_steps": [1e7],
   "test_per_episodes": [-1],
   "device": ["cpu"],
   "feature_dim": [128],
   "hidden_layers": [[]],
   "memory_type": ["FiniteReplay"],
-  "memory_size": [32],
+  "memory_size": [1e3, 1e4, 1e5],
   "exploration_type": ["LinearEpsilonGreedy"],
   "exploration_steps": [5e3],
   "epsilon_steps": [1e5],
@@ -41,7 +41,7 @@
   "seed": [1],
   "show_tb": [false],
   "gradient_clip": [-1],
-  "target_network_update_steps": [300],
+  "target_network_update_steps": [1000],
   "network_update_steps": [4, 8, 16, 32],
   "generate_random_seed": [true]
 }

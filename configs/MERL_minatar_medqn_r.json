@@ -4,16 +4,11 @@
       "name": ["Asterix-MinAtar-v0", "Breakout-MinAtar-v0", "SpaceInvaders-MinAtar-v0"],
       "max_episode_steps": [-1],
       "input_type": ["pixel"]
-    },
-    {
-      "name": ["Seaquest-MinAtar-v0"],
-      "max_episode_steps": [1e4],
-      "input_type": ["pixel"]
     }
   ],
   "agent": [
     {
-      "name": ["MeDQN_Real2"],
+      "name": ["MeDQN_Real"],
       "consod_start": [0.01],
       "consod_end": [4, 2],
       "consod_epoch": [2, 1]

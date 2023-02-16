@@ -8,13 +8,6 @@
   ],
   "agent": [
     {
-      "name": ["MeDQN_Real"],
-      "consod_start": [0.01],
-      "consod_end": [4, 2, 1],
-      "consod_epoch": [4, 2, 1],
-      "consod_size": [1e4]
-    },
-    {
       "name": ["MeDQN_Uniform"],
       "consod_start": [0.01],
       "consod_end": [4, 2, 1],

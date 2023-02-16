@@ -8,11 +8,10 @@
   ],
   "agent": [
     {
-      "name": ["MeDQN_Real", "MeDQN_Uniform"],
+      "name": ["MeDQN_Uniform"],
       "consod_start": [0.01, 0.1, 2, 4, 8],
       "consod_end": [0.01, 0.1, 2, 4, 8],
-      "consod_epoch": [4],
-      "consod_size": [1e4]
+      "consod_epoch": [4]
     }
   ],
   "train_steps": [1e5],

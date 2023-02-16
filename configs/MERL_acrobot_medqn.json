@@ -8,13 +8,6 @@
   ],
   "agent": [
     {
-      "name": ["MeDQN_Real"],
-      "consod_start": [0.01],
-      "consod_end": [4, 2, 1],
-      "consod_epoch": [4, 2, 1],
-      "consod_size": [1e4]
-    },
-    {
       "name": ["MeDQN_Uniform"],
       "consod_start": [0.01],
       "consod_end": [4, 2, 1],
@@ -26,7 +19,7 @@
   "device": ["cpu"],
   "hidden_layers": [[32,32]],
   "memory_type": ["FiniteReplay"],
-  "memory_size": [1e4],
+  "memory_size": [32],
   "exploration_type": ["LinearEpsilonGreedy"],
   "exploration_steps": [1e3],
   "epsilon_steps": [1e3],
