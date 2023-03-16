@@ -13,6 +13,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Ensemble Deep Q-learning (EnsembleDQN)](https://arxiv.org/pdf/1611.01929.pdf)
 - [Bootstrapped Deep Q-learning (BootstrappedDQN)](https://arxiv.org/pdf/1602.04621.pdf)
 - [NoisyNet Deep Q-learning (NoisyNetDQN)](https://arxiv.org/pdf/1706.10295.pdf)
+- [Randomized Exploration for Reinforcement Learning with General Value Function Approximation (LSVI-PHE)](https://arxiv.org/pdf/2106.07841.pdf)
 - [REINFORCE](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Actor-Critic](http://incompleteideas.net/book/RLbook2020.pdf)
 - [Proximal Policy Optimisation (PPO)](https://arxiv.org/pdf/1707.06347.pdf)
@@ -36,7 +37,7 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
       |     |    ├── NoisyNetDQN
       |     |    ├── BootstrappedDQN
       |     |    └── MeDQN: MeDQN(U), MeDQN(R)
-      |     ├── Maxmin DQN ── Ensemble DQN
+      |     ├── Maxmin DQN ── Ensemble DQN, LSVI-PHE
       |     └── Averaged DQN
       └── REINFORCE 
             ├── Actor-Critic
