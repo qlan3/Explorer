@@ -132,7 +132,7 @@ Enjoy!
 
 - **Qingfeng Lan**, Samuele Tosatto, Homayoon Farrahi, A. Rupam Mahmood. **Model-free Policy Learning with Reward Gradients.** AISTATS, 2022. **(Poster)** [[paper]](https://arxiv.org/pdf/2103.05147.pdf) [[code]](https://github.com/qlan3/Explorer/tree/RPG) [[robot experiment code]](https://github.com/homayoonfarrahi/rpg-ur5)
 
-- **Qingfeng Lan**, Yangchen Pan, Jun Luo, A. Rupam Mahmood. **Memory-efficient Reinforcement Learning with Knowledge Consolidation.** Arxiv [[paper]](https://arxiv.org/pdf/2205.10868.pdf) [[code]](https://github.com/qlan3/Explorer/)
+- **Qingfeng Lan**, Yangchen Pan, Jun Luo, A. Rupam Mahmood. **Memory-efficient Reinforcement Learning with Value-based Knowledge Consolidation.** TMLR, 2023. [[paper]](https://arxiv.org/pdf/2205.10868.pdf) [[code]](https://github.com/qlan3/Explorer/) [[Atari experiment code]](https://github.com/qlan3/MeDQN/)
 
 ## Cite
 
