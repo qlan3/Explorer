@@ -2,6 +2,9 @@
 
 Explorer is a PyTorch reinforcement learning framework for **exploring** new ideas.
 
+> [!NOTE]
+> This repository is no longer actively maintained. For Jax implementation, please check [Jaxplorer](https://github.com/qlan3/Jaxplorer).
+
 
 ## Implemented algorithms
 
@@ -23,10 +26,6 @@ Explorer is a PyTorch reinforcement learning framework for **exploring** new ide
 - [Reward Policy Gradient (RPG)](https://arxiv.org/pdf/2103.05147.pdf)
 - [Memory-efficient Deep Q-learning (MeDQN)](https://arxiv.org/pdf/2205.10868.pdf)
 
-## To do list
-
-- SAC with automatically adjusted temperature
-- SAC with discrete action spaces
 
 ## The dependency tree of agent classes
 
