@@ -248,5 +248,5 @@ class REINFORCE(BaseAgent):
     torch.save(self.network.state_dict(), model_path)
   
   def load_model(self, model_path):
-    self.network.load_state_dict(torch.load(model_path))
+    self.network.load_state_dict(torch.load(model_path, weights_only=True))
     self.network = self.network.to(self.device)
